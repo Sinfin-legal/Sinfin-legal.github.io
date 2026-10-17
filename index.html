@@ -781,7 +781,7 @@ let gBusy=false,gTimer=null;window.__gerr='';
 const gHash=(e,c)=>JSON.stringify([e.title,e.date,e.time||'',e.type,c?c.client+'|'+c.title+'|'+(c.radicado||''):'']);
 function gQueue(){if(!db.gcalOn||!sb||!userId)return;clearTimeout(gTimer);gTimer=setTimeout(gRun,1500)}
 async function gCall(body){
- const x=await sb.functions.invoke('calendario-google',{body});
+ const x=await sb.functions.invoke('calendario-google',{body:{...body,calId:db.gcalId||''}});
  if(x.error){let m='No se pudo conectar con Google Calendar.';try{const j=await x.error.context.json();if(j&&j.error)m=j.error}catch(e){}throw new Error(m)}
  if(x.data&&x.data.error)throw new Error(x.data.error);return x.data;
 }
@@ -810,13 +810,17 @@ function gcalForm(){
  form('Google Calendar',
   `<p style="margin:0 0 8px">${on?`<b>Conectado.</b> Los plazos, audiencias y demás eventos nuevos se envían solos a tu calendario de Google (${n} sincronizados).`:'Conecta Sinfín con tu calendario de Google para que cada evento te llegue como notificación a tu celular.'}</p>`+
   `<p style="font-size:.85rem;color:var(--muted);margin:0 0 8px">Los eventos con hora avisan 1 día y 1 hora antes. Los de día completo avisan 3 días antes y el día anterior, a las 9:00 a. m.</p>`+
-  `<div id="gmsg" class="err" role="alert">${esc(window.__gerr||'')}</div>`,
+  `<div id="gx"></div><div id="gmsg" class="err" role="alert">${esc(window.__gerr||'')}</div>`,
   ()=>{},
   `${on?'<button type="button" class="danger" id="gOff" style="margin-right:auto">Desconectar</button>':''}<button type="button" class="primary" id="gOn">${on?'Sincronizar ahora':'Conectar'}</button>`);
  $('ok').classList.add('hide');$('cancel').textContent='Cerrar';
  const msg=t=>{$('gmsg').style.color='var(--ink)';$('gmsg').textContent=t};
+ let propia=true;
+ if(sb&&userId)gCall({accion:'info'}).then(r=>{if(r.propia&&!db.gcalId)return;propia=false;
+  $('gx').innerHTML=`<div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0 0 10px;font-size:13.5px"><b>Antes de conectar:</b><ol style="margin:6px 0 0;padding-left:20px"><li>En Google Calendar (en el computador) crea un calendario nuevo, por ejemplo "Sinfín".</li><li>En sus ajustes, entra a <b>Compartir con personas concretas</b> y agrega este correo con permiso <b>Realizar cambios en eventos</b>:<br><code id="gsa" style="word-break:break-all;user-select:all">${esc(r.correo||'')}</code></li><li>En <b>Integrar el calendario</b>, copia el <b>ID del calendario</b> y pégalo aquí:</li></ol>${F('ID del calendario','gId',db.gcalId||'')}</div>`}).catch(()=>{});
  $('gOn').onclick=async()=>{
   if(!sb||!userId)return msg('Inicia sesión primero.');
+  if($('gId')){const v=$('gId').value.trim();if(!v)return msg('Pega el ID de tu calendario.');db.gcalId=v}
   $('gOn').disabled=true;msg('Conectando…');
   try{const r=await gCall({accion:'probar'});db.gcalOn=true;db.gmap=db.gmap||{};save();msg('Conectado con "'+r.nombre+'". Enviando tus eventos…');
    gBusy=false;await gRun();msg(window.__gerr?('Se conectó, pero falló un evento: '+window.__gerr):'Listo. Revisa tu Google Calendar en unos segundos.')}
