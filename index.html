@@ -415,6 +415,7 @@ async function docSubir(file,caseId,cat){
   say('Subiendo '+kb(file.size)+'…');
   const{error}=await conTiempo(sb.storage.from('documentos').upload(path,file,{contentType:file.type||'application/octet-stream'}),90000,'La subida tardó demasiado ('+kb(file.size)+'). Revisa tu internet o prueba con un archivo más pequeño.');
   if(error)throw new Error(error.message||String(error));
+  if(!db.docs)db.docs=[];
   db.docs.push({id,caseId,name:file.name,path,size:file.size,cat,fecha:today()});save();render();
  }catch(err){alert('No se pudo subir el documento.\n\n'+(err&&err.message||err));say('Subir documento')}
 }
@@ -521,7 +522,7 @@ async function invPdf(i){
  if(!window.claude||!claude.use)return;
  const d=await claude.use('db');if(!d)return;
  const ref=d.doc('casos/datos'),snap=await ref.get();
- const apply=j=>{try{const n=JSON.parse(j);['cases','entries','payments','updates','events','invoices'].forEach(k=>n[k]=n[k]||[]);db=n;try{localStorage.setItem(KEY,j)}catch(e){}render()}catch(e){}};
+ const apply=j=>{try{const n=JSON.parse(j);['cases','entries','payments','updates','events','invoices','docs'].forEach(k=>n[k]=n[k]||[]);db=n;try{localStorage.setItem(KEY,j)}catch(e){}render()}catch(e){}};
  cloud=ref;
  if(snap.exists&&snap.data().json){lastCloud=snap.data().json;apply(lastCloud)}
  else{lastCloud=JSON.stringify(db);await ref.set({json:lastCloud})}
@@ -531,14 +532,14 @@ async function invPdf(i){
 function saveFile({filename,data}){const a=document.createElement('a');a.href=URL.createObjectURL(data);a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
 document.getElementById('bk').onclick=()=>saveFile({filename:'copia-casos-'+today()+'.json',data:new Blob([JSON.stringify(db)],{type:'application/json'})});
 document.getElementById('rs').onclick=()=>document.getElementById('rsf').click();
-document.getElementById('rsf').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const n=JSON.parse(await f.text());if(!Array.isArray(n.cases))throw 0;if(!confirm('Esto reemplaza los datos actuales por los de la copia. ¿Continuar?')){e.target.value='';return}['cases','entries','payments','updates','events','invoices'].forEach(k=>n[k]=n[k]||[]);db=n;save();render()}catch(x){alert('El archivo no es una copia válida.')}e.target.value=''};
+document.getElementById('rsf').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const n=JSON.parse(await f.text());if(!Array.isArray(n.cases))throw 0;if(!confirm('Esto reemplaza los datos actuales por los de la copia. ¿Continuar?')){e.target.value='';return}['cases','entries','payments','updates','events','invoices','docs'].forEach(k=>n[k]=n[k]||[]);db=n;save();render()}catch(x){alert('El archivo no es una copia válida.')}e.target.value=''};
 var autoActs=[],vig={},watched={},userId=null,sb=null;
 {const cf=window.APP_CONFIG||{};if(window.supabase&&cf.url&&cf.anonKey&&!/TU-PROYECTO/.test(cf.url))sb=window.supabase.createClient(cf.url,cf.anonKey)}
 function vigLine(c){if(!c.radicado)return '';const v=vig[c.id];
  const t=!sb?'Inicia sesión para activar la revisión automática':!v?'Se revisará automáticamente':v.ultimo_error?'No se pudo consultar la Rama Judicial en la última revisión':'Última revisión: '+(v.revisado_en?fdate(v.revisado_en.slice(0,10)):'pendiente');
  const f=[c.despacho&&`<b style="color:var(--ink)">${esc(c.despacho)}</b>`,[c.clase,c.depto,c.jurisdiccion&&'Jurisdicción '+c.jurisdiccion].filter(Boolean).map(esc).join(' · '),c.demandante&&'Demandante: '+esc(c.demandante),c.demandado&&'Demandado: '+esc(c.demandado),c.ponente&&'Ponente: '+esc(c.ponente),c.fechaRad&&'Radicado el '+fdate(String(c.fechaRad).slice(0,10))].filter(Boolean).join('<br>');
  return `<div style="color:var(--muted);font-size:13px;margin-bottom:8px">${f?f+'<br>':''}Radicado ${esc(c.radicado)} · ${t}</div>`}
-function applyJson(j){try{const n=JSON.parse(j);['cases','entries','payments','updates','events','invoices'].forEach(k=>n[k]=n[k]||[]);db=n;try{localStorage.setItem(KEY,j)}catch(e){}render()}catch(e){}}
+function applyJson(j){try{const n=JSON.parse(j);['cases','entries','payments','updates','events','invoices','docs'].forEach(k=>n[k]=n[k]||[]);db=n;try{localStorage.setItem(KEY,j)}catch(e){}render()}catch(e){}}
 async function loadAuto(){if(!sb||!userId)return;
  const a=await sb.from('actuaciones_auto').select('*').order('detectado_en',{ascending:false});if(!a.error)autoActs=a.data||[];
  const v=await sb.from('vigilancia').select('case_id,radicado,titulo,revisado_en,ultimo_error');
