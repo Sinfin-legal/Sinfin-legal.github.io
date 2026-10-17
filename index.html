@@ -401,14 +401,22 @@ function docsHtml(c){
  return `<div class="sec"><h3>Documentos (${ds.length})</h3><button class="link" id="addDoc">Subir documento</button></div>
  ${ds.length?ds.map(d=>`<div class="panel" style="padding:10px 14px"><div class="row"><b>${esc(d.name)}</b><span class="tag">${esc(d.cat)}</span></div><div class="row m"><span>${fdate(d.fecha)} · ${kb(d.size)}</span><span><button class="link" data-dv="${d.id}">Abrir</button> · <button class="link danger" data-dd="${d.id}">Eliminar</button></span></div></div>`).join(''):'<div class="empty">Aún no hay documentos en este caso. Máximo 20 MB por archivo.</div>'}`;
 }
+const conTiempo=(p,ms,msg)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error(msg)),ms))]);
 async function docSubir(file,caseId,cat){
  if(file.size>DOC_MAX)return alert('El archivo pesa más de 20 MB.');
  const id=uid('d'),safe=file.name.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w.\-]+/g,'_');
- const path=`${userId}/${caseId}/${id}-${safe}`;
- const btn=$('addDoc');if(btn){btn.disabled=true;btn.textContent='Subiendo…'}
- const{error}=await sb.storage.from('documentos').upload(path,file,{contentType:file.type||'application/octet-stream'});
- if(error){alert('No se pudo subir: '+error.message);return render()}
- db.docs.push({id,caseId,name:file.name,path,size:file.size,cat,fecha:today()});save();render();
+ const btn=()=>$('addDoc'),say=t=>{const b=btn();if(b){b.disabled=t!=='Subir documento';b.textContent=t}};
+ try{
+  say('Verificando sesión…');
+  const{data:ss}=await conTiempo(sb.auth.getSession(),15000,'La sesión no responde. Cierra la app, ábrela e inicia sesión de nuevo.');
+  const uidNow=ss&&ss.session&&ss.session.user&&ss.session.user.id;
+  if(!uidNow)throw new Error('Tu sesión expiró. Cierra sesión y vuelve a entrar.');
+  const path=`${uidNow}/${caseId}/${id}-${safe}`;
+  say('Subiendo '+kb(file.size)+'…');
+  const{error}=await conTiempo(sb.storage.from('documentos').upload(path,file,{contentType:file.type||'application/octet-stream'}),90000,'La subida tardó demasiado ('+kb(file.size)+'). Revisa tu internet o prueba con un archivo más pequeño.');
+  if(error)throw new Error(error.message||String(error));
+  db.docs.push({id,caseId,name:file.name,path,size:file.size,cat,fecha:today()});save();render();
+ }catch(err){alert('No se pudo subir el documento.\n\n'+(err&&err.message||err));say('Subir documento')}
 }
 async function docAbrir(d){
  const w=window.open('','_blank');
