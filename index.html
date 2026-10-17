@@ -157,7 +157,7 @@ html,body{overflow-x:hidden}
  header.top #newCase{flex:none;padding:8px 12px;white-space:nowrap}
  .tabs{gap:0;margin-left:-4px;margin-right:-4px;padding:0}
  #sync{display:inline-block;max-width:60vw}
- .tabs button{padding:8px 7px;font-size:13px}
+ .tabs button{padding:8px 4px;font-size:12px}
  .kpis{grid-template-columns:1fr 1fr}
  .alert button,.alert div{min-width:0;overflow-wrap:anywhere}
  dialog{padding:14px;max-height:92vh;overflow:auto}
@@ -170,6 +170,14 @@ html,body{overflow-x:hidden}
 a{color:var(--accent)}
 .sec{flex-wrap:wrap;gap:2px 10px}.sec h3{margin-right:auto}
 @media (max-width:520px){.scroll table{min-width:430px}.scroll td,.scroll th{padding:7px 8px}}
+
+.fbar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:4px}.fbar i{display:block;height:100%;background:var(--accent)}
+.fbar.over i{background:var(--bad)}
+.mov{display:flex;justify-content:space-between;gap:10px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:6px}
+.mov .m{color:var(--muted);font-size:13px}
+.ing{color:var(--ok)}.gas{color:var(--bad)}
+.fhead{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.fhead h2{font-size:19px;text-transform:capitalize;flex:1;text-align:center;min-width:130px}
 </style>
 </head>
 <body>
@@ -179,11 +187,12 @@ a{color:var(--accent)}
     <button class="primary" id="newCase">Nuevo caso</button>
   </header>
 
-  <nav class="tabs"><button data-tab="dash" class="on">Resumen</button><button data-tab="casos">Casos</button><button data-tab="desp">Despachos</button><button data-tab="cal">Calendario</button><button data-tab="cont">Contenido</button></nav>
+  <nav class="tabs"><button data-tab="dash" class="on">Resumen</button><button data-tab="casos">Casos</button><button data-tab="desp">Despachos</button><button data-tab="cal">Calendario</button><button data-tab="cont">Contenido</button><button data-tab="fin">Finanzas</button></nav>
 
   <section id="dashView" class="hide"></section>
   <section id="despView" class="hide"></section>
   <section id="contView" class="hide"></section>
+  <section id="finView" class="hide"></section>
 
   <section id="listView">
     <p id="hello" class="hello"></p>
@@ -250,7 +259,8 @@ let current=null;
 function render(){
   document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===view));
   renderAlerts();
-  ['dashView','listView','detailView','calView','despView','contView'].forEach(i=>$(i).classList.add('hide'));
+  ['dashView','listView','detailView','calView','despView','contView','finView'].forEach(i=>$(i).classList.add('hide'));
+  if(view==='fin')return renderFin();
   if(view==='cont')return renderCont();
   if(view==='dash')return renderDash();
   if(view==='desp')return renderDesp();
@@ -695,6 +705,88 @@ function gcalForm(){
  };
  if(on)$('gOff').onclick=()=>{if(confirm('¿Dejar de sincronizar? Los eventos que ya están en Google se quedan.')){db.gcalOn=false;save();$('dlg').close()}};
 }
+
+/* ===== Finanzas personales: ingresos y gastos ===== */
+const CAT_GASTO={
+ 'Personales':['Vivienda (arriendo o cuota)','Servicios públicos','Internet y celular','Alimentación y mercado','Restaurantes y domicilios','Transporte personal','Salud (EPS, medicinas, citas)','Educación','Hijos y familia','Ropa y calzado','Belleza y bienestar','Ocio y salidas','Viajes','Suscripciones (streaming, apps)','Mascotas','Regalos y donaciones','Seguros','Deudas y tarjetas','Ahorro e inversión','Imprevistos','Otros gastos personales'],
+ 'Del despacho':['Seguridad social y pensión','Impuestos (renta, ICA)','Software y herramientas','Arriendo u oficina','Papelería y copias','Aranceles y gastos judiciales','Publicidad y redes','Capacitación y libros','Transporte laboral','Honorarios a terceros','Cuotas y tarjeta profesional','Otros gastos del despacho']};
+const CAT_INGRESO=['Honorarios','Salario','Arriendos recibidos','Rendimientos e inversiones','Ventas','Apoyos y regalos','Reembolsos','Otros ingresos'];
+const MEDIOS=['Efectivo','Tarjeta débito','Tarjeta crédito','Transferencia','Nequi','Daviplata','Otro'];
+const ambitoDe=c=>CAT_GASTO['Del despacho'].includes(c)?'Del despacho':'Personal';
+const finDB=()=>{if(!db.fin)db.fin={};if(!db.fin.tx)db.fin.tx=[];if(!db.fin.budgets)db.fin.budgets={};return db.fin};
+let finMes=today().slice(0,7);
+const mesTxt=m=>{const t=new Date(m+'-01T00:00').toLocaleDateString('es-CO',{month:'long',year:'numeric'});return t};
+const mesMov=(m,d)=>{const x=new Date(m+'-01T00:00');x.setMonth(x.getMonth()+d);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')};
+function finMovs(m){
+ const F=finDB(),out=[],dias=new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();
+ F.tx.forEach(t=>{
+  if(t.date.startsWith(m))out.push({...t,master:t.id});
+  else if(t.rec&&t.date.slice(0,7)<m&&(!t.hasta||t.hasta.slice(0,7)>=m)){const dd=Math.min(+t.date.slice(8,10),dias);out.push({...t,date:m+'-'+String(dd).padStart(2,'0'),virtual:true,master:t.id})}
+ });
+ db.payments.filter(p=>String(p.date).startsWith(m)).forEach(p=>{const c=db.cases.find(x=>x.id===p.caseId);
+  out.push({id:'pay-'+p.id,tipo:'Ingreso',cat:'Honorarios',amount:p.amount,date:p.date,desc:(c?c.client:'Pago de caso')+(p.note?' · '+p.note:''),auto:true})});
+ return out.sort((a,b)=>b.date.localeCompare(a.date));
+}
+function finTot(L){
+ const r={ing:0,gas:0,porCat:{},personal:0,despacho:0};
+ L.forEach(x=>{if(x.tipo==='Ingreso')r.ing+=x.amount;else{r.gas+=x.amount;r.porCat[x.cat]=(r.porCat[x.cat]||0)+x.amount;if(ambitoDe(x.cat)==='Personal')r.personal+=x.amount;else r.despacho+=x.amount}});
+ return r;
+}
+function renderFin(){
+ $('finView').classList.remove('hide');
+ const F=finDB(),L=finMovs(finMes),T=finTot(L),ant=finTot(finMovs(mesMov(finMes,-1))),bal=T.ing-T.gas;
+ const cats=Object.entries(T.porCat).sort((a,b)=>b[1]-a[1]);
+ const var_=ant.gas?Math.round((T.gas-ant.gas)/ant.gas*100):null;
+ const ahorro=T.ing>0?Math.round(bal/T.ing*100):null;
+ const bud=F.budgets,conBud=Object.keys(bud).filter(k=>bud[k]>0);
+ $('finView').innerHTML=`<div class="fhead"><button data-fm="-1" aria-label="Mes anterior">‹</button><h2>${esc(mesTxt(finMes))}</h2><button data-fm="1" aria-label="Mes siguiente">›</button></div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="primary" data-ftx="Ingreso">+ Ingreso</button><button class="primary" data-ftx="Gasto">+ Gasto</button><button data-fbud>Presupuesto</button><button data-fcsv>Descargar Excel</button></div>
+ <div class="kpis"><div class="kpi"><small>Ingresos</small><b class="ing" style="font-size:20px">${eur(T.ing)}</b></div><div class="kpi"><small>Gastos</small><b class="gas" style="font-size:20px">${eur(T.gas)}</b></div><div class="kpi"><small>Balance del mes</small><b style="font-size:20px;color:${bal>=0?'var(--ok)':'var(--bad)'}">${eur(bal)}</b></div><div class="kpi"><small>Ahorro del mes</small><b style="font-size:20px">${ahorro===null?'—':ahorro+'%'}</b></div></div>
+ ${var_===null?'':`<p style="color:var(--muted);margin:0 0 10px">Tus gastos ${var_>0?'subieron':var_<0?'bajaron':'se mantuvieron'} ${var_===0?'':Math.abs(var_)+'%'} frente al mes anterior.</p>`}
+ ${T.gas?`<div class="panel"><h3>En qué se va tu dinero</h3><p>Personal ${eur(T.personal)} · Del despacho ${eur(T.despacho)}</p>${cats.map(([k,v])=>`<div style="margin:8px 0"><div class="row" style="display:flex;justify-content:space-between;gap:8px"><span>${esc(k)}</span><span class="num">${eur(v)} · ${Math.round(v/T.gas*100)}%</span></div><div class="fbar${bud[k]&&v>bud[k]?' over':''}"><i style="width:${Math.min(100,v/T.gas*100)}%"></i></div></div>`).join('')}</div>`:''}
+ ${conBud.length?`<div class="panel"><h3>Presupuesto del mes</h3>${conBud.map(k=>{const g=T.porCat[k]||0,pc=Math.round(g/bud[k]*100);return `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;gap:8px"><span>${esc(k)}</span><span class="num" style="color:${pc>100?'var(--bad)':pc>80?'var(--warn)':'var(--ok)'}">${eur(g)} de ${eur(bud[k])}</span></div><div class="fbar${pc>100?' over':''}"><i style="width:${Math.min(100,pc)}%"></i></div></div>`}).join('')}</div>`:''}
+ <div class="sec"><h3>Movimientos (${L.length})</h3></div>
+ ${L.length?L.map(x=>`<button class="mov" ${x.auto?'':`data-ftxe="${x.master||x.id}"`} ${x.auto?'style="cursor:default"':''}><div><b>${esc(x.desc||x.cat)}</b><div class="m">${esc(x.cat)} · ${fdate(x.date)}${x.medio?' · '+esc(x.medio):''}${x.virtual?' · se repite':''}${x.auto?' · automático (honorarios cobrados)':''}</div></div><span class="num ${x.tipo==='Ingreso'?'ing':'gas'}">${x.tipo==='Ingreso'?'+':'−'}${eur(x.amount)}</span></button>`).join(''):'<div class="empty">Aún no hay movimientos este mes. Toca <b>+ Gasto</b> o <b>+ Ingreso</b> para empezar.</div>'}
+ <p style="font-size:.78rem;color:var(--muted);margin-top:14px">Los honorarios que registras en cada caso suman solos como ingresos. Esta información es solo para tu orden personal; para impuestos consulta a tu contador.</p>`;
+}
+function optCats(tipo,sel){
+ if(tipo==='Ingreso')return CAT_INGRESO.map(c=>`<option ${c===sel?'selected':''}>${c}</option>`).join('');
+ return Object.entries(CAT_GASTO).map(([g,L])=>`<optgroup label="${g}">${L.map(c=>`<option ${c===sel?'selected':''}>${esc(c)}</option>`).join('')}</optgroup>`).join('');
+}
+function finForm(tipo,t){
+ const e=!!t;t=t||{tipo,date:today(),medio:'Efectivo'};tipo=t.tipo;
+ form((e?'Editar ':'Nuevo ')+(tipo==='Ingreso'?'ingreso':'gasto'),
+  F('Monto (COP)','amount',t.amount??'','number','min="0" step="1" inputmode="numeric"')+
+  `<label for="f_cat">Categoría</label><select id="f_cat" name="cat">${optCats(tipo,t.cat)}</select>`+
+  F('Descripción (opcional)','desc',t.desc||'')+F('Fecha','date',t.date,'date')+S('Medio de pago','medio',MEDIOS,t.medio||'Efectivo')+
+  `<label for="f_caseId">Caso relacionado (opcional)</label><select id="f_caseId" name="caseId"><option value="">Ninguno</option>${db.cases.map(c=>`<option value="${c.id}" ${c.id===t.caseId?'selected':''}>${esc(c.client)}</option>`).join('')}</select>`+
+  `<label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="f_rec" name="rec" ${t.rec?'checked':''} style="width:auto"> Se repite cada mes (arriendo, suscripción, salario…)</label><div id="hastaw">${F('Repetir hasta (opcional)','hasta',t.hasta||'','date')}</div>`,
+  f=>{const d={tipo,amount:parseFloat(val('amount')),cat:val('cat'),desc:val('desc'),date:val('date'),medio:val('medio'),caseId:val('caseId'),rec:f.elements.rec.checked,hasta:f.elements.rec.checked?val('hasta'):''};
+   if(!(d.amount>0))return 'Escribe un monto mayor a cero.';if(!d.date)return 'Elige la fecha.';
+   if(e)Object.assign(t,d);else finDB().tx.push({id:uid('f'),...d})},
+  e?'<button type="button" class="danger" id="delTx" style="margin-right:auto">Eliminar</button>':'');
+ const sh=()=>$('hastaw').classList.toggle('hide',!$('f_rec').checked);$('f_rec').onchange=sh;sh();
+ if(e)$('delTx').onclick=()=>{if(confirm('¿Eliminar este movimiento? Si se repite, se borra de todos los meses.')){const F=finDB();F.tx=F.tx.filter(x=>x.id!==t.id);$('dlg').close();save();render()}};
+}
+function presForm(){
+ const B=finDB().budgets,L=[...CAT_GASTO['Personales'],...CAT_GASTO['Del despacho']];
+ form('Presupuesto mensual','<p style="font-size:.85rem;color:var(--muted);margin:0 0 6px">Escribe cuánto quieres gastar al mes en cada categoría. Deja en blanco las que no quieras controlar.</p>'+L.map((c,i)=>F(c,'b'+i,B[c]||'','number','min="0" inputmode="numeric"')).join(''),
+  f=>{const nb={};L.forEach((c,i)=>{const v=parseFloat(f.elements['b'+i].value);if(v>0)nb[c]=v});finDB().budgets=nb});
+}
+function finCsv(){
+ const L=finMovs(finMes).sort((a,b)=>a.date.localeCompare(b.date)),q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+ const rows=[['Fecha','Tipo','Categoría','Ámbito','Descripción','Medio de pago','Monto (COP)'].map(q).join(';')];
+ L.forEach(x=>rows.push([x.date,x.tipo,x.cat,x.tipo==='Gasto'?ambitoDe(x.cat):'',x.desc||'',x.medio||'',Math.round(x.amount)].map(q).join(';')));
+ saveFile({filename:'finanzas-'+finMes+'.csv',data:new Blob(['﻿'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'})});
+}
+$('finView').addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.fm){finMes=mesMov(finMes,+b.dataset.fm);renderFin()}
+ else if(b.dataset.ftx)finForm(b.dataset.ftx);
+ else if(b.dataset.ftxe)finForm(null,finDB().tx.find(x=>x.id===b.dataset.ftxe));
+ else if('fbud' in b.dataset)presForm();
+ else if('fcsv' in b.dataset)finCsv();
+});
 function eventForm(ev,date,caseId,preset){
  const e=!!ev;ev=ev||{type:'Audiencia',date:date||today(),time:'',caseId:caseId||'',...(preset||{})};
  form(e?'Editar evento':'Nuevo evento',
