@@ -178,6 +178,17 @@ a{color:var(--accent)}
 .ing{color:var(--ok)}.gas{color:var(--bad)}
 .fhead{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 .fhead h2{font-size:19px;text-transform:capitalize;flex:1;text-align:center;min-width:130px}
+
+.fsub{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px;padding-bottom:2px}.fsub::-webkit-scrollbar{display:none}
+.fsub button{flex:none;white-space:nowrap;padding:6px 12px;font-size:14px;border-radius:99px}
+.fsub button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chart{display:flex;align-items:flex-end;gap:4px;height:150px;margin:10px 0 4px}
+.chart .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+.chart .pair{display:flex;align-items:flex-end;gap:2px;height:100%;width:100%;justify-content:center}
+.chart .pair i{display:block;width:42%;max-width:14px;border-radius:3px 3px 0 0;min-height:1px}
+.chart .pair .i{background:var(--ok)}.chart .pair .g{background:var(--bad)}
+.chart small{font-size:10px;color:var(--muted);margin-top:3px}
+.venc{color:var(--bad);font-weight:600}.pronto{color:var(--warn);font-weight:600}
 </style>
 </head>
 <body>
@@ -257,6 +268,7 @@ const color=s=>s==='Activo'?'var(--ok)':s==='En pausa'?'var(--warn)':'var(--mute
 
 let current=null;
 function render(){
+  try{if(pagosSync())save()}catch(e){}
   document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===view));
   renderAlerts();
   ['dashView','listView','detailView','calView','despView','contView','finView'].forEach(i=>$(i).classList.add('hide'));
@@ -358,8 +370,8 @@ document.addEventListener('click',ev=>{
 });
 let view='dash',cal=new Date();cal.setDate(1);
 const STAGES=['Demanda presentada','Admitida a trámite','Contestación','Audiencia previa','Prueba','Juicio','Sentencia','Recurso','Ejecución','Archivo','Otro'];
-const EVT=['Audiencia','Plazo','Cobro','Publicación','Reunión','Otro'];
-const evColor=t=>t==='Audiencia'?'var(--bad)':t==='Plazo'?'var(--warn)':t==='Cobro'?'var(--ok)':t==='Publicación'?'#b02a5b':t==='Reunión'?'var(--info)':'var(--muted)';
+const EVT=['Audiencia','Plazo','Cobro','Pago','Publicación','Reunión','Otro'];
+const evColor=t=>t==='Audiencia'?'var(--bad)':t==='Plazo'?'var(--warn)':t==='Cobro'?'var(--ok)':t==='Pago'?'var(--warn)':t==='Publicación'?'#b02a5b':t==='Reunión'?'var(--info)':'var(--muted)';
 const S=(l,n,opts,v)=>`<label for="f_${n}">${l}</label><select id="f_${n}" name="${n}">${opts.map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select>`;
 const evSort=(a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||''));
 function stageOf(id){const u=db.updates.filter(x=>x.caseId===id).sort((a,b)=>b.date.localeCompare(a.date))[0];return u?u.stage:''}
@@ -732,14 +744,13 @@ function finTot(L){
  L.forEach(x=>{if(x.tipo==='Ingreso')r.ing+=x.amount;else{r.gas+=x.amount;r.porCat[x.cat]=(r.porCat[x.cat]||0)+x.amount;if(ambitoDe(x.cat)==='Personal')r.personal+=x.amount;else r.despacho+=x.amount}});
  return r;
 }
-function renderFin(){
- $('finView').classList.remove('hide');
+function finMesHtml(){
  const F=finDB(),L=finMovs(finMes),T=finTot(L),ant=finTot(finMovs(mesMov(finMes,-1))),bal=T.ing-T.gas;
  const cats=Object.entries(T.porCat).sort((a,b)=>b[1]-a[1]);
  const var_=ant.gas?Math.round((T.gas-ant.gas)/ant.gas*100):null;
  const ahorro=T.ing>0?Math.round(bal/T.ing*100):null;
  const bud=F.budgets,conBud=Object.keys(bud).filter(k=>bud[k]>0);
- $('finView').innerHTML=`<div class="fhead"><button data-fm="-1" aria-label="Mes anterior">‹</button><h2>${esc(mesTxt(finMes))}</h2><button data-fm="1" aria-label="Mes siguiente">›</button></div>
+ return `<div class="fhead"><button data-fm="-1" aria-label="Mes anterior">‹</button><h2>${esc(mesTxt(finMes))}</h2><button data-fm="1" aria-label="Mes siguiente">›</button></div>
  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="primary" data-ftx="Ingreso">+ Ingreso</button><button class="primary" data-ftx="Gasto">+ Gasto</button><button data-fbud>Presupuesto</button><button data-fcsv>Descargar Excel</button></div>
  <div class="kpis"><div class="kpi"><small>Ingresos</small><b class="ing" style="font-size:20px">${eur(T.ing)}</b></div><div class="kpi"><small>Gastos</small><b class="gas" style="font-size:20px">${eur(T.gas)}</b></div><div class="kpi"><small>Balance del mes</small><b style="font-size:20px;color:${bal>=0?'var(--ok)':'var(--bad)'}">${eur(bal)}</b></div><div class="kpi"><small>Ahorro del mes</small><b style="font-size:20px">${ahorro===null?'—':ahorro+'%'}</b></div></div>
  ${var_===null?'':`<p style="color:var(--muted);margin:0 0 10px">Tus gastos ${var_>0?'subieron':var_<0?'bajaron':'se mantuvieron'} ${var_===0?'':Math.abs(var_)+'%'} frente al mes anterior.</p>`}
@@ -749,6 +760,7 @@ function renderFin(){
  ${L.length?L.map(x=>`<button class="mov" ${x.auto?'':`data-ftxe="${x.master||x.id}"`} ${x.auto?'style="cursor:default"':''}><div><b>${esc(x.desc||x.cat)}</b><div class="m">${esc(x.cat)} · ${fdate(x.date)}${x.medio?' · '+esc(x.medio):''}${x.virtual?' · se repite':''}${x.auto?' · automático (honorarios cobrados)':''}</div></div><span class="num ${x.tipo==='Ingreso'?'ing':'gas'}">${x.tipo==='Ingreso'?'+':'−'}${eur(x.amount)}</span></button>`).join(''):'<div class="empty">Aún no hay movimientos este mes. Toca <b>+ Gasto</b> o <b>+ Ingreso</b> para empezar.</div>'}
  <p style="font-size:.78rem;color:var(--muted);margin-top:14px">Los honorarios que registras en cada caso suman solos como ingresos. Esta información es solo para tu orden personal; para impuestos consulta a tu contador.</p>`;
 }
+
 function optCats(tipo,sel){
  if(tipo==='Ingreso')return CAT_INGRESO.map(c=>`<option ${c===sel?'selected':''}>${c}</option>`).join('');
  return Object.entries(CAT_GASTO).map(([g,L])=>`<optgroup label="${g}">${L.map(c=>`<option ${c===sel?'selected':''}>${esc(c)}</option>`).join('')}</optgroup>`).join('');
@@ -786,6 +798,180 @@ $('finView').addEventListener('click',e=>{
  else if(b.dataset.ftxe)finForm(null,finDB().tx.find(x=>x.id===b.dataset.ftxe));
  else if('fbud' in b.dataset)presForm();
  else if('fcsv' in b.dataset)finCsv();
+});
+
+/* ===== Finanzas ampliadas: metas, pagos, impuestos, deudas, año ===== */
+const pad2=n=>String(n).padStart(2,'0');
+let finSub='mes',finAnio=new Date().getFullYear();
+function renderFin(){
+ $('finView').classList.remove('hide');
+ const F=finDB();['metas','pagos','deudas'].forEach(k=>{if(!F[k])F[k]=[]});
+ const T=[['mes','Mes'],['metas','Metas'],['pagos','Pagos'],['deudas','Deudas'],['anio','Año']];
+ const nav=`<div class="fsub">${T.map(([k,n])=>`<button data-fs="${k}" class="${k===finSub?'on':''}">${n}</button>`).join('')}</div>`;
+ const body=finSub==='metas'?finMetasHtml():finSub==='pagos'?finPagosHtml():finSub==='deudas'?finDeudasHtml():finSub==='anio'?finAnioHtml():finMesHtml();
+ $('finView').innerHTML=nav+body;
+}
+const diasHasta=d=>Math.round((new Date(d+'T00:00')-new Date(today()+'T00:00'))/864e5);
+
+/* ---------- Metas de ahorro ---------- */
+const metaSaldo=m=>(m.aportes||[]).reduce((s,a)=>s+a.amount,0);
+function finMetasHtml(){
+ const L=finDB().metas;
+ return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="primary" data-meta-new>+ Nueva meta</button></div>`+
+ (L.length?L.map(m=>{const sv=metaSaldo(m),pc=m.target?Math.min(100,Math.round(sv/m.target*100)):0,falta=Math.max(0,m.target-sv);
+  let extra='';
+  if(m.fecha&&falta>0){const dias=diasHasta(m.fecha);if(dias<=0)extra=`<div class="venc">La fecha de la meta ya pasó. Faltan ${eur(falta)}.</div>`;else{const meses=Math.max(1,Math.ceil(dias/30.4));extra=`<div style="color:var(--muted)">Para llegar el ${fdate(m.fecha)} necesitas ahorrar unos <b>${eur(Math.ceil(falta/meses))}</b> al mes (${meses} ${meses===1?'mes':'meses'}).</div>`}}
+  return `<div class="panel"><div style="display:flex;justify-content:space-between;gap:8px"><h3>${esc(m.name)}</h3><button class="link" data-meta-edit="${m.id}">Editar</button></div>
+  <p style="margin:2px 0 6px"><b class="num">${eur(sv)}</b> de ${eur(m.target)} · ${pc}%</p><div class="fbar"><i style="width:${pc}%;${pc>=100?'background:var(--ok)':''}"></i></div>
+  ${pc>=100?'<p style="color:var(--ok);margin:8px 0 0">🎉 ¡Meta lograda!</p>':extra}<div style="margin-top:10px"><button data-meta-ap="${m.id}">Aportar o retirar</button></div></div>`}).join(''):'<div class="empty">Aún no tienes metas. Crea una, por ejemplo “Fondo de emergencia”, “Viaje” o “Carro”.</div>')+
+ `<p style="font-size:.78rem;color:var(--muted)">Los aportes a una meta no cambian tus gastos del mes. Es solo para seguir cuánto llevas ahorrado.</p>`;
+}
+function metaForm(m){
+ const e=!!m;m=m||{};
+ form(e?'Editar meta':'Nueva meta',F('Nombre de la meta','name',m.name||'')+F('¿Cuánto quieres juntar? (COP)','target',m.target??'','number','min="1" inputmode="numeric"')+F('Fecha para lograrla (opcional)','fecha',m.fecha||'','date')+(e?'':F('¿Cuánto llevas ya? (opcional)','ini','','number','min="0" inputmode="numeric"')),
+  f=>{const d={name:val('name'),target:parseFloat(val('target')),fecha:val('fecha')};if(!d.name)return 'Escribe el nombre.';if(!(d.target>0))return 'Escribe cuánto quieres juntar.';
+   if(e)Object.assign(m,d);else{const ini=parseFloat(val('ini'))||0;finDB().metas.push({id:uid('m'),...d,aportes:ini>0?[{id:uid('a'),date:today(),amount:ini}]:[]})}},
+  e?'<button type="button" class="danger" id="delMeta" style="margin-right:auto">Eliminar</button>':'');
+ if(e)$('delMeta').onclick=()=>{if(confirm('¿Eliminar esta meta?')){const F=finDB();F.metas=F.metas.filter(x=>x.id!==m.id);$('dlg').close();save();render()}};
+}
+function aporteForm(m){
+ form('Aportar a “'+esc(m.name)+'”',S('¿Qué quieres hacer?','mov',['Aportar','Retirar'],'Aportar')+F('Monto (COP)','amount','','number','min="1" inputmode="numeric"')+F('Fecha','date',today(),'date'),
+  f=>{const a=parseFloat(val('amount'));if(!(a>0))return 'Escribe un monto.';if(!val('date'))return 'Elige la fecha.';
+   m.aportes=m.aportes||[];m.aportes.push({id:uid('a'),date:val('date'),amount:val('mov')==='Retirar'?-a:a})});
+}
+
+/* ---------- Pagos que vencen e impuestos ---------- */
+function pagoOcc(p,a,b){
+ const out=[],start=p.fecha,push=d=>{if(d>=a&&d<=b&&d>=start)out.push(d)};
+ if(p.rec==='unico'){push(p.fecha);return out}
+ const day=+p.fecha.slice(8,10),mo0=+p.fecha.slice(5,7);
+ let y=+a.slice(0,4),m=+a.slice(5,7);const yb=+b.slice(0,4),mb=+b.slice(5,7);
+ while(y<yb||(y===yb&&m<=mb)){
+  const dias=new Date(y,m,0).getDate(),d=y+'-'+pad2(m)+'-'+pad2(Math.min(day,dias));
+  if(p.rec==='mensual'||(p.rec==='anual'&&m===mo0))push(d);
+  m++;if(m>12){m=1;y++}
+ }
+ return out;
+}
+function pagosSync(){
+ const F=db.fin;if(!F||!F.pagos)return false;
+ const t=today(),lim=TERM.iso(TERM.add(TERM.parse(t),45));let ch=false;
+ const quiere=new Set();
+ F.pagos.forEach(p=>{if(!p.cal)return;pagoOcc(p,t,lim).forEach(d=>{if(p.paid&&p.paid[d])return;quiere.add('pg-'+p.id+'-'+d);
+   if(!db.events.some(e=>e.id==='pg-'+p.id+'-'+d)){db.events.push({id:'pg-'+p.id+'-'+d,caseId:'',pagoId:p.id,date:d,time:'',title:'Pago: '+p.name+(p.amount?' ('+eur(p.amount)+')':''),type:'Pago'});ch=true}})});
+ const antes=db.events.length;
+ db.events=db.events.filter(e=>!e.pagoId||e.date<t||quiere.has(e.id));
+ if(db.events.length!==antes)ch=true;
+ return ch;
+}
+function pagoItems(){
+ const t=today(),a=TERM.iso(TERM.add(TERM.parse(t),-45)),b=TERM.iso(TERM.add(TERM.parse(t),40)),L=[];
+ finDB().pagos.forEach(p=>pagoOcc(p,a,b).forEach(d=>L.push({p,d,paid:!!(p.paid&&p.paid[d])})));
+ return L;
+}
+function cuandoTxt(d){const n=diasHasta(d);return n<0?`<span class="venc">Vencido hace ${-n} ${-n===1?'día':'días'}</span>`:n===0?'<span class="pronto">Vence hoy</span>':n<=7?`<span class="pronto">En ${n} ${n===1?'día':'días'}</span>`:`En ${n} días`}
+function finPagosHtml(){
+ const L=pagoItems(),pend=L.filter(x=>!x.paid).sort((a,b)=>a.d.localeCompare(b.d)),hechos=L.filter(x=>x.paid).sort((a,b)=>b.d.localeCompare(a.d)).slice(0,5);
+ const t30=pend.filter(x=>diasHasta(x.d)<=30).reduce((s,x)=>s+(x.p.amount||0),0);
+ const fila=x=>`<div class="mov" style="cursor:default"><div><b>${esc(x.p.name)}</b><div class="m">${fdate(x.d)} · ${x.p.rec==='mensual'?'cada mes':x.p.rec==='anual'?'cada año':'una vez'} · ${cuandoTxt(x.d)}</div></div><div style="text-align:right"><div class="num">${x.p.amount?eur(x.p.amount):'—'}</div><button class="link" data-pg-pay="${x.p.id}|${x.d}">Marcar pagado</button> <button class="link" data-pg-edit="${x.p.id}">Editar</button></div></div>`;
+ const imp=pend.filter(x=>x.p.impuesto),otros=pend.filter(x=>!x.p.impuesto);
+ return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="primary" data-pg-new>+ Pago</button><button data-pg-imp>+ Impuesto u obligación</button></div>
+ <div class="kpis"><div class="kpi"><small>Por pagar en 30 días</small><b class="gas" style="font-size:20px">${eur(t30)}</b></div><div class="kpi"><small>Pendientes</small><b style="font-size:20px">${pend.length}</b></div></div>
+ <div class="sec"><h3>Próximos pagos</h3></div>${otros.length?otros.map(fila).join(''):'<div class="empty">No tienes pagos pendientes. Agrega arriendo, servicios, tarjeta o seguridad social.</div>'}
+ <div class="sec"><h3>Impuestos y obligaciones</h3></div>${imp.length?imp.map(fila).join(''):'<div class="empty">Agrega tu declaración de renta, PILA, IVA o ICA para que te avise.</div>'}
+ <p style="font-size:.78rem;color:var(--muted)">Las fechas de los impuestos las fija la DIAN cada año según los últimos dígitos de tu NIT o cédula. Confírmalas en dian.gov.co (Calendario tributario) antes de guardarlas.</p>
+ ${hechos.length?`<div class="sec"><h3>Pagados hace poco</h3></div>${hechos.map(x=>`<div class="mov" style="cursor:default;opacity:.7"><div><b>${esc(x.p.name)}</b><div class="m">${fdate(x.d)}</div></div><span class="num">${x.p.amount?eur(x.p.amount):''}</span></div>`).join('')}`:''}`;
+}
+const TIPOS_IMP=['Declaración de renta','IVA','ICA / Reteica','Retención en la fuente','Aportes PILA (seguridad social)','Impuesto predial','Impuesto vehicular','Otra obligación'];
+function pagoForm(p,imp){
+ const e=!!p;p=p||{rec:imp?'anual':'mensual',cal:true,fecha:today(),cat:imp?'Impuestos (renta, ICA)':'Servicios públicos',impuesto:!!imp,name:''};imp=p.impuesto;
+ form((e?'Editar ':'Nuevo ')+(imp?'impuesto u obligación':'pago'),
+  (imp?`<label for="f_tipo">Tipo de obligación</label><select id="f_tipo" name="tipo">${TIPOS_IMP.map(x=>`<option ${x===p.name?'selected':''}>${x}</option>`).join('')}</select>`:'')+
+  F('Nombre','name',p.name)+F('Monto aproximado (COP, opcional)','amount',p.amount??'','number','min="0" inputmode="numeric"')+
+  F(imp?'Fecha límite':'Primer vencimiento','fecha',p.fecha,'date')+
+  `<label for="f_rec">¿Cada cuánto?</label><select id="f_rec" name="rec"><option value="mensual" ${p.rec==='mensual'?'selected':''}>Cada mes</option><option value="anual" ${p.rec==='anual'?'selected':''}>Cada año</option><option value="unico" ${p.rec==='unico'?'selected':''}>Una sola vez</option></select>`+
+  `<label for="f_cat">Categoría del gasto</label><select id="f_cat" name="cat">${optCats('Gasto',p.cat)}</select>`+
+  `<label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" name="cal" ${p.cal?'checked':''} style="width:auto"> Avisarme en mi calendario (y en Google Calendar)</label>`,
+  f=>{const d={name:val('name'),amount:parseFloat(val('amount'))||0,fecha:val('fecha'),rec:val('rec'),cat:val('cat'),cal:f.elements.cal.checked,impuesto:imp};
+   if(!d.name)return 'Escribe el nombre.';if(!d.fecha)return 'Elige la fecha.';
+   if(e)Object.assign(p,d);else finDB().pagos.push({id:uid('g'),paid:{},...d})},
+  e?'<button type="button" class="danger" id="delPg" style="margin-right:auto">Eliminar</button>':'');
+ if(imp&&$('f_tipo')){$('f_tipo').onchange=()=>{$('f_name').value=$('f_tipo').value};if(!e)$('f_name').value=$('f_tipo').value}
+ if(e)$('delPg').onclick=()=>{if(confirm('¿Eliminar este pago? Se borran también sus avisos del calendario.')){const F=finDB();F.pagos=F.pagos.filter(x=>x.id!==p.id);db.events=db.events.filter(x=>x.pagoId!==p.id);$('dlg').close();save();render()}};
+}
+function pagarForm(p,d){
+ form('Marcar como pagado',`<p style="margin:0 0 6px"><b>${esc(p.name)}</b> · vencía el ${fdate(d)}</p>`+F('Monto pagado (COP)','amount',p.amount||'','number','min="0" inputmode="numeric"')+F('Fecha del pago','fecha',today(),'date')+
+  `<label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" name="gasto" checked style="width:auto"> Registrarlo también como gasto en mis movimientos</label>`,
+  f=>{const a=parseFloat(val('amount'))||0,fe=val('fecha')||today();p.paid=p.paid||{};p.paid[d]=true;
+   if(f.elements.gasto.checked&&a>0)finDB().tx.push({id:uid('f'),tipo:'Gasto',amount:a,cat:p.cat,desc:p.name,date:fe,medio:'Transferencia',caseId:''});
+   if(p.deudaId){const de=finDB().deudas.find(x=>x.id===p.deudaId);if(de&&a>0){de.abonos=de.abonos||[];de.abonos.push({id:uid('b'),date:fe,amount:a})}}
+   db.events=db.events.filter(x=>x.id!=='pg-'+p.id+'-'+d)});
+}
+
+/* ---------- Deudas ---------- */
+const deudaSaldo=d=>Math.max(0,d.total-(d.abonos||[]).reduce((s,a)=>s+a.amount,0));
+function deudaMeses(d){
+ const sal=deudaSaldo(d);if(sal<=0)return 0;if(!(d.cuota>0))return null;
+ if(d.tasa>0){const r=Math.pow(1+d.tasa/100,1/12)-1;if(d.cuota<=r*sal)return Infinity;return Math.ceil(-Math.log(1-r*sal/d.cuota)/Math.log(1+r))}
+ return Math.ceil(sal/d.cuota);
+}
+function finDeudasHtml(){
+ const L=finDB().deudas,act=L.filter(d=>deudaSaldo(d)>0),tot=act.reduce((s,d)=>s+deudaSaldo(d),0),cuotas=act.reduce((s,d)=>s+(d.cuota||0),0);
+ const orden=[...act].sort((a,b)=>(b.tasa||0)-(a.tasa||0)||deudaSaldo(a)-deudaSaldo(b));
+ return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="primary" data-de-new>+ Nueva deuda</button></div>
+ <div class="kpis"><div class="kpi"><small>Total que debes</small><b class="gas" style="font-size:20px">${eur(tot)}</b></div><div class="kpi"><small>Cuotas al mes</small><b style="font-size:20px">${eur(cuotas)}</b></div></div>
+ ${L.length?L.map(d=>{const sal=deudaSaldo(d),pc=d.total?Math.min(100,Math.round((d.total-sal)/d.total*100)):0,n=deudaMeses(d);
+  let fin='';if(sal<=0)fin='<span style="color:var(--ok)">🎉 ¡Deuda pagada!</span>';else if(n===null)fin='Agrega la cuota mensual para calcular cuándo terminas.';else if(n===Infinity)fin='<span class="venc">La cuota no alcanza a cubrir los intereses. Conviene subirla.</span>';else{const f=new Date();f.setMonth(f.getMonth()+n);fin=`Al ritmo actual terminas en unos <b>${n} ${n===1?'mes':'meses'}</b> (${f.toLocaleDateString('es-CO',{month:'long',year:'numeric'})}).`}
+  return `<div class="panel"><div style="display:flex;justify-content:space-between;gap:8px"><h3>${esc(d.name)}</h3><button class="link" data-de-edit="${d.id}">Editar</button></div>
+  <p style="margin:2px 0 6px;color:var(--muted)">${d.acreedor?esc(d.acreedor)+' · ':''}${d.cuota?'cuota '+eur(d.cuota):''}${d.tasa?' · '+d.tasa+'% E.A.':''}</p>
+  <p style="margin:0 0 6px">Debes <b class="num">${eur(sal)}</b> de ${eur(d.total)} · pagado ${pc}%</p><div class="fbar"><i style="width:${pc}%"></i></div><p style="margin:8px 0">${fin}</p><button data-de-ab="${d.id}">Registrar abono</button></div>`}).join(''):'<div class="empty">No tienes deudas registradas. Si tienes tarjeta, crédito o préstamos, agrégalos para ver cuánto falta.</div>'}
+ ${orden.length>1?`<div class="panel"><h3>Con cuál empezar</h3><p style="margin:0 0 6px;color:var(--muted)">${orden.some(d=>d.tasa>0)?'Pagar primero la de mayor interés (método avalancha) te ahorra más dinero:':'Pagar primero la de menor saldo (método bola de nieve) te da motivación al cerrarlas rápido:'}</p><ol style="margin:0;padding-left:20px">${orden.map(d=>`<li>${esc(d.name)} · ${eur(deudaSaldo(d))}${d.tasa?' · '+d.tasa+'%':''}</li>`).join('')}</ol><p style="font-size:.78rem;color:var(--muted);margin:8px 0 0">Mientras tanto, paga la cuota mínima de todas.</p></div>`:''}`;
+}
+function deudaForm(d){
+ const e=!!d;d=d||{};
+ form(e?'Editar deuda':'Nueva deuda',F('Nombre (ej. Tarjeta Bancolombia)','name',d.name||'')+F('A quién le debes (opcional)','acreedor',d.acreedor||'')+F('Valor total de la deuda (COP)','total',d.total??'','number','min="1" inputmode="numeric"')+F('Cuota mensual (COP)','cuota',d.cuota??'','number','min="0" inputmode="numeric"')+F('Interés efectivo anual % (opcional)','tasa',d.tasa??'','number','min="0" step="0.1" inputmode="decimal"')+
+  (e?'':F('Día del mes en que pagas','dia','1','number','min="1" max="31" inputmode="numeric"')+`<label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" name="rec" checked style="width:auto"> Recordarme la cuota cada mes en Pagos</label>`),
+  f=>{const x={name:val('name'),acreedor:val('acreedor'),total:parseFloat(val('total')),cuota:parseFloat(val('cuota'))||0,tasa:parseFloat(val('tasa'))||0};
+   if(!x.name)return 'Escribe el nombre.';if(!(x.total>0))return 'Escribe el valor total.';
+   if(e){Object.assign(d,x);const p=finDB().pagos.find(g=>g.deudaId===d.id);if(p){p.name='Cuota: '+x.name;p.amount=x.cuota}}
+   else{const nd={id:uid('d'),abonos:[],...x};finDB().deudas.push(nd);
+    if(f.elements.rec.checked&&x.cuota>0){const dia=Math.min(31,Math.max(1,parseInt(val('dia'),10)||1)),h=new Date(),dd=Math.min(dia,new Date(h.getFullYear(),h.getMonth()+1,0).getDate());let f0=h.getFullYear()+'-'+pad2(h.getMonth()+1)+'-'+pad2(dd);if(f0<today())f0=TERM.iso(new Date(h.getFullYear(),h.getMonth()+1,Math.min(dia,28)));
+     finDB().pagos.push({id:uid('g'),name:'Cuota: '+x.name,amount:x.cuota,fecha:f0,rec:'mensual',cat:'Deudas y tarjetas',cal:true,impuesto:false,deudaId:nd.id,paid:{}})}}},
+  e?'<button type="button" class="danger" id="delDe" style="margin-right:auto">Eliminar</button>':'');
+ if(e)$('delDe').onclick=()=>{if(confirm('¿Eliminar esta deuda y su recordatorio de cuota?')){const F=finDB();F.deudas=F.deudas.filter(x=>x.id!==d.id);const ps=F.pagos.filter(g=>g.deudaId===d.id).map(g=>g.id);F.pagos=F.pagos.filter(g=>g.deudaId!==d.id);db.events=db.events.filter(x=>!ps.includes(x.pagoId));$('dlg').close();save();render()}};
+}
+function abonoForm(d){
+ form('Abono a “'+esc(d.name)+'”',F('Monto (COP)','amount',d.cuota||'','number','min="1" inputmode="numeric"')+F('Fecha','fecha',today(),'date')+`<label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" name="gasto" checked style="width:auto"> Registrarlo también como gasto</label>`,
+  f=>{const a=parseFloat(val('amount'));if(!(a>0))return 'Escribe el monto.';d.abonos=d.abonos||[];d.abonos.push({id:uid('b'),date:val('fecha')||today(),amount:a});
+   if(f.elements.gasto.checked)finDB().tx.push({id:uid('f'),tipo:'Gasto',amount:a,cat:'Deudas y tarjetas',desc:'Abono: '+d.name,date:val('fecha')||today(),medio:'Transferencia',caseId:''})});
+}
+
+/* ---------- Año ---------- */
+function finAnioHtml(){
+ const y=finAnio,M=[];for(let i=1;i<=12;i++){const m=y+'-'+pad2(i),T=finTot(finMovs(m));M.push({m,i,ing:T.ing,gas:T.gas})}
+ const mx=Math.max(1,...M.map(x=>Math.max(x.ing,x.gas))),I=M.reduce((s,x)=>s+x.ing,0),G=M.reduce((s,x)=>s+x.gas,0);
+ const con=M.filter(x=>x.ing||x.gas),mejor=con.length?[...con].sort((a,b)=>(b.ing-b.gas)-(a.ing-a.gas))[0]:null,mas=con.length?[...con].sort((a,b)=>b.gas-a.gas)[0]:null;
+ const nm=i=>new Date(y,i-1,1).toLocaleDateString('es-CO',{month:'long'});
+ return `<div class="fhead"><button data-an="-1" aria-label="Año anterior">‹</button><h2>${y}</h2><button data-an="1" aria-label="Año siguiente">›</button></div>
+ <div class="kpis"><div class="kpi"><small>Ingresos del año</small><b class="ing" style="font-size:20px">${eur(I)}</b></div><div class="kpi"><small>Gastos del año</small><b class="gas" style="font-size:20px">${eur(G)}</b></div><div class="kpi"><small>Balance del año</small><b style="font-size:20px;color:${I-G>=0?'var(--ok)':'var(--bad)'}">${eur(I-G)}</b></div><div class="kpi"><small>Gasto promedio al mes</small><b style="font-size:20px">${eur(con.length?G/con.length:0)}</b></div></div>
+ <div class="panel"><h3>Mes a mes</h3><p style="margin:0;color:var(--muted)"><span class="ing">■</span> Ingresos &nbsp; <span class="gas">■</span> Gastos</p>
+ <div class="chart">${M.map(x=>`<div class="col"><div class="pair"><i class="i" style="height:${x.ing/mx*100}%"></i><i class="g" style="height:${x.gas/mx*100}%"></i></div><small>${nm(x.i).slice(0,3)}</small></div>`).join('')}</div></div>
+ ${mejor?`<div class="panel"><p style="margin:0">Tu mejor mes fue <b>${nm(+mejor.m.slice(5))}</b> (balance ${eur(mejor.ing-mejor.gas)}). El mes de mayor gasto fue <b>${nm(+mas.m.slice(5))}</b> (${eur(mas.gas)}).</p></div>`:'<div class="empty">Aún no hay movimientos este año.</div>'}`;
+}
+$('finView').addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;const D=b.dataset,F=finDB();
+ if(D.fs){finSub=D.fs;renderFin()}
+ else if(D.an){finAnio+= +D.an;renderFin()}
+ else if('metaNew' in D)metaForm();
+ else if(D.metaEdit)metaForm(F.metas.find(x=>x.id===D.metaEdit));
+ else if(D.metaAp)aporteForm(F.metas.find(x=>x.id===D.metaAp));
+ else if('pgNew' in D)pagoForm();
+ else if('pgImp' in D)pagoForm(null,true);
+ else if(D.pgEdit)pagoForm(F.pagos.find(x=>x.id===D.pgEdit));
+ else if(D.pgPay){const[id,d]=D.pgPay.split('|');pagarForm(F.pagos.find(x=>x.id===id),d)}
+ else if('deNew' in D)deudaForm();
+ else if(D.deEdit)deudaForm(F.deudas.find(x=>x.id===D.deEdit));
+ else if(D.deAb)abonoForm(F.deudas.find(x=>x.id===D.deAb));
 });
 function eventForm(ev,date,caseId,preset){
  const e=!!ev;ev=ev||{type:'Audiencia',date:date||today(),time:'',caseId:caseId||'',...(preset||{})};
@@ -825,7 +1011,7 @@ function setHello(n){const h=new Date().getHours(),g=h<12?'Buenos días':h<19?'B
 function renderAlerts(){
  const t=today(),l=new Date();l.setDate(l.getDate()+7);
  const L=l.getFullYear()+'-'+String(l.getMonth()+1).padStart(2,'0')+'-'+String(l.getDate()).padStart(2,'0');
- const es=db.events.filter(e=>(e.type==='Plazo'||e.type==='Audiencia'||e.type==='Cobro')&&e.date>=t&&e.date<=L).sort(evSort);
+ const es=db.events.filter(e=>(e.type==='Plazo'||e.type==='Audiencia'||e.type==='Cobro'||e.type==='Pago')&&e.date>=t&&e.date<=L).sort(evSort);
  setHello(es.length);$('alerts').innerHTML=es.length?`<div class="alert"><b>Vence en los próximos 7 días</b>${es.map(e=>{const n=Math.round((new Date(e.date+'T00:00')-new Date(t+'T00:00'))/864e5),c=db.cases.find(x=>x.id===e.caseId);return `<button class="evrow" data-ev="${e.id}" style="--c:${evColor(e.type)}"><span>${esc(e.title)}${c?' · '+esc(c.client):''}</span><span class="num"><b>${n===0?'Hoy':n===1?'Mañana':'En '+n+' días'}</b></span></button>`}).join('')}</div>`:'';
 }
 function invHtml(c){
