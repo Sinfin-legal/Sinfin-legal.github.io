@@ -68,7 +68,7 @@ label{display:block;margin:10px 0 3px;font-weight:500}
 .tl li{position:relative;padding:4px 0 12px 12px}
 .tl li::before{content:"";position:absolute;left:-21px;top:11px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
 .tl .m{color:var(--muted);font-size:13px}
-.calhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.calhead{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
 .calhead h2{font-size:20px;text-transform:capitalize;min-width:150px;text-align:center}
 .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:8px}
 .wd{background:var(--surface);text-align:center;padding:6px 0;color:var(--muted);font-size:13px}
@@ -288,6 +288,7 @@ document.addEventListener('click',ev=>{
   else if(t.dataset.di){if(confirm('¿Eliminar esta factura?')){db.invoices=db.invoices.filter(i=>i.id!==t.dataset.di);save();render()}}
   else if(t.id==='addU')updForm(current);
   else if(t.id==='addEv')eventForm(null,today(),current);
+  else if(t.id==='addTerm')termForm(current);
   else if(t.dataset.du){db.updates=db.updates.filter(u=>u.id!==t.dataset.du);save();render()}
   else if(t.dataset.ev&&!t.closest('#calView'))eventForm(db.events.find(x=>x.id===t.dataset.ev));
   else if(t.dataset.de){db.entries=db.entries.filter(e=>e.id!==t.dataset.de);save();render()}
@@ -307,12 +308,86 @@ function procHtml(c){
  return `<div class="sec"><h3>Proceso judicial${us[0]?' · '+esc(us[0].stage):''}</h3><button class="link" id="addU">Añadir actuación</button></div>
  ${vigLine(c)}
  ${us.length?`<ol class="tl">${us.map(u=>`<li><div class="m"><b>${esc(u.stage)}</b> · ${fdate(u.date)}${u.court?' · '+esc(u.court):''} ${u.auto?'<span class="tag">Automática</span>':`<button class="link danger" data-du="${u.id}" aria-label="Eliminar actuación">Eliminar</button>`}</div>${u.note?`<div>${esc(u.note)}</div>`:''}</li>`).join('')}</ol>`:'<div class="empty">Sin actuaciones. Registra cada notificación o resolución del juzgado para seguir el proceso.</div>'}
- <div class="sec"><h3>Próximas fechas</h3><button class="link" id="addEv">Añadir al calendario</button></div>
+ <div class="sec"><h3>Próximas fechas</h3><span><button class="link" id="addTerm">Calcular término</button> · <button class="link" id="addEv">Añadir al calendario</button></span></div>
  ${evs.length?evs.map(evRow).join(''):'<div class="empty">No hay audiencias ni plazos próximos.</div>'}`;
 }
 function updForm(caseId){
  form('Nueva actuación',S('Fase o estado','stage',STAGES,stageOf(caseId)||STAGES[0])+F('Fecha','date',today(),'date')+F('Juzgado o referencia (opcional)','court')+'<label for="f_note">Detalle (opcional)</label><textarea id="f_note" name="note" rows="3"></textarea>',
   f=>{if(!val('date'))return 'Indica la fecha.';db.updates.push({id:uid('u'),caseId,date:val('date'),stage:val('stage'),court:val('court'),note:val('note')})});
+}
+
+/* ===== Calculadora de términos judiciales ===== */
+const TERM={
+ iso:d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),
+ parse:s=>{const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c)},
+ add:(d,n)=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()+n);return x},
+ easter:y=>{const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=(h+l-7*m+114)%31+1;return new Date(y,mo-1,da)},
+ toMon:d=>{const w=d.getDay();return w===1?d:TERM.add(d,(8-w)%7)},
+ cache:{},
+ holidays(y){
+  if(this.cache[y])return this.cache[y];
+  const H={},put=(d,n)=>{H[this.iso(d)]=n},E=this.easter(y);
+  [[0,1,'Año Nuevo'],[4,1,'Día del Trabajo'],[6,20,'Independencia'],[7,7,'Batalla de Boyacá'],[11,8,'Inmaculada Concepción'],[11,25,'Navidad']].forEach(([m,d,n])=>put(new Date(y,m,d),n));
+  [[0,6,'Reyes Magos'],[2,19,'San José'],[5,29,'San Pedro y San Pablo'],[7,15,'Asunción'],[9,12,'Día de la Raza'],[10,1,'Todos los Santos'],[10,11,'Independencia de Cartagena']].forEach(([m,d,n])=>put(this.toMon(new Date(y,m,d)),n));
+  put(this.add(E,-3),'Jueves Santo');put(this.add(E,-2),'Viernes Santo');
+  put(this.toMon(this.add(E,39)),'Ascensión');put(this.toMon(this.add(E,60)),'Corpus Christi');put(this.toMon(this.add(E,68)),'Sagrado Corazón');
+  return this.cache[y]=H;
+ },
+ vacancia(d){
+  const m=d.getMonth(),n=d.getDate();
+  if((m===11&&n>=20)||(m===0&&n<=10))return 'Vacancia judicial (20 dic – 10 ene)';
+  const E=this.easter(d.getFullYear()),ini=this.add(E,-6),fin=E;
+  if(d>=ini&&d<=fin)return 'Semana Santa (vacancia judicial)';
+  return '';
+ },
+ // devuelve motivo por el que NO corre término, o '' si es día hábil
+ noHabil(d,vac){
+  const w=d.getDay();if(w===0)return 'Domingo';if(w===6)return 'Sábado';
+  const h=this.holidays(d.getFullYear())[this.iso(d)];if(h)return 'Festivo: '+h;
+  if(vac){const v=this.vacancia(d);if(v)return v}
+  return '';
+ },
+ calcular(inicio,n,modo,vac){
+  let d=this.parse(inicio),cont=0,saltados=[];
+  if(modo==='habiles'){
+   while(cont<n){d=this.add(d,1);const r=this.noHabil(d,vac);if(r){saltados.push([this.iso(d),r])}else cont++}
+  }else{
+   d=this.add(d,n);
+   while(this.noHabil(d,vac)){saltados.push([this.iso(d),this.noHabil(d,vac)]);d=this.add(d,1)}
+  }
+  return{fin:this.iso(d),saltados};
+ }
+};
+const DIAS=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const fechaLarga=s=>{const d=TERM.parse(s);return DIAS[d.getDay()]+' '+d.getDate()+' de '+d.toLocaleDateString('es-CO',{month:'long'})+' de '+d.getFullYear()};
+function termForm(caseId){
+ const T=[['Contestar demanda (20 días hábiles)',20],['Contestar demanda – proceso verbal sumario (10)',10],['Recurso de reposición (3)',3],['Recurso de apelación de auto (3)',3],['Recurso de apelación de sentencia (3)',3],['Traslado de excepciones (3)',3],['Subsanar demanda (5)',5],['Tutela – impugnar fallo (3)',3],['Otro (escribir los días)',10]];
+ form('Calculadora de términos',
+  `<p class="hint" style="font-size:.85rem;margin:0 0 8px">Escribe la fecha en que <b>quedó notificada</b> la providencia (o la fecha desde la cual corre el término). El conteo empieza el día hábil siguiente.</p>`+
+  `<label for="f_tipo">¿Qué término es?</label><select id="f_tipo" name="tipo">${T.map(t=>`<option value="${t[1]}">${t[0]}</option>`).join('')}</select>`+
+  F('Número de días','dias','10','number','min="1" max="365" inputmode="numeric"')+
+  S('Tipo de días','modo',['Días hábiles','Días calendario'],'Días hábiles')+
+  F('Fecha de notificación (inicio)','inicio',today(),'date')+
+  `<label style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="f_vac" name="vac" checked style="width:auto"> No contar vacancia judicial (20 dic–10 ene y Semana Santa)</label>`+
+  `<div id="termRes" class="panel" style="margin-top:12px"></div>`+
+  `<label for="f_caseId">Guardar el plazo en el caso</label><select id="f_caseId" name="caseId"><option value="">Sin caso</option>${db.cases.map(c=>`<option value="${c.id}" ${c.id===caseId?'selected':''}>${esc(c.client)} · ${esc(c.number||c.radicado||'')}</option>`).join('')}</select>`+
+  F('Título del plazo','title','Vence término')+
+  `<p class="hint" style="font-size:.78rem;margin-top:10px">⚠️ Es una ayuda de cálculo. Verifica siempre el cómputo (suspensiones, cierres extraordinarios, traslados, Ley 2213 de 2022, acuerdos del Consejo Superior).</p>`,
+  f=>{const r=termForm.last;if(!r||!val('title'))return 'Revisa los datos y el título.';
+   db.events.push({id:uid('v'),caseId:val('caseId'),date:r.fin,time:'',title:val('title'),type:'Plazo'});},
+  '');
+ $('ok').textContent='Crear plazo en el calendario';
+ const calc=()=>{
+  const n=parseInt(val('dias'),10),ini=val('inicio'),box=$('termRes');
+  if(!n||n<1||!ini){termForm.last=null;box.innerHTML='Completa los días y la fecha.';return}
+  const r=TERM.calcular(ini,n,val('modo')==='Días hábiles'?'habiles':'cal',$('f_vac').checked);
+  termForm.last=r;
+  box.innerHTML=`<small>El término vence el</small><h3 style="margin:2px 0 6px;color:var(--brand,#620209)">${fechaLarga(r.fin)}</h3>`+
+   (r.saltados.length?`<details><summary>${r.saltados.length} días no contados</summary><ul style="margin:6px 0 0 16px;font-size:.82rem">${r.saltados.map(x=>`<li>${fechaLarga(x[0])} — ${x[1]}</li>`).join('')}</ul></details>`:'<small>No hay festivos ni fines de semana en el rango.</small>');
+ };
+ $('f_tipo').onchange=()=>{$('f_dias').value=$('f_tipo').value;calc()};
+ ['f_dias','f_modo','f_inicio','f_vac'].forEach(i=>{$(i).oninput=calc;$(i).onchange=calc});
+ $('f_dias').value=$('f_tipo').value;calc();
 }
 function eventForm(ev,date,caseId){
  const e=!!ev;ev=ev||{type:'Audiencia',date:date||today(),time:'',caseId:caseId||''};
@@ -332,7 +407,7 @@ function renderCal(){
  for(let d=1;d<=days;d++){const ds=`${y}-${pad(m+1)}-${pad(d)}`,es=db.events.filter(e=>e.date===ds).sort(evSort);
   cells.push(`<div class="day${ds===today()?' now':''}" data-day="${ds}" tabindex="0" role="button" aria-label="Añadir evento el ${d}"><span class="dn">${d}</span>${es.slice(0,3).map(e=>`<span class="ev" data-ev="${e.id}" style="--c:${evColor(e.type)}">${e.time?esc(e.time)+' ':''}${esc(e.title)}</span>`).join('')}${es.length>3?`<span class="more">+${es.length-3} más</span>`:''}</div>`)}
  const up=db.events.filter(e=>e.date>=today()).sort(evSort).slice(0,8);
- $('calView').innerHTML=`<div class="calhead"><button data-nav="-1" aria-label="Mes anterior">‹</button><h2>${cal.toLocaleDateString('es-ES',{month:'long',year:'numeric'})}</h2><button data-nav="1" aria-label="Mes siguiente">›</button><button class="primary" data-new style="margin-left:auto">Nuevo evento</button></div>
+ $('calView').innerHTML=`<div class="calhead"><button data-nav="-1" aria-label="Mes anterior">‹</button><h2>${cal.toLocaleDateString('es-ES',{month:'long',year:'numeric'})}</h2><button data-nav="1" aria-label="Mes siguiente">›</button><button data-term style="margin-left:auto">Calculadora de términos</button><button class="primary" data-new>Nuevo evento</button></div>
  <div class="grid">${['L','M','X','J','V','S','D'].map(d=>`<div class="wd">${d}</div>`).join('')}${cells.join('')}</div>
  <div class="sec"><h3>Próximos eventos</h3></div>${up.length?up.map(evRow).join(''):'<div class="empty">No hay eventos próximos. Toca un día del calendario para añadir uno.</div>'}`;
 }
@@ -340,6 +415,7 @@ $('calView').addEventListener('click',e=>{
  const n=e.target.closest('[data-nav]'),v=e.target.closest('[data-ev]'),d=e.target.closest('[data-day]');
  if(n){cal.setMonth(cal.getMonth()+ +n.dataset.nav);renderCal()}
  else if(v)eventForm(db.events.find(x=>x.id===v.dataset.ev));
+ else if(e.target.closest('[data-term]'))termForm();
  else if(e.target.closest('[data-new]'))eventForm();
  else if(d)eventForm(null,d.dataset.day);
 });
