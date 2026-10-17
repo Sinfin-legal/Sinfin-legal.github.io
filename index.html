@@ -174,7 +174,7 @@ var cloud=null,cloudT=null,lastCloud='';
 function setSync(t){const el=document.getElementById('sync');if(el)el.textContent=t}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}
  if(cloud){setSync('Guardando…');clearTimeout(cloudT);cloudT=setTimeout(async()=>{try{lastCloud=JSON.stringify(db);await cloud.set({json:lastCloud});if(window.watchSync)await watchSync();setSync('Guardado en la nube')}catch(e){setSync('No se pudo guardar en la nube')}},600)}}
-if(!db.updates)db.updates=[];if(!db.events)db.events=[];if(!db.invoices)db.invoices=[];
+if(!db.docs)db.docs=[];if(!db.updates)db.updates=[];if(!db.events)db.events=[];if(!db.invoices)db.invoices=[];
 try{if(!db.updates.length&&!db.events.length&&!localStorage.getItem(KEY+'-d2')&&db.cases.some(c=>c.id==='c2')){localStorage.setItem(KEY+'-d2','1');
  db.updates=[{id:'u1',caseId:'c1',date:'2026-09-05',stage:'Demanda presentada',court:'Juzgado de Familia nº 2',note:'Se presenta el convenio regulador firmado por ambas partes.'},{id:'u2',caseId:'c2',date:'2026-09-12',stage:'Demanda presentada',court:'Juzgado de 1ª Instancia nº 4',note:''},{id:'u3',caseId:'c2',date:'2026-09-29',stage:'Admitida a trámite',court:'Juzgado de 1ª Instancia nº 4',note:'El juzgado admite la demanda y da traslado al demandado por 20 días.'}];
  db.events=[{id:'v1',caseId:'c1',date:'2026-10-16',time:'11:00',title:'Reunión con Marta Ríos',type:'Reunión'},{id:'v2',caseId:'c2',date:'2026-10-19',time:'',title:'Vence plazo de contestación',type:'Plazo'},{id:'v3',caseId:'c2',date:'2026-10-22',time:'10:30',title:'Audiencia previa',type:'Audiencia'}];save()}}catch(e){}
@@ -235,6 +235,7 @@ function renderDetail(){
   ${es.length?`<div class="scroll"><table><tr><th>Fecha</th><th>Trabajo</th><th class="r">Horas</th><th class="r">Importe</th><th></th></tr>${es.map(e=>`<tr><td>${fdate(e.date)}</td><td>${esc(e.desc)}</td><td class="r num">${e.hours}</td><td class="r num">${eur(e.hours*c.amount)}</td><td><button class="link danger" data-de="${e.id}" aria-label="Eliminar registro">Eliminar</button></td></tr>`).join('')}</table></div>`:'<div class="empty">Sin horas registradas. Añade la primera para calcular los honorarios.</div>'}`:''}
   <div class="sec"><h3>Pagos recibidos</h3><button class="link" id="addP">Registrar pago</button></div>
   ${ps.length?`<div class="scroll"><table><tr><th>Fecha</th><th>Concepto</th><th class="r">Importe</th><th></th></tr>${ps.map(p=>`<tr><td>${fdate(p.date)}</td><td>${esc(p.note)||'—'}</td><td class="r num">${eur(p.amount)}</td><td><button class="link danger" data-dp="${p.id}" aria-label="Eliminar pago">Eliminar</button></td></tr>`).join('')}</table></div>`:'<div class="empty">Aún no hay pagos de este cliente.</div>'}
+  ${docsHtml(c)}
   ${invHtml(c)}
   </div>`;
 }
@@ -268,7 +269,7 @@ function caseForm(c){
   e?'<button type="button" class="danger" id="delCase" style="margin-right:auto">Eliminar caso</button>':'');
   const sync=()=>$('recw').classList.toggle('hide',val('feeType')!=='exito');
   $('f_feeType').onchange=sync;sync();initRadicado();
-  if(e)$('delCase').onclick=()=>{if(confirm('¿Eliminar este caso con sus horas y pagos? No se puede deshacer.')){db.cases=db.cases.filter(x=>x.id!==c.id);db.entries=db.entries.filter(x=>x.caseId!==c.id);db.payments=db.payments.filter(x=>x.caseId!==c.id);db.updates=db.updates.filter(x=>x.caseId!==c.id);db.events=db.events.filter(x=>x.caseId!==c.id);current=null;$('dlg').close();save();render()}};
+  if(e)$('delCase').onclick=()=>{if(confirm('¿Eliminar este caso con sus horas y pagos? No se puede deshacer.')){db.cases=db.cases.filter(x=>x.id!==c.id);db.entries=db.entries.filter(x=>x.caseId!==c.id);db.payments=db.payments.filter(x=>x.caseId!==c.id);db.updates=db.updates.filter(x=>x.caseId!==c.id);db.events=db.events.filter(x=>x.caseId!==c.id);docsBorrarCaso(c.id);current=null;$('dlg').close();save();render()}};
 }
 
 $('newCase').onclick=()=>caseForm();
@@ -389,6 +390,54 @@ function termForm(caseId){
  ['f_dias','f_modo','f_inicio','f_vac'].forEach(i=>{$(i).oninput=calc;$(i).onchange=calc});
  $('f_dias').value=$('f_tipo').value;calc();
 }
+
+/* ===== Documentos por caso (Supabase Storage, bucket privado) ===== */
+const DOC_CATS=['Demanda','Poder','Auto / providencia','Prueba','Contrato','Otro'];
+const DOC_MAX=20*1024*1024;
+const kb=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+function docsHtml(c){
+ const ds=(db.docs||[]).filter(d=>d.caseId===c.id).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+ if(!sb||!userId)return `<div class="sec"><h3>Documentos</h3></div><div class="empty">Inicia sesión para guardar documentos.</div>`;
+ return `<div class="sec"><h3>Documentos (${ds.length})</h3><button class="link" id="addDoc">Subir documento</button></div>
+ ${ds.length?ds.map(d=>`<div class="panel" style="padding:10px 14px"><div class="row"><b>${esc(d.name)}</b><span class="tag">${esc(d.cat)}</span></div><div class="row m"><span>${fdate(d.fecha)} · ${kb(d.size)}</span><span><button class="link" data-dv="${d.id}">Abrir</button> · <button class="link danger" data-dd="${d.id}">Eliminar</button></span></div></div>`).join(''):'<div class="empty">Aún no hay documentos en este caso. Máximo 20 MB por archivo.</div>'}`;
+}
+async function docSubir(file,caseId,cat){
+ if(file.size>DOC_MAX)return alert('El archivo pesa más de 20 MB.');
+ const id=uid('d'),safe=file.name.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w.\-]+/g,'_');
+ const path=`${userId}/${caseId}/${id}-${safe}`;
+ const btn=$('addDoc');if(btn){btn.disabled=true;btn.textContent='Subiendo…'}
+ const{error}=await sb.storage.from('documentos').upload(path,file,{contentType:file.type||'application/octet-stream'});
+ if(error){alert('No se pudo subir: '+error.message);return render()}
+ db.docs.push({id,caseId,name:file.name,path,size:file.size,cat,fecha:today()});save();render();
+}
+async function docAbrir(d){
+ const w=window.open('','_blank');
+ const{data,error}=await sb.storage.from('documentos').createSignedUrl(d.path,120);
+ if(error){if(w)w.close();return alert('No se pudo abrir: '+error.message)}
+ if(w)w.location=data.signedUrl;else location.href=data.signedUrl;
+}
+async function docEliminar(d){
+ if(!confirm('¿Eliminar "'+d.name+'"? No se puede deshacer.'))return;
+ const{error}=await sb.storage.from('documentos').remove([d.path]);
+ if(error)return alert('No se pudo eliminar: '+error.message);
+ db.docs=db.docs.filter(x=>x.id!==d.id);save();render();
+}
+function docsBorrarCaso(caseId){
+ const ds=(db.docs||[]).filter(d=>d.caseId===caseId);
+ if(ds.length&&sb)sb.storage.from('documentos').remove(ds.map(d=>d.path)).catch(()=>{});
+ db.docs=(db.docs||[]).filter(d=>d.caseId!==caseId);
+}
+$('detailView').addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ if(b.id==='addDoc'){
+  const c=current;
+  form('Subir documento',S('Tipo de documento','cat',DOC_CATS,'Otro')+'<p style="font-size:.85rem;margin-top:10px">Después de tocar <b>Elegir archivo</b>, selecciona el documento en tu tablet.</p><label for="f_file">Archivo</label><input id="f_file" name="file" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt">',
+   f=>{const file=f.elements.file.files[0];if(!file)return 'Elige un archivo.';const cat=val('cat');setTimeout(()=>docSubir(file,c,cat),0)});
+  $('ok').textContent='Subir';
+ }
+ else if(b.dataset.dv)docAbrir(db.docs.find(x=>x.id===b.dataset.dv));
+ else if(b.dataset.dd)docEliminar(db.docs.find(x=>x.id===b.dataset.dd));
+});
 function eventForm(ev,date,caseId){
  const e=!!ev;ev=ev||{type:'Audiencia',date:date||today(),time:'',caseId:caseId||''};
  form(e?'Editar evento':'Nuevo evento',
