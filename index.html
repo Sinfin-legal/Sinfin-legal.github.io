@@ -143,6 +143,33 @@ header.top{grid-column:1/-1}
 .estilos button{display:flex;align-items:center;gap:12px;text-align:left;padding:12px 14px;border-radius:16px}
 .estilos button.on{outline:2px solid var(--accent)}
 .estilos i{width:26px;height:26px;border-radius:50%;display:inline-block;flex:none}
+
+/* Ajustes para celular */
+html,body{overflow-x:hidden}
+.tabs{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;white-space:nowrap}
+@media (max-width:520px){
+ .wrap{padding:10px}
+ header.top{flex-wrap:nowrap;gap:8px;align-items:flex-start}
+ .brand{min-width:0;flex:1 1 auto}
+ .brand h1{font-size:22px}
+ header.top #newCase{flex:none;padding:8px 12px;white-space:nowrap}
+ .tabs{gap:0;margin-left:-4px;margin-right:-4px;padding:0}
+ #sync{display:inline-block;max-width:60vw}
+ .tabs button{padding:8px 7px;font-size:13px}
+ .kpis{grid-template-columns:1fr 1fr}
+ .alert button,.alert div{min-width:0;overflow-wrap:anywhere}
+ dialog{padding:14px;max-height:92vh;overflow:auto}
+ .calhead{gap:6px}.calhead h2{min-width:0;font-size:17px;flex:1 1 100%;order:-1;text-align:left}
+ .calhead button{padding:6px 10px;font-size:13px}
+ .case .row{flex-wrap:wrap}
+ .kv{grid-template-columns:1fr 1fr}
+}
+
+a{color:var(--accent)}
+.sec{flex-wrap:wrap;gap:2px 10px}.sec h3{margin-right:auto}
+@media (max-width:520px){.scroll table{min-width:430px}.scroll td,.scroll th{padding:7px 8px}}
 </style>
 </head>
 <body>
@@ -250,7 +277,7 @@ function renderDetail(){
   const ps=db.payments.filter(p=>p.caseId===c.id).sort((a,b)=>b.date.localeCompare(a.date));
   const hourly=c.feeType==='hora';
   $('detailView').innerHTML=`<button class="link" id="back">‹ Todos los casos</button>
-  <div class="detail"><div class="head"><div><h2>${esc(c.client)}</h2><div class="m" style="color:var(--muted)">${esc(c.title)} · ${esc(c.number)} · ${esc(c.type)}</div></div>
+  <div class="detail"><div class="head"><div><h2>${esc(c.client)}</h2><div class="m" style="color:var(--muted)">${[c.title,c.number,c.type].filter(Boolean).map(esc).join(' · ')}</div></div>
   <div><span class="tag">${c.status}</span> <button class="link" id="editCase">Editar</button></div></div>
   <div class="kv"><div><small>Honorarios</small><b>${feeLabel(c)}</b></div><div><small>Facturable</small><b class="num">${eur(s.billed)}</b></div><div><small>Cobrado</small><b class="num" style="color:var(--ok)">${eur(s.paid)}</b></div><div><small>Pendiente</small><b class="num" style="color:var(--warn)">${eur(s.due)}</b></div></div>
   ${c.feeType==='exito'?`<div style="color:var(--muted)">Importe recuperado: ${eur(c.recovered)}</div>`:''}
