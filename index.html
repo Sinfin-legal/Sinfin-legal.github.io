@@ -9,6 +9,7 @@
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <meta name="theme-color" content="#620209">
+<script>try{document.documentElement.dataset.estilo=localStorage.getItem('sinfin-estilo')||'clasico'}catch(e){document.documentElement.dataset.estilo='clasico'}</script>
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;700&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -122,19 +123,40 @@ header.top{grid-column:1/-1}
 .wrap>section{grid-column:2}}
 .rinfo{margin:6px 0 0;padding:8px 10px;border-radius:10px;background:var(--bg);font-size:13px;color:var(--muted)}
 .rinfo:empty{display:none}.rinfo b{color:var(--ink)}
+
+/* Estilos Sinfín */
+@media (prefers-color-scheme:light){
+:root[data-estilo="rosa"]{--bg:#fff4f7;--line:#f2d5df;--ink:#3b1a28;--muted:#8a6577;--accent:#b02a5b}
+:root[data-estilo="lila"]{--bg:#f8f4fd;--line:#e4d9f1;--ink:#2b1d3d;--muted:#7a6a90;--accent:#6b3fa0}}
+:root[data-theme="light"][data-estilo="rosa"]{--bg:#fff4f7;--line:#f2d5df;--ink:#3b1a28;--muted:#8a6577;--accent:#b02a5b}
+:root[data-theme="light"][data-estilo="lila"]{--bg:#f8f4fd;--line:#e4d9f1;--ink:#2b1d3d;--muted:#7a6a90;--accent:#6b3fa0}
+:root[data-estilo="rosa"] body,:root[data-estilo="lila"] body{background-image:radial-gradient(circle at 100% 0,color-mix(in srgb,var(--accent) 12%,transparent),transparent 45%)}
+:root[data-estilo="rosa"] .panel,:root[data-estilo="rosa"] .case,:root[data-estilo="rosa"] .detail,:root[data-estilo="rosa"] .totals,:root[data-estilo="lila"] .panel,:root[data-estilo="lila"] .case,:root[data-estilo="lila"] .detail,:root[data-estilo="lila"] .totals{border-radius:20px;box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 10%,transparent)}
+:root[data-estilo="rosa"] button,:root[data-estilo="lila"] button{border-radius:99px}
+:root[data-estilo="rosa"] input,:root[data-estilo="rosa"] select,:root[data-estilo="rosa"] textarea,:root[data-estilo="lila"] input,:root[data-estilo="lila"] select,:root[data-estilo="lila"] textarea{border-radius:14px}
+:root[data-estilo="rosa"] .tabs,:root[data-estilo="lila"] .tabs{border-bottom:0;gap:6px}
+:root[data-estilo="rosa"] .tabs button,:root[data-estilo="lila"] .tabs button{border:1px solid var(--line);border-radius:99px;background:var(--surface)}
+:root[data-estilo="rosa"] .tabs button.on,:root[data-estilo="lila"] .tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+:root[data-estilo="rosa"] h1::after,:root[data-estilo="lila"] h1::after{content:" ✦";color:var(--accent);font-size:.6em;vertical-align:super}
+:root[data-estilo="rosa"] dialog,:root[data-estilo="lila"] dialog{border-radius:24px}
+.estilos{display:grid;gap:10px;margin-top:10px}
+.estilos button{display:flex;align-items:center;gap:12px;text-align:left;padding:12px 14px;border-radius:16px}
+.estilos button.on{outline:2px solid var(--accent)}
+.estilos i{width:26px;height:26px;border-radius:50%;display:inline-block;flex:none}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="brand"><img class="logo" src="logo.png" alt=""><div><h1>Sinfín</h1><small id="sync" style="color:var(--muted)">Datos guardados en este navegador</small> <button class="link hide" id="logout">Salir</button></div></div>
+    <div class="brand"><img class="logo" src="logo.png" alt=""><div><h1>Sinfín</h1><small id="sync" style="color:var(--muted)">Datos guardados en este navegador</small> <button class="link" id="estiloBtn">Estilo</button> <button class="link hide" id="logout">Salir</button></div></div>
     <button class="primary" id="newCase">Nuevo caso</button>
   </header>
 
-  <nav class="tabs"><button data-tab="dash" class="on">Resumen</button><button data-tab="casos">Casos</button><button data-tab="desp">Despachos</button><button data-tab="cal">Calendario</button></nav>
+  <nav class="tabs"><button data-tab="dash" class="on">Resumen</button><button data-tab="casos">Casos</button><button data-tab="desp">Despachos</button><button data-tab="cal">Calendario</button><button data-tab="cont">Contenido</button></nav>
 
   <section id="dashView" class="hide"></section>
   <section id="despView" class="hide"></section>
+  <section id="contView" class="hide"></section>
 
   <section id="listView">
     <p id="hello" class="hello"></p>
@@ -174,7 +196,7 @@ var cloud=null,cloudT=null,lastCloud='';
 function setSync(t){const el=document.getElementById('sync');if(el)el.textContent=t}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}
  if(cloud){setSync('Guardando…');clearTimeout(cloudT);cloudT=setTimeout(async()=>{try{lastCloud=JSON.stringify(db);await cloud.set({json:lastCloud});if(window.watchSync)await watchSync();setSync('Guardado en la nube')}catch(e){setSync('No se pudo guardar en la nube')}},600)}}
-if(!db.docs)db.docs=[];if(!db.updates)db.updates=[];if(!db.events)db.events=[];if(!db.invoices)db.invoices=[];
+if(!db.docs)db.docs=[];if(!db.posts)db.posts=[];if(!db.updates)db.updates=[];if(!db.events)db.events=[];if(!db.invoices)db.invoices=[];
 try{if(!db.updates.length&&!db.events.length&&!localStorage.getItem(KEY+'-d2')&&db.cases.some(c=>c.id==='c2')){localStorage.setItem(KEY+'-d2','1');
  db.updates=[{id:'u1',caseId:'c1',date:'2026-09-05',stage:'Demanda presentada',court:'Juzgado de Familia nº 2',note:'Se presenta el convenio regulador firmado por ambas partes.'},{id:'u2',caseId:'c2',date:'2026-09-12',stage:'Demanda presentada',court:'Juzgado de 1ª Instancia nº 4',note:''},{id:'u3',caseId:'c2',date:'2026-09-29',stage:'Admitida a trámite',court:'Juzgado de 1ª Instancia nº 4',note:'El juzgado admite la demanda y da traslado al demandado por 20 días.'}];
  db.events=[{id:'v1',caseId:'c1',date:'2026-10-16',time:'11:00',title:'Reunión con Marta Ríos',type:'Reunión'},{id:'v2',caseId:'c2',date:'2026-10-19',time:'',title:'Vence plazo de contestación',type:'Plazo'},{id:'v3',caseId:'c2',date:'2026-10-22',time:'10:30',title:'Audiencia previa',type:'Audiencia'}];save()}}catch(e){}
@@ -201,7 +223,8 @@ let current=null;
 function render(){
   document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===view));
   renderAlerts();
-  ['dashView','listView','detailView','calView','despView'].forEach(i=>$(i).classList.add('hide'));
+  ['dashView','listView','detailView','calView','despView','contView'].forEach(i=>$(i).classList.add('hide'));
+  if(view==='cont')return renderCont();
   if(view==='dash')return renderDash();
   if(view==='desp')return renderDesp();
   if(view==='cal')return renderCal();
@@ -231,9 +254,9 @@ function renderDetail(){
   <div><span class="tag">${c.status}</span> <button class="link" id="editCase">Editar</button></div></div>
   <div class="kv"><div><small>Honorarios</small><b>${feeLabel(c)}</b></div><div><small>Facturable</small><b class="num">${eur(s.billed)}</b></div><div><small>Cobrado</small><b class="num" style="color:var(--ok)">${eur(s.paid)}</b></div><div><small>Pendiente</small><b class="num" style="color:var(--warn)">${eur(s.due)}</b></div></div>
   ${c.feeType==='exito'?`<div style="color:var(--muted)">Importe recuperado: ${eur(c.recovered)}</div>`:''}
-  ${procHtml(c)}${hourly?`<div class="sec"><h3>Horas (${s.hrs.toLocaleString('es-ES')} h)</h3><button class="link" id="addE">Añadir horas</button></div>
+  ${contactosHtml(c)}${procHtml(c)}${hourly?`<div class="sec"><h3>Horas (${s.hrs.toLocaleString('es-ES')} h)</h3><button class="link" id="addE">Añadir horas</button></div>
   ${es.length?`<div class="scroll"><table><tr><th>Fecha</th><th>Trabajo</th><th class="r">Horas</th><th class="r">Importe</th><th></th></tr>${es.map(e=>`<tr><td>${fdate(e.date)}</td><td>${esc(e.desc)}</td><td class="r num">${e.hours}</td><td class="r num">${eur(e.hours*c.amount)}</td><td><button class="link danger" data-de="${e.id}" aria-label="Eliminar registro">Eliminar</button></td></tr>`).join('')}</table></div>`:'<div class="empty">Sin horas registradas. Añade la primera para calcular los honorarios.</div>'}`:''}
-  <div class="sec"><h3>Pagos recibidos</h3><button class="link" id="addP">Registrar pago</button></div>
+  <div class="sec"><h3>Pagos recibidos</h3><span><button class="link" id="addCobro">Recordar cobro</button> · <button class="link" id="addP">Registrar pago</button></span></div>
   ${ps.length?`<div class="scroll"><table><tr><th>Fecha</th><th>Concepto</th><th class="r">Importe</th><th></th></tr>${ps.map(p=>`<tr><td>${fdate(p.date)}</td><td>${esc(p.note)||'—'}</td><td class="r num">${eur(p.amount)}</td><td><button class="link danger" data-dp="${p.id}" aria-label="Eliminar pago">Eliminar</button></td></tr>`).join('')}</table></div>`:'<div class="empty">Aún no hay pagos de este cliente.</div>'}
   ${docsHtml(c)}
   ${invHtml(c)}
@@ -258,8 +281,9 @@ function caseForm(c){
    <label for="f_status">Estado</label><select id="f_status" name="status">${['Activo','En pausa','Cerrado'].map(o=>`<option ${o===c.status?'selected':''}>${o}</option>`).join('')}</select>
    <label for="f_feeType">Tipo de honorarios</label><select id="f_feeType" name="feeType"><option value="hora" ${c.feeType==='hora'?'selected':''}>Por hora</option><option value="fijo" ${c.feeType==='fijo'?'selected':''}>Tarifa fija</option><option value="exito" ${c.feeType==='exito'?'selected':''}>A éxito (porcentaje)</option></select>`+
    F('Tarifa ($ por hora, $ total o %)','amount',c.amount??'','number','step="0.01" min="0"')+
-   `<div id="recw">${F('Importe recuperado ($)','recovered',c.recovered??'','number','step="0.01" min="0"')}</div>`,
-  f=>{const d={client:val('client'),title:val('title'),number:val('number'),radicado:val('radicado').replace(/\D/g,''),type:val('type'),status:val('status'),feeType:val('feeType'),amount:parseFloat(val('amount'))};
+   `<div id="recw">${F('Importe recuperado ($)','recovered',c.recovered??'','number','step="0.01" min="0"')}</div>`+
+   `<h3 style="margin-top:16px">Contactos</h3>`+F('Teléfono / WhatsApp del cliente','cTel',c.cTel||'','tel','inputmode="tel"')+F('Correo del cliente','cMail',c.cMail||'','email')+F('Contraparte','contra',c.contra||'')+F('Abogado de la contraparte','contraAb',c.contraAb||'')+F('Teléfono o correo de la contraparte','contraTel',c.contraTel||''),
+  f=>{const d={client:val('client'),title:val('title'),number:val('number'),radicado:val('radicado').replace(/\D/g,''),type:val('type'),status:val('status'),feeType:val('feeType'),amount:parseFloat(val('amount')),cTel:val('cTel'),cMail:val('cMail'),contra:val('contra'),contraAb:val('contraAb'),contraTel:val('contraTel')};
     if(d.radicado.length===23){Object.assign(d,window.__rx||{});if(!d.client)d.client='Por definir cliente';if(!d.title)d.title=d.clase||('Proceso '+d.radicado.slice(12,16)+'-'+d.radicado.slice(16,21))}
     if(!d.client||!d.title)return 'Indica el cliente y el asunto, o escribe el radicado de 23 dígitos.';
     if(d.radicado&&d.radicado.length!==23)return 'El radicado debe tener 23 dígitos.';
@@ -297,8 +321,8 @@ document.addEventListener('click',ev=>{
 });
 let view='dash',cal=new Date();cal.setDate(1);
 const STAGES=['Demanda presentada','Admitida a trámite','Contestación','Audiencia previa','Prueba','Juicio','Sentencia','Recurso','Ejecución','Archivo','Otro'];
-const EVT=['Audiencia','Plazo','Reunión','Otro'];
-const evColor=t=>t==='Audiencia'?'var(--bad)':t==='Plazo'?'var(--warn)':t==='Reunión'?'var(--info)':'var(--muted)';
+const EVT=['Audiencia','Plazo','Cobro','Publicación','Reunión','Otro'];
+const evColor=t=>t==='Audiencia'?'var(--bad)':t==='Plazo'?'var(--warn)':t==='Cobro'?'var(--ok)':t==='Publicación'?'#b02a5b':t==='Reunión'?'var(--info)':'var(--muted)';
 const S=(l,n,opts,v)=>`<label for="f_${n}">${l}</label><select id="f_${n}" name="${n}">${opts.map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select>`;
 const evSort=(a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||''));
 function stageOf(id){const u=db.updates.filter(x=>x.caseId===id).sort((a,b)=>b.date.localeCompare(a.date))[0];return u?u.stage:''}
@@ -447,8 +471,155 @@ $('detailView').addEventListener('click',e=>{
  else if(b.dataset.dv)docAbrir(db.docs.find(x=>x.id===b.dataset.dv));
  else if(b.dataset.dd)docEliminar(db.docs.find(x=>x.id===b.dataset.dd));
 });
-function eventForm(ev,date,caseId){
- const e=!!ev;ev=ev||{type:'Audiencia',date:date||today(),time:'',caseId:caseId||''};
+
+/* ===== Contactos, cobros, reporte mensual y estilos ===== */
+const soloNum=t=>String(t||'').replace(/\D/g,'');
+function linkContacto(t){
+ t=String(t||'').trim();if(!t)return '';
+ if(/@/.test(t))return `<a href="mailto:${esc(t)}">${esc(t)}</a>`;
+ const n=soloNum(t);if(n.length<7)return esc(t);
+ const wa=n.length===10&&n[0]==='3'?'57'+n:n;
+ return `${esc(t)} · <a href="tel:${esc(n)}">Llamar</a> · <a href="https://wa.me/${wa}" target="_blank" rel="noopener">WhatsApp</a>`;
+}
+function contactosHtml(c){
+ const f=[['Cliente (teléfono)',c.cTel],['Cliente (correo)',c.cMail],['Contraparte',c.contra],['Abogado contraparte',c.contraAb],['Contacto contraparte',c.contraTel]].filter(x=>x[1]);
+ if(!f.length)return '';
+ return `<div class="sec"><h3>Contactos</h3></div><div class="panel" style="padding:10px 14px">${f.map(([k,v])=>`<div class="row m" style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:3px 0"><span style="color:var(--muted)">${k}</span><span>${k==='Contraparte'||k==='Abogado contraparte'?esc(v):linkContacto(v)}</span></div>`).join('')}</div>`;
+}
+function porCobrarHtml(S){
+ const L=db.cases.map((c,i)=>({c,due:S[i].due})).filter(x=>x.due>0&&x.c.status!=='Cerrado').sort((a,b)=>b.due-a.due).slice(0,6);
+ return `<div class="panel"><h3>Honorarios por cobrar</h3>${L.length?L.map(x=>`<button class="case" data-id="${x.c.id}" style="--c:var(--warn)"><div class="row"><span class="t">${esc(x.c.client)}</span><span class="num" style="color:var(--warn)">${eur(x.due)}</span></div><div class="row m"><span>${esc(x.c.title)}</span></div></button>`).join(''):'<div class="empty">No tienes honorarios pendientes. ✨</div>'}</div>`;
+}
+function reporteDatos(mes){
+ const en=db.entries.filter(e=>String(e.date).startsWith(mes)),pa=db.payments.filter(p=>String(p.date).startsWith(mes));
+ const nom=id=>{const c=db.cases.find(x=>x.id===id);return c?c.client:'(caso eliminado)'};
+ const filas=db.cases.map(c=>{
+  const h=en.filter(e=>e.caseId===c.id).reduce((s,e)=>s+e.hours,0),cob=pa.filter(p=>p.caseId===c.id).reduce((s,p)=>s+p.amount,0);
+  const act=db.updates.filter(u=>u.caseId===c.id&&String(u.date).startsWith(mes)).length+autoActs.filter(a=>a.case_id===c.id&&String(a.fecha||'').startsWith(mes)).length;
+  return{cliente:c.client,asunto:c.title,radicado:c.radicado||c.number||'',horas:h,facturado:c.feeType==='hora'?h*c.amount:0,cobrado:cob,actuaciones:act};
+ }).filter(f=>f.horas||f.cobrado||f.actuaciones);
+ return{filas,pagos:pa.map(p=>({fecha:p.date,cliente:nom(p.caseId),nota:p.note||'',monto:p.amount})),horas:en.map(e=>({fecha:e.date,cliente:nom(e.caseId),desc:e.desc,horas:e.hours}))};
+}
+function reporteForm(){
+ const m0=today().slice(0,7);
+ form('Reporte mensual',F('Mes del reporte','mes',m0,'month')+'<p style="font-size:.85rem;color:var(--muted);margin-top:10px">Incluye horas, pagos recibidos y actuaciones del mes, por cliente.</p>',
+  f=>{const mes=val('mes');if(!mes)return 'Elige el mes.';setTimeout(()=>reportePdf(mes),0)},
+  '<button type="button" id="repCsv" style="margin-right:auto">Descargar Excel (CSV)</button>');
+ $('ok').textContent='Descargar PDF';
+ $('repCsv').onclick=()=>{const mes=val('mes');if(!mes)return;reporteCsv(mes);$('dlg').close()};
+}
+function reporteCsv(mes){
+ const R=reporteDatos(mes),q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+ const L=[['Cliente','Asunto','Radicado','Horas del mes','Honorarios por horas (COP)','Cobrado en el mes (COP)','Actuaciones'].map(q).join(';')];
+ R.filas.forEach(f=>L.push([f.cliente,f.asunto,f.radicado,f.horas,Math.round(f.facturado),Math.round(f.cobrado),f.actuaciones].map(q).join(';')));
+ saveFile({filename:'reporte-'+mes+'.csv',data:new Blob(['﻿'+L.join('\r\n')],{type:'text/csv;charset=utf-8'})});
+}
+function reportePdf(mes){
+ if(!window.jspdf)return alert('No se pudo cargar el generador de PDF. Recarga la página.');
+ const R=reporteDatos(mes),d=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),f=db.firm||{};let y=20;
+ const nombreMes=new Date(mes+'-01T00:00').toLocaleDateString('es-CO',{month:'long',year:'numeric'});
+ const salto=n=>{if(y+n>282){d.addPage();y=20}};
+ d.setFont('helvetica','bold');d.setFontSize(18);d.text('Reporte mensual',20,y);
+ d.setFontSize(11);d.setFont('helvetica','normal');d.text(nombreMes.charAt(0).toUpperCase()+nombreMes.slice(1),190,y,{align:'right'});
+ y+=7;if(f.name){d.setTextColor(110);d.text(f.name,20,y);d.setTextColor(0);y+=6}
+ const tH=R.filas.reduce((s,x)=>s+x.horas,0),tF=R.filas.reduce((s,x)=>s+x.facturado,0),tC=R.filas.reduce((s,x)=>s+x.cobrado,0),tA=R.filas.reduce((s,x)=>s+x.actuaciones,0);
+ y+=4;d.setFont('helvetica','bold');d.text('Resumen',20,y);y+=6;d.setFont('helvetica','normal');
+ [['Horas trabajadas',String(tH)],['Honorarios por horas',eur(tF)],['Cobrado en el mes',eur(tC)],['Actuaciones registradas',String(tA)]].forEach(([k,v])=>{d.text(k,24,y);d.text(v,190,y,{align:'right'});y+=6});
+ y+=4;d.setFont('helvetica','bold');d.text('Por cliente',20,y);y+=6;
+ if(!R.filas.length){d.setFont('helvetica','normal');d.text('No hay movimientos en este mes.',24,y);y+=6}
+ R.filas.forEach(x=>{salto(14);d.setFont('helvetica','bold');d.setFontSize(10);d.text(d.splitTextToSize(x.cliente+(x.radicado?'  ·  '+x.radicado:''),170),24,y);y+=5;
+  d.setFont('helvetica','normal');d.text(x.horas+' h  ·  honorarios '+eur(x.facturado)+'  ·  cobrado '+eur(x.cobrado)+'  ·  '+x.actuaciones+' actuaciones',24,y);y+=7});
+ if(R.pagos.length){y+=2;salto(14);d.setFontSize(11);d.setFont('helvetica','bold');d.text('Pagos recibidos',20,y);y+=6;d.setFontSize(10);d.setFont('helvetica','normal');
+  R.pagos.sort((a,b)=>a.fecha.localeCompare(b.fecha)).forEach(p=>{salto(6);d.text(fdate(p.fecha)+'  ·  '+p.cliente+(p.nota?'  ·  '+p.nota:''),24,y);d.text(eur(p.monto),190,y,{align:'right'});y+=6})}
+ if(R.horas.length){y+=2;salto(14);d.setFontSize(11);d.setFont('helvetica','bold');d.text('Detalle de horas',20,y);y+=6;d.setFontSize(10);d.setFont('helvetica','normal');
+  R.horas.sort((a,b)=>a.fecha.localeCompare(b.fecha)).forEach(h=>{salto(6);d.text(d.splitTextToSize(fdate(h.fecha)+'  ·  '+h.cliente+'  ·  '+h.desc,150),24,y);d.text(h.horas+' h',190,y,{align:'right'});y+=6})}
+ saveFile({filename:'reporte-'+mes+'.pdf',data:d.output('blob')});
+}
+function estiloForm(){
+ const cur=document.documentElement.dataset.estilo||'clasico';
+ const E=[['clasico','Clásico (el original)','#620209','Vino tinto sobrio'],['rosa','Rosa','#b02a5b','Suave, con formas redondeadas'],['lila','Lila','#6b3fa0','Elegante y tranquilo']];
+ form('Elige tu estilo','<div class="estilos">'+E.map(e=>`<button type="button" data-es="${e[0]}" class="${e[0]===cur?'on':''}"><i style="background:${e[2]}"></i><span><b>${e[1]}</b><br><small style="color:var(--muted)">${e[3]}</small></span></button>`).join('')+'</div>',()=>{});
+ $('ok').classList.add('hide');$('cancel').textContent='Cerrar';
+ $('frm').querySelectorAll('[data-es]').forEach(b=>b.onclick=()=>{aplicarEstilo(b.dataset.es);$('dlg').close()});
+}
+function aplicarEstilo(n){
+ document.documentElement.dataset.estilo=n;try{localStorage.setItem('sinfin-estilo',n)}catch(e){}
+ const m=document.querySelector('meta[name="theme-color"]');if(m)m.content={rosa:'#b02a5b',lila:'#6b3fa0',clasico:'#620209'}[n]||'#620209';
+}
+aplicarEstilo(document.documentElement.dataset.estilo||'clasico');
+document.addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ if(b.id==='estiloBtn')estiloForm();
+ else if(b.id==='repBtn')reporteForm();
+ else if(b.id==='termBtn')termForm();
+ else if(b.id==='addCobro'){const c=db.cases.find(x=>x.id===current);if(c){const d=new Date();d.setDate(d.getDate()+7);eventForm(null,TERM.iso(d),c.id,{type:'Cobro',title:'Cobrar honorarios: '+c.client})}}
+});
+
+/* ===== Contenido: planificador de publicaciones para redes ===== */
+const REDES=['Instagram','LinkedIn','TikTok','Facebook','YouTube','X (Twitter)','Blog'];
+const FORMATOS=['Reel / video corto','Carrusel','Publicación con imagen','Historia','Artículo','Video largo'];
+const ESTADOS_POST=['Idea','Redactando','Programado','Publicado'];
+const TEMAS={
+ 'Laboral':['despido sin justa causa','la liquidación de prestaciones','contrato a término fijo vs indefinido','acoso laboral','las horas extras','la licencia de maternidad'],
+ 'Familia':['la cuota de alimentos','el divorcio de mutuo acuerdo','la custodia de los hijos','la sucesión','la unión marital de hecho','las medidas de protección'],
+ 'Civil':['el contrato de arrendamiento','la prescripción de deudas','cobrar una deuda','la compraventa de un inmueble','el pagaré','el proceso ejecutivo'],
+ 'Penal':['qué hacer si te citan a declarar','los derechos de quien es capturado','poner una denuncia','la audiencia de imputación','la víctima en el proceso penal'],
+ 'Mercantil':['crear una SAS','registrar tu marca','contratos con clientes','proteger tu emprendimiento','cobrar facturas impagadas'],
+ 'Administrativo':['el derecho de petición','la acción de tutela','demandar al Estado','una multa de tránsito injusta','la pensión y Colpensiones']
+};
+const PLANTILLAS=[
+ t=>`Mito vs. realidad: ${t}`,t=>`3 cosas que debes saber sobre ${t}`,t=>`¿Qué hacer si te pasa esto con ${t}?`,
+ t=>`Paso a paso: cómo manejar ${t}`,t=>`Preguntas frecuentes sobre ${t}`,t=>`El error más común con ${t} (y cómo evitarlo)`,
+ t=>`Lo que nadie te cuenta de ${t}`,t=>`Checklist antes de enfrentar ${t}`
+];
+const IDEAS_FIJAS=['Detrás de cámaras: un día en mi despacho','Por qué decidí ser abogada','Mi herramienta favorita para organizar mis casos','Cómo prepararte para tu primera cita con una abogada','Qué documentos llevar a una asesoría legal','Mujeres y derecho: lo que me hubiera gustado saber al empezar','Mito vs. realidad: "los abogados solo sirven cuando ya hay demanda"'];
+const AVISO_PUB='Recuerda: no reveles datos de clientes ni de procesos reservados, no prometas resultados y revisa las reglas de publicidad del Código Disciplinario del Abogado (Ley 1123 de 2007).';
+function renderCont(){
+ $('contView').classList.remove('hide');
+ const t=today(),P=db.posts||[];
+ const col=e=>{const L=P.filter(x=>x.estado===e).sort((a,b)=>(a.fecha||'9').localeCompare(b.fecha||'9'));
+  return `<div class="panel"><h3>${e} (${L.length})</h3>${L.length?L.map(x=>`<button class="case" data-post="${x.id}" style="--c:${x.estado==='Publicado'?'var(--ok)':x.estado==='Programado'?'var(--info)':'var(--line)'}"><div class="row"><span class="t">${esc(x.title)}</span><span class="num">${x.fecha?fdate(x.fecha):''}</span></div><div class="row m"><span>${esc(x.red)} · ${esc(x.formato)}</span></div></button>`).join(''):'<div class="empty" style="padding:6px 0">Vacío por ahora.</div>'}</div>`};
+ const prog=P.filter(x=>x.estado==='Programado'&&x.fecha&&x.fecha>=t).length;
+ $('contView').innerHTML=`<h2 style="margin-bottom:6px">Mi contenido</h2><p style="color:var(--muted);margin:0 0 10px">Planifica lo que publicas para atraer clientes. ${prog?`Tienes ${prog} ${prog===1?'publicación programada':'publicaciones programadas'}.`:''}</p>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="primary" id="postNew">Nueva publicación</button><button id="postIdeas">Ideas para publicar</button></div>
+ <p style="font-size:.8rem;color:var(--muted)">${AVISO_PUB}</p>
+ ${ESTADOS_POST.map(col).join('')}`;
+}
+function postForm(p,pre){
+ const e=!!p;p=p||{estado:'Idea',red:'Instagram',formato:'Reel / video corto',...(pre||{})};
+ form(e?'Editar publicación':'Nueva publicación',
+  F('Tema o título','title',p.title||'')+S('Red social','red',REDES,p.red)+S('Formato','formato',FORMATOS,p.formato)+S('Estado','estado',ESTADOS_POST,p.estado)+
+  F('Fecha de publicación (opcional)','fecha',p.fecha||'','date')+
+  `<label for="f_texto">Texto o guion</label><textarea id="f_texto" name="texto" rows="6" placeholder="Escribe aquí tu texto, el guion del video o las ideas principales.">${esc(p.texto||'')}</textarea>`+
+  F('Hashtags (opcional)','tags',p.tags||'')+`<p style="font-size:.78rem;color:var(--muted)">${AVISO_PUB}</p>`,
+  f=>{const d={title:val('title'),red:val('red'),formato:val('formato'),estado:val('estado'),fecha:val('fecha'),texto:f.elements.texto.value.trim(),tags:val('tags')};
+   if(!d.title)return 'Escribe el tema o título.';
+   if(d.estado==='Programado'&&!d.fecha)return 'Para programarla, elige la fecha de publicación.';
+   let post=p;if(e)Object.assign(p,d);else{post={id:uid('p'),...d};db.posts.push(post)}
+   db.events=db.events.filter(x=>x.postId!==post.id);
+   if(d.fecha&&d.estado!=='Publicado')db.events.push({id:uid('v'),caseId:'',postId:post.id,date:d.fecha,time:'',title:'Publicar: '+d.title+' ('+d.red+')',type:'Publicación'})},
+  e?'<button type="button" class="danger" id="delPost" style="margin-right:auto">Eliminar</button>':'');
+ if(e)$('delPost').onclick=()=>{if(!confirm('¿Eliminar esta publicación?'))return;db.posts=db.posts.filter(x=>x.id!==p.id);db.events=db.events.filter(x=>x.postId!==p.id);$('dlg').close();save();render()};
+}
+function ideasForm(area){
+ area=area||'Laboral';
+ const pick=()=>{const T=TEMAS[area],out=new Set();let n=0;while(out.size<5&&n++<60){const f=PLANTILLAS[Math.floor(Math.random()*PLANTILLAS.length)],tm=T[Math.floor(Math.random()*T.length)];out.add(f(tm))}
+  out.add(IDEAS_FIJAS[Math.floor(Math.random()*IDEAS_FIJAS.length)]);return [...out]};
+ const ideas=pick();
+ form('Ideas para publicar',`<label for="f_area">Mi área</label><select id="f_area" name="area">${Object.keys(TEMAS).map(a=>`<option ${a===area?'selected':''}>${a}</option>`).join('')}</select>`+
+  `<div style="margin-top:10px">${ideas.map((x,i)=>`<div class="panel" style="padding:10px 14px"><div>${esc(x)}</div><button type="button" class="link" data-idea="${i}">Usar esta idea</button></div>`).join('')}</div>`,()=>{});
+ $('ok').textContent='Cerrar';
+ $('f_area').onchange=()=>ideasForm($('f_area').value);
+ $('frm').querySelectorAll('[data-idea]').forEach(b=>b.onclick=()=>{const t=ideas[+b.dataset.idea];$('dlg').close();postForm(null,{title:t})});
+}
+$('contView').addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ if(b.id==='postNew')postForm();
+ else if(b.id==='postIdeas')ideasForm();
+ else if(b.dataset.post)postForm(db.posts.find(x=>x.id===b.dataset.post));
+});
+function eventForm(ev,date,caseId,preset){
+ const e=!!ev;ev=ev||{type:'Audiencia',date:date||today(),time:'',caseId:caseId||'',...(preset||{})};
  form(e?'Editar evento':'Nuevo evento',
   F('Título','title',ev.title)+S('Tipo','type',EVT,ev.type)+F('Fecha','date',ev.date,'date')+F('Hora (opcional)','time',ev.time||'','time')+
   `<label for="f_caseId">Caso</label><select id="f_caseId" name="caseId"><option value="">Sin caso</option>${db.cases.map(c=>`<option value="${c.id}" ${c.id===ev.caseId?'selected':''}>${esc(c.client)} · ${esc(c.number)}</option>`).join('')}</select>`,
@@ -484,7 +655,7 @@ function setHello(n){const h=new Date().getHours(),g=h<12?'Buenos días':h<19?'B
 function renderAlerts(){
  const t=today(),l=new Date();l.setDate(l.getDate()+7);
  const L=l.getFullYear()+'-'+String(l.getMonth()+1).padStart(2,'0')+'-'+String(l.getDate()).padStart(2,'0');
- const es=db.events.filter(e=>(e.type==='Plazo'||e.type==='Audiencia')&&e.date>=t&&e.date<=L).sort(evSort);
+ const es=db.events.filter(e=>(e.type==='Plazo'||e.type==='Audiencia'||e.type==='Cobro')&&e.date>=t&&e.date<=L).sort(evSort);
  setHello(es.length);$('alerts').innerHTML=es.length?`<div class="alert"><b>Vence en los próximos 7 días</b>${es.map(e=>{const n=Math.round((new Date(e.date+'T00:00')-new Date(t+'T00:00'))/864e5),c=db.cases.find(x=>x.id===e.caseId);return `<button class="evrow" data-ev="${e.id}" style="--c:${evColor(e.type)}"><span>${esc(e.title)}${c?' · '+esc(c.client):''}</span><span class="num"><b>${n===0?'Hoy':n===1?'Mañana':'En '+n+' días'}</b></span></button>`}).join('')}</div>`:'';
 }
 function invHtml(c){
@@ -522,7 +693,7 @@ async function invPdf(i){
  if(!window.claude||!claude.use)return;
  const d=await claude.use('db');if(!d)return;
  const ref=d.doc('casos/datos'),snap=await ref.get();
- const apply=j=>{try{const n=JSON.parse(j);['cases','entries','payments','updates','events','invoices','docs'].forEach(k=>n[k]=n[k]||[]);db=n;try{localStorage.setItem(KEY,j)}catch(e){}render()}catch(e){}};
+ const apply=j=>{try{const n=JSON.parse(j);['cases','entries','payments','updates','events','invoices','docs','posts'].forEach(k=>n[k]=n[k]||[]);db=n;try{localStorage.setItem(KEY,j)}catch(e){}render()}catch(e){}};
  cloud=ref;
  if(snap.exists&&snap.data().json){lastCloud=snap.data().json;apply(lastCloud)}
  else{lastCloud=JSON.stringify(db);await ref.set({json:lastCloud})}
@@ -532,14 +703,14 @@ async function invPdf(i){
 function saveFile({filename,data}){const a=document.createElement('a');a.href=URL.createObjectURL(data);a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
 document.getElementById('bk').onclick=()=>saveFile({filename:'copia-casos-'+today()+'.json',data:new Blob([JSON.stringify(db)],{type:'application/json'})});
 document.getElementById('rs').onclick=()=>document.getElementById('rsf').click();
-document.getElementById('rsf').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const n=JSON.parse(await f.text());if(!Array.isArray(n.cases))throw 0;if(!confirm('Esto reemplaza los datos actuales por los de la copia. ¿Continuar?')){e.target.value='';return}['cases','entries','payments','updates','events','invoices','docs'].forEach(k=>n[k]=n[k]||[]);db=n;save();render()}catch(x){alert('El archivo no es una copia válida.')}e.target.value=''};
+document.getElementById('rsf').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const n=JSON.parse(await f.text());if(!Array.isArray(n.cases))throw 0;if(!confirm('Esto reemplaza los datos actuales por los de la copia. ¿Continuar?')){e.target.value='';return}['cases','entries','payments','updates','events','invoices','docs','posts'].forEach(k=>n[k]=n[k]||[]);db=n;save();render()}catch(x){alert('El archivo no es una copia válida.')}e.target.value=''};
 var autoActs=[],vig={},watched={},userId=null,sb=null;
 {const cf=window.APP_CONFIG||{};if(window.supabase&&cf.url&&cf.anonKey&&!/TU-PROYECTO/.test(cf.url))sb=window.supabase.createClient(cf.url,cf.anonKey)}
 function vigLine(c){if(!c.radicado)return '';const v=vig[c.id];
  const t=!sb?'Inicia sesión para activar la revisión automática':!v?'Se revisará automáticamente':v.ultimo_error?'No se pudo consultar la Rama Judicial en la última revisión':'Última revisión: '+(v.revisado_en?fdate(v.revisado_en.slice(0,10)):'pendiente');
  const f=[c.despacho&&`<b style="color:var(--ink)">${esc(c.despacho)}</b>`,[c.clase,c.depto,c.jurisdiccion&&'Jurisdicción '+c.jurisdiccion].filter(Boolean).map(esc).join(' · '),c.demandante&&'Demandante: '+esc(c.demandante),c.demandado&&'Demandado: '+esc(c.demandado),c.ponente&&'Ponente: '+esc(c.ponente),c.fechaRad&&'Radicado el '+fdate(String(c.fechaRad).slice(0,10))].filter(Boolean).join('<br>');
  return `<div style="color:var(--muted);font-size:13px;margin-bottom:8px">${f?f+'<br>':''}Radicado ${esc(c.radicado)} · ${t}</div>`}
-function applyJson(j){try{const n=JSON.parse(j);['cases','entries','payments','updates','events','invoices','docs'].forEach(k=>n[k]=n[k]||[]);db=n;try{localStorage.setItem(KEY,j)}catch(e){}render()}catch(e){}}
+function applyJson(j){try{const n=JSON.parse(j);['cases','entries','payments','updates','events','invoices','docs','posts'].forEach(k=>n[k]=n[k]||[]);db=n;try{localStorage.setItem(KEY,j)}catch(e){}render()}catch(e){}}
 async function loadAuto(){if(!sb||!userId)return;
  const a=await sb.from('actuaciones_auto').select('*').order('detectado_en',{ascending:false});if(!a.error)autoActs=a.data||[];
  const v=await sb.from('vigilancia').select('case_id,radicado,titulo,revisado_en,ultimo_error');
@@ -591,9 +762,11 @@ function renderDash(){
  const cnt=k=>{const m={};db.cases.forEach(c=>{const v=c[k]||'Sin dato';m[v]=(m[v]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
  const prox=db.events.filter(e=>e.date>=t).sort(evSort).slice(0,5);
  $('dashView').innerHTML=`<p class="hello">${esc($('hello').textContent)}</p>${$('alerts').innerHTML}
+ <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button id="repBtn">Reporte mensual</button><button id="termBtn">Calculadora de términos</button></div>
  <div class="kpis"><div class="kpi"><small>Casos activos</small><b>${act.length}</b></div><div class="kpi"><small>Actuaciones este mes</small><b>${acts}</b></div><div class="kpi"><small>Casos nuevos este mes</small><b>${nuevos}</b></div><div class="kpi"><small>Por cobrar</small><b style="color:var(--warn);font-size:21px">${eur(due)}</b></div></div>
  <div class="panel"><h3>Antigüedad de la última actuación</h3><p>Casos no cerrados, según el tiempo desde su última actuación</p><div class="age"><div class="g"><b>${ag.g}</b><small>0–6 meses</small></div><div class="a"><b>${ag.a}</b><small>6–12 meses</small></div><div class="r"><b>${ag.r}</b><small>Más de 12 meses</small></div><div class="n"><b>${ag.n}</b><small>Sin actuación</small></div></div></div>
  <div class="charts"><div class="panel"><h3>Casos por área</h3>${donut(cnt('type'),db.cases.length)}</div><div class="panel"><h3>Casos por estado</h3>${donut(cnt('status'),db.cases.length)}</div><div class="panel"><h3>Casos por jurisdicción</h3>${donut(cnt('jurisdiccion'),db.cases.length)}</div></div>
+ ${porCobrarHtml(S)}
  <div class="panel"><h3>Honorarios</h3><p>Cobrado ${eur(P)} de ${eur(B)}</p><div class="bar"><i style="width:${B?Math.min(100,P/B*100):0}%"></i></div></div>
  <div class="panel"><h3>Próximas fechas</h3>${prox.length?prox.map(evRow).join(''):'<div class="empty">No hay fechas próximas.</div>'}</div>`;
 }
