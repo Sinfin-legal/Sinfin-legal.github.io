@@ -618,6 +618,56 @@ $('contView').addEventListener('click',e=>{
  else if(b.id==='postIdeas')ideasForm();
  else if(b.dataset.post)postForm(db.posts.find(x=>x.id===b.dataset.post));
 });
+
+/* ===== Sincronización con Google Calendar (por Edge Function) ===== */
+let gBusy=false,gTimer=null;window.__gerr='';
+const gHash=(e,c)=>JSON.stringify([e.title,e.date,e.time||'',e.type,c?c.client+'|'+c.title+'|'+(c.radicado||''):'']);
+function gQueue(){if(!db.gcalOn||!sb||!userId)return;clearTimeout(gTimer);gTimer=setTimeout(gRun,1500)}
+async function gCall(body){
+ const x=await sb.functions.invoke('calendario-google',{body});
+ if(x.error){let m='No se pudo conectar con Google Calendar.';try{const j=await x.error.context.json();if(j&&j.error)m=j.error}catch(e){}throw new Error(m)}
+ if(x.data&&x.data.error)throw new Error(x.data.error);return x.data;
+}
+async function gRun(){
+ if(gBusy||!db.gcalOn||!sb||!userId)return;gBusy=true;window.__gerr='';
+ try{
+  db.gmap=db.gmap||{};const t=today();let cambio=false;
+  for(const id of Object.keys(db.gmap)){
+   if(!db.events.some(e=>e.id===id)){await gCall({accion:'borrar',g:db.gmap[id].g});delete db.gmap[id];cambio=true}
+  }
+  for(const e of db.events){
+   if(e.date<t&&!db.gmap[e.id])continue;
+   const c=db.cases.find(x=>x.id===e.caseId),h=gHash(e,c),m=db.gmap[e.id];
+   if(m&&m.h===h)continue;
+   const desc=(c?'Caso: '+c.client+' — '+c.title+(c.radicado?'\nRadicado: '+c.radicado:''):'')+'\nCreado desde Sinfín';
+   const r=await gCall({accion:'guardar',evento:{title:(e.type==='Audiencia'||e.type==='Plazo'||e.type==='Cobro'?e.type+': ':'')+e.title,date:e.date,time:e.time||'',type:e.type,desc,g:m&&m.g}});
+   db.gmap[e.id]={g:r.g,h};cambio=true;
+  }
+  if(cambio)save();
+ }catch(err){window.__gerr=err.message||String(err)}
+ gBusy=false;
+}
+const _saveOrig=save;save=function(){_saveOrig.apply(this,arguments);gQueue()};
+function gcalForm(){
+ const on=!!db.gcalOn,n=Object.keys(db.gmap||{}).length;
+ form('Google Calendar',
+  `<p style="margin:0 0 8px">${on?`<b>Conectado.</b> Los plazos, audiencias y demás eventos nuevos se envían solos a tu calendario de Google (${n} sincronizados).`:'Conecta Sinfín con tu calendario de Google para que cada evento te llegue como notificación a tu celular.'}</p>`+
+  `<p style="font-size:.85rem;color:var(--muted);margin:0 0 8px">Los eventos con hora avisan 1 día y 1 hora antes. Los de día completo avisan 3 días antes y el día anterior, a las 9:00 a. m.</p>`+
+  `<div id="gmsg" class="err" role="alert">${esc(window.__gerr||'')}</div>`,
+  ()=>{},
+  `${on?'<button type="button" class="danger" id="gOff" style="margin-right:auto">Desconectar</button>':''}<button type="button" class="primary" id="gOn">${on?'Sincronizar ahora':'Conectar'}</button>`);
+ $('ok').classList.add('hide');$('cancel').textContent='Cerrar';
+ const msg=t=>{$('gmsg').style.color='var(--ink)';$('gmsg').textContent=t};
+ $('gOn').onclick=async()=>{
+  if(!sb||!userId)return msg('Inicia sesión primero.');
+  $('gOn').disabled=true;msg('Conectando…');
+  try{const r=await gCall({accion:'probar'});db.gcalOn=true;db.gmap=db.gmap||{};save();msg('Conectado con "'+r.nombre+'". Enviando tus eventos…');
+   gBusy=false;await gRun();msg(window.__gerr?('Se conectó, pero falló un evento: '+window.__gerr):'Listo. Revisa tu Google Calendar en unos segundos.')}
+  catch(err){$('gmsg').style.color='var(--bad)';$('gmsg').textContent=err.message}
+  $('gOn').disabled=false;
+ };
+ if(on)$('gOff').onclick=()=>{if(confirm('¿Dejar de sincronizar? Los eventos que ya están en Google se quedan.')){db.gcalOn=false;save();$('dlg').close()}};
+}
 function eventForm(ev,date,caseId,preset){
  const e=!!ev;ev=ev||{type:'Audiencia',date:date||today(),time:'',caseId:caseId||'',...(preset||{})};
  form(e?'Editar evento':'Nuevo evento',
@@ -636,7 +686,7 @@ function renderCal(){
  for(let d=1;d<=days;d++){const ds=`${y}-${pad(m+1)}-${pad(d)}`,es=db.events.filter(e=>e.date===ds).sort(evSort);
   cells.push(`<div class="day${ds===today()?' now':''}" data-day="${ds}" tabindex="0" role="button" aria-label="Añadir evento el ${d}"><span class="dn">${d}</span>${es.slice(0,3).map(e=>`<span class="ev" data-ev="${e.id}" style="--c:${evColor(e.type)}">${e.time?esc(e.time)+' ':''}${esc(e.title)}</span>`).join('')}${es.length>3?`<span class="more">+${es.length-3} más</span>`:''}</div>`)}
  const up=db.events.filter(e=>e.date>=today()).sort(evSort).slice(0,8);
- $('calView').innerHTML=`<div class="calhead"><button data-nav="-1" aria-label="Mes anterior">‹</button><h2>${cal.toLocaleDateString('es-ES',{month:'long',year:'numeric'})}</h2><button data-nav="1" aria-label="Mes siguiente">›</button><button data-term style="margin-left:auto">Calculadora de términos</button><button class="primary" data-new>Nuevo evento</button></div>
+ $('calView').innerHTML=`<div class="calhead"><button data-nav="-1" aria-label="Mes anterior">‹</button><h2>${cal.toLocaleDateString('es-ES',{month:'long',year:'numeric'})}</h2><button data-nav="1" aria-label="Mes siguiente">›</button><button data-gcal style="margin-left:auto">Google Calendar</button><button data-term>Calculadora de términos</button><button class="primary" data-new>Nuevo evento</button></div>
  <div class="grid">${['L','M','X','J','V','S','D'].map(d=>`<div class="wd">${d}</div>`).join('')}${cells.join('')}</div>
  <div class="sec"><h3>Próximos eventos</h3></div>${up.length?up.map(evRow).join(''):'<div class="empty">No hay eventos próximos. Toca un día del calendario para añadir uno.</div>'}`;
 }
@@ -644,6 +694,7 @@ $('calView').addEventListener('click',e=>{
  const n=e.target.closest('[data-nav]'),v=e.target.closest('[data-ev]'),d=e.target.closest('[data-day]');
  if(n){cal.setMonth(cal.getMonth()+ +n.dataset.nav);renderCal()}
  else if(v)eventForm(db.events.find(x=>x.id===v.dataset.ev));
+ else if(e.target.closest('[data-gcal]'))gcalForm();
  else if(e.target.closest('[data-term]'))termForm();
  else if(e.target.closest('[data-new]'))eventForm();
  else if(d)eventForm(null,d.dataset.day);
