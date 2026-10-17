@@ -95,6 +95,33 @@ label{display:block;margin:10px 0 3px;font-weight:500}
 .case,.detail,.totals,.alert{box-shadow:0 1px 3px rgba(60,20,25,.07)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .logo{filter:brightness(0) invert(.93)}}
 :root[data-theme="dark"] .logo{filter:brightness(0) invert(.93)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 1px 3px rgba(60,20,25,.07)}
+.kpi small{display:block;color:var(--muted)}
+.kpi b{font-family:"Source Serif 4",Georgia,serif;font-size:28px;font-variant-numeric:tabular-nums}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(60,20,25,.07)}
+.panel h3{font-size:17px;margin-bottom:2px}.panel>p{margin:0 0 10px;color:var(--muted);font-size:13px}
+.age{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.age div{border-radius:10px;padding:10px 12px;border:1px solid var(--line)}
+.age b{display:block;font-size:26px;font-family:"Source Serif 4",Georgia,serif}
+.age .g{background:color-mix(in srgb,var(--ok) 13%,var(--surface));color:var(--ok)}
+.age .a{background:color-mix(in srgb,var(--warn) 13%,var(--surface));color:var(--warn)}
+.age .r{background:color-mix(in srgb,var(--bad) 13%,var(--surface));color:var(--bad)}
+.age .n{color:var(--muted)}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}
+.donut{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:8px}
+.legend{flex:1;min-width:140px;list-style:none;margin:0;padding:0}
+.legend li{display:flex;justify-content:space-between;gap:8px;padding:3px 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+@media (min-width:900px){
+.wrap{max-width:1180px;display:grid;grid-template-columns:200px minmax(0,1fr);column-gap:28px;align-items:start}
+header.top{grid-column:1/-1}
+.tabs{grid-column:1;flex-direction:column;border:0;gap:2px;position:sticky;top:12px}
+.tabs button{text-align:left;border:0;border-left:3px solid transparent;padding:10px 14px;border-radius:0 10px 10px 0}
+.tabs button.on{background:var(--surface);border-left-color:var(--accent)}
+.wrap>section{grid-column:2}}
+.rinfo{margin:6px 0 0;padding:8px 10px;border-radius:10px;background:var(--bg);font-size:13px;color:var(--muted)}
+.rinfo:empty{display:none}.rinfo b{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -104,7 +131,10 @@ label{display:block;margin:10px 0 3px;font-weight:500}
     <button class="primary" id="newCase">Nuevo caso</button>
   </header>
 
-  <nav class="tabs"><button data-tab="casos" class="on">Casos</button><button data-tab="cal">Calendario</button></nav>
+  <nav class="tabs"><button data-tab="dash" class="on">Resumen</button><button data-tab="casos">Casos</button><button data-tab="desp">Despachos</button><button data-tab="cal">Calendario</button></nav>
+
+  <section id="dashView" class="hide"></section>
+  <section id="despView" class="hide"></section>
 
   <section id="listView">
     <p id="hello" class="hello"></p>
@@ -171,6 +201,9 @@ let current=null;
 function render(){
   document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===view));
   renderAlerts();
+  ['dashView','listView','detailView','calView','despView'].forEach(i=>$(i).classList.add('hide'));
+  if(view==='dash')return renderDash();
+  if(view==='desp')return renderDesp();
   if(view==='cal')return renderCal();
   $('calView').classList.add('hide');
   if(current&&db.cases.find(c=>c.id===current))return renderDetail();
@@ -219,21 +252,22 @@ const F=(l,n,v='',t='text',x='')=>`<label for="f_${n}">${l}</label><input id="f_
 function caseForm(c){
   const e=!!c;c=c||{status:'Activo',feeType:'hora',type:'Civil'};
   form(e?'Editar caso':'Nuevo caso',
-   F('Cliente','client',c.client)+F('Asunto','title',c.title)+F('Número de expediente','number',c.number)+F('Radicado de 23 dígitos (opcional, activa avisos de la Rama Judicial)','radicado',c.radicado||'','text','inputmode="numeric" maxlength="30"')+
+   F('Radicado de 23 dígitos (rellena los datos solo y activa los avisos)','radicado',c.radicado||'','text','inputmode="numeric" maxlength="40" autocomplete="off"')+'<div id="rinfo" class="rinfo" aria-live="polite"></div>'+F('Cliente','client',c.client)+F('Asunto','title',c.title)+F('Número de expediente','number',c.number)+
    `<label for="f_type">Área</label><select id="f_type" name="type">${['Civil','Penal','Mercantil','Laboral','Familia','Administrativo','Otro'].map(o=>`<option ${o===c.type?'selected':''}>${o}</option>`).join('')}</select>
    <label for="f_status">Estado</label><select id="f_status" name="status">${['Activo','En pausa','Cerrado'].map(o=>`<option ${o===c.status?'selected':''}>${o}</option>`).join('')}</select>
    <label for="f_feeType">Tipo de honorarios</label><select id="f_feeType" name="feeType"><option value="hora" ${c.feeType==='hora'?'selected':''}>Por hora</option><option value="fijo" ${c.feeType==='fijo'?'selected':''}>Tarifa fija</option><option value="exito" ${c.feeType==='exito'?'selected':''}>A éxito (porcentaje)</option></select>`+
    F('Tarifa ($ por hora, $ total o %)','amount',c.amount??'','number','step="0.01" min="0"')+
    `<div id="recw">${F('Importe recuperado ($)','recovered',c.recovered??'','number','step="0.01" min="0"')}</div>`,
   f=>{const d={client:val('client'),title:val('title'),number:val('number'),radicado:val('radicado').replace(/\D/g,''),type:val('type'),status:val('status'),feeType:val('feeType'),amount:parseFloat(val('amount'))};
-    if(!d.client||!d.title)return 'Indica el cliente y el asunto.';
+    if(d.radicado.length===23){Object.assign(d,window.__rx||{});if(!d.client)d.client='Por definir cliente';if(!d.title)d.title=d.clase||('Proceso '+d.radicado.slice(12,16)+'-'+d.radicado.slice(16,21))}
+    if(!d.client||!d.title)return 'Indica el cliente y el asunto, o escribe el radicado de 23 dígitos.';
     if(d.radicado&&d.radicado.length!==23)return 'El radicado debe tener 23 dígitos.';
     if(isNaN(d.amount)||d.amount<0)return 'Indica una tarifa válida.';
     if(d.feeType==='exito'){d.recovered=parseFloat(val('recovered'))||0}
-    if(e)Object.assign(c,d);else db.cases.push({id:uid('c'),...d});},
+    if(e)Object.assign(c,d);else db.cases.push({id:uid('c'),creado:today(),...d});},
   e?'<button type="button" class="danger" id="delCase" style="margin-right:auto">Eliminar caso</button>':'');
   const sync=()=>$('recw').classList.toggle('hide',val('feeType')!=='exito');
-  $('f_feeType').onchange=sync;sync();
+  $('f_feeType').onchange=sync;sync();initRadicado();
   if(e)$('delCase').onclick=()=>{if(confirm('¿Eliminar este caso con sus horas y pagos? No se puede deshacer.')){db.cases=db.cases.filter(x=>x.id!==c.id);db.entries=db.entries.filter(x=>x.caseId!==c.id);db.payments=db.payments.filter(x=>x.caseId!==c.id);db.updates=db.updates.filter(x=>x.caseId!==c.id);db.events=db.events.filter(x=>x.caseId!==c.id);current=null;$('dlg').close();save();render()}};
 }
 
@@ -241,7 +275,7 @@ $('newCase').onclick=()=>caseForm();
 $('q').oninput=render;$('flt').onchange=render;
 document.addEventListener('click',ev=>{
   const t=ev.target.closest('button');if(!t)return;
-  if(t.classList.contains('case')){current=t.dataset.id;render();window.scrollTo(0,0)}
+  if(t.classList.contains('case')){current=t.dataset.id;view='casos';render();window.scrollTo(0,0)}
   else if(t.id==='back'){current=null;render()}
   else if(t.id==='editCase')caseForm(db.cases.find(c=>c.id===current));
   else if(t.id==='addE')form('Añadir horas',F('Fecha','date',today(),'date')+F('Trabajo realizado','desc')+F('Horas','hours','','number','step="0.25" min="0"'),
@@ -259,7 +293,7 @@ document.addEventListener('click',ev=>{
   else if(t.dataset.de){db.entries=db.entries.filter(e=>e.id!==t.dataset.de);save();render()}
   else if(t.dataset.dp){db.payments=db.payments.filter(p=>p.id!==t.dataset.dp);save();render()}
 });
-let view='casos',cal=new Date();cal.setDate(1);
+let view='dash',cal=new Date();cal.setDate(1);
 const STAGES=['Demanda presentada','Admitida a trámite','Contestación','Audiencia previa','Prueba','Juicio','Sentencia','Recurso','Ejecución','Archivo','Otro'];
 const EVT=['Audiencia','Plazo','Reunión','Otro'];
 const evColor=t=>t==='Audiencia'?'var(--bad)':t==='Plazo'?'var(--warn)':t==='Reunión'?'var(--info)':'var(--muted)';
@@ -369,7 +403,8 @@ var autoActs=[],vig={},watched={},userId=null,sb=null;
 {const cf=window.APP_CONFIG||{};if(window.supabase&&cf.url&&cf.anonKey&&!/TU-PROYECTO/.test(cf.url))sb=window.supabase.createClient(cf.url,cf.anonKey)}
 function vigLine(c){if(!c.radicado)return '';const v=vig[c.id];
  const t=!sb?'Inicia sesión para activar la revisión automática':!v?'Se revisará automáticamente':v.ultimo_error?'No se pudo consultar la Rama Judicial en la última revisión':'Última revisión: '+(v.revisado_en?fdate(v.revisado_en.slice(0,10)):'pendiente');
- return `<div style="color:var(--muted);font-size:13px;margin-bottom:6px">Radicado ${esc(c.radicado)} · ${t}</div>`}
+ const f=[c.despacho&&`<b style="color:var(--ink)">${esc(c.despacho)}</b>`,[c.clase,c.depto,c.jurisdiccion&&'Jurisdicción '+c.jurisdiccion].filter(Boolean).map(esc).join(' · '),c.demandante&&'Demandante: '+esc(c.demandante),c.demandado&&'Demandado: '+esc(c.demandado),c.ponente&&'Ponente: '+esc(c.ponente),c.fechaRad&&'Radicado el '+fdate(String(c.fechaRad).slice(0,10))].filter(Boolean).join('<br>');
+ return `<div style="color:var(--muted);font-size:13px;margin-bottom:8px">${f?f+'<br>':''}Radicado ${esc(c.radicado)} · ${t}</div>`}
 function applyJson(j){try{const n=JSON.parse(j);['cases','entries','payments','updates','events','invoices'].forEach(k=>n[k]=n[k]||[]);db=n;try{localStorage.setItem(KEY,j)}catch(e){}render()}catch(e){}}
 async function loadAuto(){if(!sb||!userId)return;
  const a=await sb.from('actuaciones_auto').select('*').order('detectado_en',{ascending:false});if(!a.error)autoActs=a.data||[];
@@ -403,6 +438,62 @@ if(sb){
  document.addEventListener('visibilitychange',async()=>{if(document.hidden||!userId||$('dlg').open)return;
   const r=await sb.from('app_data').select('data').eq('user_id',userId).maybeSingle();
   if(r.data&&r.data.data){const j=JSON.stringify(r.data.data);if(j!==lastCloud){lastCloud=j;applyJson(j)}}loadAuto()});
+}
+const PAL=['var(--accent)','#2f5d8a','#a86a0f','#2f7d4f','#7b3f61','#8b8082','#b3382c'];
+function donut(items,total){
+ if(!total)return '<div class="empty">Sin datos todavía.</div>';
+ let off=0;const R=15.9155;
+ const segs=items.map((it,i)=>{const p=it[1]/total*100,x=`<circle r="${R}" cx="21" cy="21" fill="none" stroke-width="6" style="stroke:${PAL[i%PAL.length]}" stroke-dasharray="${p} ${100-p}" stroke-dashoffset="${25-off}"/>`;off+=p;return x}).join('');
+ return `<div class="donut"><svg viewBox="0 0 42 42" width="130" height="130" role="img" aria-label="Gráfico de ${total} casos"><circle r="${R}" cx="21" cy="21" fill="none" stroke-width="6" style="stroke:var(--line)"/>${segs}<text x="21" y="23" text-anchor="middle" font-size="7" font-weight="700" style="fill:var(--ink)">${total}</text></svg><ul class="legend">${items.map((it,i)=>`<li><span><i style="background:${PAL[i%PAL.length]}"></i>${esc(it[0])}</span><b>${it[1]}</b></li>`).join('')}</ul></div>`}
+function lastAct(c){const d=db.updates.filter(u=>u.caseId===c.id).map(u=>u.date).concat(autoActs.filter(a=>a.case_id===c.id).map(a=>String(a.fecha||'').slice(0,10))).filter(Boolean).sort();return d.length?d[d.length-1]:''}
+function renderDash(){
+ ['listView','detailView','calView'].forEach(i=>$(i).classList.add('hide'));$('dashView').classList.remove('hide');
+ const t=today(),mes=t.slice(0,7),vivos=db.cases.filter(c=>c.status!=='Cerrado'),act=db.cases.filter(c=>c.status==='Activo');
+ const acts=db.updates.filter(u=>String(u.date).startsWith(mes)).length+autoActs.filter(a=>String(a.fecha||'').startsWith(mes)).length;
+ const nuevos=db.cases.filter(c=>c.creado&&c.creado.startsWith(mes)).length;
+ const S=db.cases.map(stats),due=S.reduce((s,x)=>s+Math.max(0,x.due),0),B=S.reduce((s,x)=>s+x.billed,0),P=S.reduce((s,x)=>s+x.paid,0);
+ const ag={g:0,a:0,r:0,n:0};
+ vivos.forEach(c=>{const d=lastAct(c);if(!d){ag.n++;return}const m=(new Date(t+'T00:00')-new Date(d+'T00:00'))/864e5/30.4;m<=6?ag.g++:m<=12?ag.a++:ag.r++});
+ const cnt=k=>{const m={};db.cases.forEach(c=>{const v=c[k]||'Sin dato';m[v]=(m[v]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
+ const prox=db.events.filter(e=>e.date>=t).sort(evSort).slice(0,5);
+ $('dashView').innerHTML=`<p class="hello">${esc($('hello').textContent)}</p>${$('alerts').innerHTML}
+ <div class="kpis"><div class="kpi"><small>Casos activos</small><b>${act.length}</b></div><div class="kpi"><small>Actuaciones este mes</small><b>${acts}</b></div><div class="kpi"><small>Casos nuevos este mes</small><b>${nuevos}</b></div><div class="kpi"><small>Por cobrar</small><b style="color:var(--warn);font-size:21px">${eur(due)}</b></div></div>
+ <div class="panel"><h3>Antigüedad de la última actuación</h3><p>Casos no cerrados, según el tiempo desde su última actuación</p><div class="age"><div class="g"><b>${ag.g}</b><small>0–6 meses</small></div><div class="a"><b>${ag.a}</b><small>6–12 meses</small></div><div class="r"><b>${ag.r}</b><small>Más de 12 meses</small></div><div class="n"><b>${ag.n}</b><small>Sin actuación</small></div></div></div>
+ <div class="charts"><div class="panel"><h3>Casos por área</h3>${donut(cnt('type'),db.cases.length)}</div><div class="panel"><h3>Casos por estado</h3>${donut(cnt('status'),db.cases.length)}</div><div class="panel"><h3>Casos por jurisdicción</h3>${donut(cnt('jurisdiccion'),db.cases.length)}</div></div>
+ <div class="panel"><h3>Honorarios</h3><p>Cobrado ${eur(P)} de ${eur(B)}</p><div class="bar"><i style="width:${B?Math.min(100,P/B*100):0}%"></i></div></div>
+ <div class="panel"><h3>Próximas fechas</h3>${prox.length?prox.map(evRow).join(''):'<div class="empty">No hay fechas próximas.</div>'}</div>`;
+}
+function decodeRad(r){return{muni:r.slice(0,5),despacho:String(+r.slice(9,12)),anio:r.slice(12,16),inst:r.slice(21,23)}}
+function areaDe(t){t=String(t||'').toUpperCase();return /FAMILIA/.test(t)?'Familia':/LABORAL/.test(t)?'Laboral':/PENAL|GARANT|CONOCIMIENTO/.test(t)?'Penal':/ADMINISTRATIV/.test(t)?'Administrativo':/MERCANTIL|COMERCIAL|SOCIEDADES/.test(t)?'Mercantil':/CIVIL/.test(t)?'Civil':''}
+async function buscarRadicado(r){
+ if(!sb||!userId)throw new Error('Inicia sesión para consultar la Rama Judicial.');
+ const x=await sb.functions.invoke('revisar-procesos',{body:{radicado:r}});
+ if(x.error){let m='No se pudo consultar la Rama Judicial.';try{const j=await x.error.context.json();if(j&&j.error)m=j.error}catch(e){}throw new Error(m)}
+ if(x.data&&x.data.error)throw new Error(x.data.error);return x.data}
+function initRadicado(){
+ window.__rx={};const inp=$('f_radicado'),box=$('rinfo');let tok=0;
+ inp.addEventListener('input',async()=>{
+  const r=inp.value.replace(/\D/g,'');if(r!==inp.value)inp.value=r;window.__rx={};box.onclick=null;
+  if(r.length<23){box.textContent=r?'Faltan '+(23-r.length)+' dígitos':'';return}
+  if(r.length>23){box.textContent='El radicado debe tener 23 dígitos.';return}
+  const l=decodeRad(r),my=++tok,base='Año '+l.anio+' · Despacho n.º '+l.despacho+' · '+(l.inst==='00'?'Primera instancia':'Instancia '+l.inst);
+  box.innerHTML=base+'<br>Consultando la Rama Judicial…';
+  try{
+   const d=await buscarRadicado(r);if(my!==tok)return;
+   const dem=d.demandante||'',ddo=d.demandado||'',txt=(d.despacho||'')+' '+(d.tipo||'')+' '+(d.clase||'');
+   window.__rx={despacho:d.despacho||'',depto:d.departamento||'',clase:d.clase||d.tipo||'',ponente:d.ponente||'',fechaRad:d.fechaRadicacion||'',demandante:dem,demandado:ddo,jurisdiccion:/ADMINISTRATIV/i.test(txt)?'Contencioso Administrativa':'Ordinaria'};
+   if(!val('title')&&window.__rx.clase)$('f_title').value=window.__rx.clase;
+   const a=areaDe(txt);if(a)$('f_type').value=a;
+   box.innerHTML='<b>'+esc(d.despacho||'Despacho no informado')+'</b><br>'+esc(window.__rx.clase)+(d.departamento?' · '+esc(d.departamento):'')+(dem?'<br>Demandante: '+esc(dem):'')+(ddo?'<br>Demandado: '+esc(ddo):'')+((dem||ddo)?'<div class="row2">'+(dem?'<button type="button" data-cli="d1">Mi cliente es el demandante</button>':'')+(ddo?'<button type="button" data-cli="d2">Mi cliente es el demandado</button>':'')+'</div>':'');
+   box.onclick=e=>{const b=e.target.closest('[data-cli]');if(b)$('f_client').value=b.dataset.cli==='d1'?dem:ddo};
+  }catch(e){if(my!==tok)return;box.innerHTML=base+'<br><span style="color:var(--bad)">'+esc(e.message)+'</span> Puedes llenar los datos a mano.'}
+ });
+}
+function renderDesp(){
+ $('despView').classList.remove('hide');
+ const g={};db.cases.forEach(c=>{const k=c.despacho||'Sin despacho (agrega el radicado)';(g[k]=g[k]||[]).push(c)});
+ const ks=Object.keys(g).sort((a,b)=>g[b].length-g[a].length);
+ $('despView').innerHTML='<h2 style="margin-bottom:10px">Despachos</h2>'+(ks.length?ks.map(k=>`<div class="panel"><h3>${esc(k)}</h3><p>${g[k].length} ${g[k].length===1?'caso':'casos'}</p>${g[k].map(c=>`<button class="case" data-id="${c.id}" style="--c:${color(c.status)}"><div class="row"><span class="t">${esc(c.client)}</span><span class="num">${esc(c.radicado||c.number||'')}</span></div><div class="row m"><span>${esc(c.title)}</span><span class="tag">${c.status}</span></div></button>`).join('')}</div>`).join(''):'<div class="empty">Aún no hay casos.</div>');
 }
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 render();
