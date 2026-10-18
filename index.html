@@ -1241,11 +1241,23 @@ $('calcView').addEventListener('click',e=>{const b=e.target.closest('button');if
 function renderMas(){
  $('masView').classList.remove('hide');
  const pin=!!(()=>{try{return localStorage.getItem('sinfin-pin')}catch(e){return ''}})();
- const I=[['desp','Despachos','Tus casos agrupados por juzgado'],['pros','Prospectos','Seguimiento de personas que te consultan'],['calc','Calculadoras jurídicas','Liquidación laboral, mora, indexación y términos'],['cont','Contenido','Planifica tus publicaciones en redes'],['estilo','Estilo','Clásico, rosa, lila o ejecutivo'],['pin',pin?'Candado con PIN (activado)':'Candado con PIN','Protege la app en este dispositivo'],['bk','Copia de seguridad','Descarga tus datos'],['rs','Restaurar copia','Recupera una copia descargada']].concat($('logout').classList.contains('hide')?[]:[['out','Cerrar sesión','Salir de tu cuenta en este dispositivo']]);
+ const I=[['desp','Despachos','Tus casos agrupados por juzgado'],['pros','Prospectos','Seguimiento de personas que te consultan'],['calc','Calculadoras jurídicas','Liquidación laboral, mora, indexación y términos'],['cont','Contenido','Planifica tus publicaciones en redes'],['estilo','Estilo','Clásico, rosa, lila o ejecutivo'],['pin',pin?'Candado con PIN (activado)':'Candado con PIN','Protege la app en este dispositivo'],['bk','Copia de seguridad','Descarga tus datos'],['mail','Enviar correo de prueba','Comprueba que los avisos de la Rama Judicial te lleguen'],['rs','Restaurar copia','Recupera una copia descargada']].concat($('logout').classList.contains('hide')?[]:[['out','Cerrar sesión','Salir de tu cuenta en este dispositivo']]);
  $('masView').innerHTML=`<h2 style="margin-bottom:10px">Más</h2><div class="mas">${I.map(([k,n,d])=>`<button class="go" data-go="${k}"><span><b>${n}</b><small>${d}</small></span></button>`).join('')}</div>`;
 }
 $('masView').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!b.dataset.go)return;const k=b.dataset.go;
- if(['desp','pros','calc','cont'].includes(k)){view=k;render();window.scrollTo(0,0)}else if(k==='estilo')estiloForm();else if(k==='pin')pinForm();else if(k==='bk')$('bk').click();else if(k==='rs')$('rs').click();else if(k==='out')$('logout').click()});
+ if(['desp','pros','calc','cont'].includes(k)){view=k;render();window.scrollTo(0,0)}else if(k==='estilo')estiloForm();else if(k==='pin')pinForm();else if(k==='bk')$('bk').click();else if(k==='mail')correoPrueba(b);else if(k==='rs')$('rs').click();else if(k==='out')$('logout').click()});
+
+async function correoPrueba(btn){
+ if(!sb||!userId){alert('Inicia sesión para probar los avisos.');return}
+ const t=btn.querySelector('small'),o=t.textContent;btn.disabled=true;t.textContent='Enviando…';
+ try{
+  const x=await sb.functions.invoke('revisar-procesos',{body:{accion:'probar_correo'}});
+  let m='';if(x.error){m='No se pudo enviar.';try{const j=await x.error.context.json();if(j&&j.error)m=j.error}catch(e){}}
+  else if(x.data&&x.data.error)m=x.data.error;
+  if(m)alert('No se pudo enviar el correo de prueba.\n\n'+m);else alert('Listo. Te enviamos un correo a '+(x.data.a||'tu correo')+'. Si no lo ves en un minuto, revisa el spam.');
+ }catch(e){alert('No se pudo enviar el correo de prueba.\n\n'+(e.message||e))}
+ btn.disabled=false;t.textContent=o;
+}
 
 /* ---------- Candado con PIN ---------- */
 const pinHash=async p=>{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('sinfin|'+p));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')};
