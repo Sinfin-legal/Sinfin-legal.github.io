@@ -301,6 +301,14 @@ header.top .brand h1{font-size:24px}
 :root[data-estilo] .fsub button{border-radius:0}
 [data-ftx],[data-fbud],[data-fcsv]{white-space:nowrap}
 @media (max-width:520px){button{font-size:14px}.fhead button{padding:7px 11px}.fhead h2{font-size:17px}}
+
+/* Guía de inicio */
+.guia .gp{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;border:0;border-top:1px solid var(--line);border-radius:0;background:none;padding:10px 2px}
+.guia .gp:hover{background:none}
+.guia .gp small{display:block;color:var(--muted);font-weight:400;font-size:13px}
+.guia .gk{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:13px;color:var(--accent-ink);margin-top:1px}
+.guia .gp.ok .gk{background:var(--ok);border-color:var(--ok)}
+.guia .gp.ok b{color:var(--muted);font-weight:500}
 </style>
 </head>
 <body>
@@ -1255,22 +1263,85 @@ $('calcView').addEventListener('click',e=>{const b=e.target.closest('button');if
 function renderMas(){
  $('masView').classList.remove('hide');
  const pin=!!(()=>{try{return localStorage.getItem('sinfin-pin')}catch(e){return ''}})();
- const I=[['desp','Despachos','Tus casos agrupados por juzgado'],['pros','Prospectos','Seguimiento de personas que te consultan'],['calc','Calculadoras jurídicas','Liquidación laboral, mora, indexación y términos'],['cont','Contenido','Planifica tus publicaciones en redes'],['estilo','Estilo','Clásico, rosa, lila o ejecutivo'],['pin',pin?'Candado con PIN (activado)':'Candado con PIN','Protege la app en este dispositivo'],['bk','Copia de seguridad','Descarga tus datos'],['mail','Enviar correo de prueba','Comprueba que los avisos de la Rama Judicial te lleguen'],['rs','Restaurar copia','Recupera una copia descargada']].concat($('logout').classList.contains('hide')?[]:[['out','Cerrar sesión','Salir de tu cuenta en este dispositivo']]);
+ const I=[['guia','Guía de inicio','Los primeros pasos para sacarle provecho a Sinfín'],['desp','Despachos','Tus casos agrupados por juzgado'],['pros','Prospectos','Seguimiento de personas que te consultan'],['calc','Calculadoras jurídicas','Liquidación laboral, mora, indexación y términos'],['cont','Contenido','Planifica tus publicaciones en redes'],['estilo','Estilo','Clásico, rosa, lila o ejecutivo'],['pin',pin?'Candado con PIN (activado)':'Candado con PIN','Protege la app en este dispositivo'],['copias','Copias automáticas','Una cada día en la nube; restaura una versión anterior'],['bk','Copia de seguridad','Descarga tus datos'],['mail','Enviar correo de prueba','Comprueba que los avisos de la Rama Judicial te lleguen'],['rs','Restaurar copia','Recupera una copia descargada']].concat($('logout').classList.contains('hide')?[]:[['out','Cerrar sesión','Salir de tu cuenta en este dispositivo']]);
  $('masView').innerHTML=`<h2 style="margin-bottom:10px">Más</h2><div class="mas">${I.map(([k,n,d])=>`<button class="go" data-go="${k}"><span><b>${n}</b><small>${d}</small></span></button>`).join('')}</div>`;
 }
 $('masView').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!b.dataset.go)return;const k=b.dataset.go;
- if(['desp','pros','calc','cont'].includes(k)){view=k;render();window.scrollTo(0,0)}else if(k==='estilo')estiloForm();else if(k==='pin')pinForm();else if(k==='bk')$('bk').click();else if(k==='mail')correoPrueba(b);else if(k==='rs')$('rs').click();else if(k==='out')$('logout').click()});
+ if(['desp','pros','calc','cont'].includes(k)){view=k;render();window.scrollTo(0,0)}else if(k==='estilo')estiloForm();else if(k==='pin')pinForm();else if(k==='bk')$('bk').click();else if(k==='mail')correoPrueba(b);else if(k==='copias')copiasForm();else if(k==='guia'){db.guiaOff=false;save();view='dash';render();window.scrollTo(0,0)}else if(k==='rs')$('rs').click();else if(k==='out')$('logout').click()});
 
 async function correoPrueba(btn){
  if(!sb||!userId){alert('Inicia sesión para probar los avisos.');return}
- const t=btn.querySelector('small'),o=t.textContent;btn.disabled=true;t.textContent='Enviando…';
+ const t=btn&&btn.querySelector('small'),o=t&&t.textContent;if(btn)btn.disabled=true;if(t)t.textContent='Enviando…';
  try{
   const x=await sb.functions.invoke('revisar-procesos',{body:{accion:'probar_correo'}});
   let m='';if(x.error){m='No se pudo enviar.';try{const j=await x.error.context.json();if(j&&j.error)m=j.error}catch(e){}}
   else if(x.data&&x.data.error)m=x.data.error;
-  if(m)alert('No se pudo enviar el correo de prueba.\n\n'+m);else alert('Listo. Te enviamos un correo a '+(x.data.a||'tu correo')+'. Si no lo ves en un minuto, revisa el spam.');
+  if(m)alert('No se pudo enviar el correo de prueba.\n\n'+m);else{db.mailOk=true;save();alert('Listo. Te enviamos un correo a '+(x.data.a||'tu correo')+'. Si no lo ves en un minuto, revisa el spam.')}
  }catch(e){alert('No se pudo enviar el correo de prueba.\n\n'+(e.message||e))}
- btn.disabled=false;t.textContent=o;
+ if(btn)btn.disabled=false;if(t)t.textContent=o;
+}
+
+
+/* ===== Guía de inicio ===== */
+function guiaPasos(){
+ const sa=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+ return [
+  ['caso','Crea tu primer caso','Guarda el cliente, el asunto y los honorarios.',db.cases.length>0],
+  ['rad','Agrega el radicado de 23 dígitos','Así Sinfín revisa la Rama Judicial y te avisa por correo.',db.cases.some(c=>c.radicado)],
+  ['fecha','Anota un plazo o una audiencia','Queda en tu calendario y en las alertas.',db.events.length>0],
+  ['cal','Conecta tu Google Calendar','Cada fecha te llega como notificación al celular.',!!db.gcalOn],
+  ['mail','Prueba el correo de avisos','Comprueba que los avisos te lleguen a tu correo.',!!db.mailOk],
+  ['inst','Instala la app en tu celular','Android (Chrome): menú ⋮ → Instalar aplicación. iPhone (Safari): Compartir → Añadir a pantalla de inicio.',sa]];
+}
+function guiaHtml(){
+ if(db.guiaOff)return '';
+ const P=guiaPasos(),n=P.filter(p=>p[3]).length;if(n===P.length)return '';
+ return `<div class="panel guia"><div class="row" style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><h3>Primeros pasos</h3><span class="m" style="color:var(--muted);font-size:13px">${n} de ${P.length}</span></div><div class="bar" style="margin:6px 0 8px"><i style="width:${n/P.length*100}%;background:var(--accent)"></i></div>`+
+ P.map(p=>`<button class="gp ${p[3]?'ok':''}" data-guia="${p[0]}"><span class="gk" aria-hidden="true">${p[3]?'✓':''}</span><span><b>${p[1]}</b><small>${p[2]}</small></span></button>`).join('')+
+ `<div style="margin-top:6px"><button class="link" data-guia="off">Ocultar esta guía</button></div></div>`;
+}
+document.addEventListener('click',e=>{
+ const b=e.target.closest('[data-guia]');if(!b)return;const k=b.dataset.guia;
+ if(k==='off'){db.guiaOff=true;save();render();return}
+ if(k==='caso')$('newCase').click();
+ else if(k==='rad'){const c=db.cases.find(x=>!x.radicado);if(c)caseForm(c);else $('newCase').click()}
+ else if(k==='fecha')eventForm(null,today());
+ else if(k==='cal')gcalForm();
+ else if(k==='mail'){if(!sb||!userId)alert('Inicia sesión para probar los avisos.');else correoPrueba(null)}
+ else if(k==='inst')alert('Android (Chrome): toca el menú ⋮ y elige "Instalar aplicación".\n\niPhone (Safari): toca Compartir y elige "Añadir a pantalla de inicio".');
+});
+
+/* ===== Copias de seguridad automáticas ===== */
+const COPIA_TIPO={auto:'Automática',manual:'Manual','antes-de-restaurar':'Antes de restaurar'};
+const fHora=s=>{const d=new Date(s);return d.toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('es-CO',{hour:'numeric',minute:'2-digit'})};
+async function copiaCrear(tipo){
+ const x=await sb.from('app_data_copias').insert({user_id:userId,tipo,casos:db.cases.length,data:JSON.parse(JSON.stringify(db))});
+ if(x.error)throw x.error;
+}
+function copiasForm(){
+ if(!sb||!userId){alert('Inicia sesión para usar las copias automáticas.');return}
+ form('Copias de seguridad','<p style="margin:0 0 8px;color:var(--muted)">Cada día Sinfín guarda una copia de todos tus datos en la nube y conserva las últimas 14. Si algo se borra por error, puedes volver a una copia anterior.</p><div id="cpMsg" class="err" role="alert"></div><div id="cpList"><div class="empty">Cargando…</div></div>',()=>{},
+  '<button type="button" class="primary" id="cpNow" style="margin-right:auto">Crear copia ahora</button>');
+ $('ok').classList.add('hide');$('cancel').textContent='Cerrar';
+ const msg=(t,bad)=>{$('cpMsg').style.color=bad?'var(--bad)':'var(--ink)';$('cpMsg').textContent=t};
+ const lista=async()=>{
+  const r=await sb.from('app_data_copias').select('id,creado,tipo,casos').order('creado',{ascending:false}).limit(20);
+  if(r.error){$('cpList').innerHTML='';return msg('No se pudieron cargar las copias: '+r.error.message,true)}
+  $('cpList').innerHTML=(r.data||[]).length?r.data.map(c=>`<div class="mov" style="cursor:default"><span><b>${fHora(c.creado)}</b><br><span class="m">${COPIA_TIPO[c.tipo]||c.tipo} · ${c.casos==null?'?':c.casos===1?'1 caso':c.casos+' casos'}</span></span><button type="button" data-cprest="${c.id}" data-cpd="${esc(fHora(c.creado))}">Restaurar</button></div>`).join(''):'<div class="empty">Aún no hay copias. La primera se crea esta noche, o pulsa "Crear copia ahora".</div>';
+ };
+ lista();
+ $('cpNow').onclick=async()=>{$('cpNow').disabled=true;msg('Guardando…');try{await copiaCrear('manual');msg('Copia guardada.');await lista()}catch(e){msg('No se pudo guardar: '+(e.message||e),true)}$('cpNow').disabled=false};
+ $('cpList').onclick=async ev=>{const b=ev.target.closest('[data-cprest]');if(!b)return;
+  if(!confirm('Vas a reemplazar tus datos actuales por la copia del '+b.dataset.cpd+'.\n\nAntes guardamos una copia de lo que tienes ahora, por si cambias de idea. ¿Continuar?'))return;
+  b.disabled=true;msg('Restaurando…');
+  try{
+   const r=await sb.from('app_data_copias').select('data').eq('id',b.dataset.cprest).single();
+   if(r.error||!r.data)throw r.error||new Error('No se encontró la copia.');
+   await copiaCrear('antes-de-restaurar');
+   applyJson(JSON.stringify(r.data.data));save();try{await watchSync()}catch(e){}
+   msg('Listo. Tus datos se restauraron.');await lista();
+  }catch(e){msg('No se pudo restaurar: '+(e.message||e),true)}
+  b.disabled=false};
 }
 
 /* ---------- Candado con PIN ---------- */
@@ -1449,7 +1520,7 @@ function renderDash(){
  vivos.forEach(c=>{const d=lastAct(c);if(!d){ag.n++;return}const m=(new Date(t+'T00:00')-new Date(d+'T00:00'))/864e5/30.4;m<=6?ag.g++:m<=12?ag.a++:ag.r++});
  const cnt=k=>{const m={};db.cases.forEach(c=>{const v=c[k]||'Sin dato';m[v]=(m[v]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
  const prox=db.events.filter(e=>e.date>=t).sort(evSort).slice(0,5);
- $('dashView').innerHTML=`<p class="hello">${esc($('hello').textContent)}</p>${$('alerts').innerHTML}
+ $('dashView').innerHTML=`<p class="hello">${esc($('hello').textContent)}</p>${guiaHtml()}${$('alerts').innerHTML}
  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button id="repBtn">Reporte mensual</button><button id="termBtn">Calculadora de términos</button></div>
  <div class="kpis"><div class="kpi"><small>Casos activos</small><b>${act.length}</b></div><div class="kpi"><small>Actuaciones este mes</small><b>${acts}</b></div><div class="kpi"><small>Casos nuevos este mes</small><b>${nuevos}</b></div><div class="kpi"><small>Por cobrar</small><b style="color:var(--warn);font-size:21px">${eur(due)}</b></div></div>
  <div class="panel"><h3>Antigüedad de la última actuación</h3><p>Casos no cerrados, según el tiempo desde su última actuación</p><div class="age"><div class="g"><b>${ag.g}</b><small>0–6 meses</small></div><div class="a"><b>${ag.a}</b><small>6–12 meses</small></div><div class="r"><b>${ag.r}</b><small>Más de 12 meses</small></div><div class="n"><b>${ag.n}</b><small>Sin actuación</small></div></div></div>
