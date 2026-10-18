@@ -159,7 +159,7 @@ html,body{overflow-x:hidden;touch-action:manipulation}
  .brand h1{font-size:22px}
  header.top #newCase{flex:none;padding:8px 12px;white-space:nowrap}
  .tabs{gap:0;margin-left:-4px;margin-right:-4px;padding:0}
- #sync{display:inline-block;max-width:60vw}
+ #sync{max-width:100%}
  .tabs button{padding:8px 4px;font-size:12px}
  .kpis{grid-template-columns:1fr 1fr}
  .alert button,.alert div{min-width:0;overflow-wrap:anywhere}
@@ -242,8 +242,13 @@ dialog{border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
 .tag{border-radius:6px;padding:1px 8px;font-size:11.5px}
 .bar,.fbar{height:5px}
 header.top{margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
-header.top .brand h1{font-size:22px}
-.logo{height:40px}
+header.top .brand h1{font-size:24px}
+.logo{height:58px}
+.brand{gap:14px}
+.brand>div{min-width:0}
+#sync{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.authbox .logo{height:84px}
+#lock .logo{height:64px}
 #sync{font-size:12px}
 #estiloBtn,#logout{display:none!important}
 #newCase::before{content:"+";font-size:17px;line-height:1;margin-right:6px;font-weight:500}
@@ -262,8 +267,9 @@ header.top .brand h1{font-size:22px}
 }
 @media (max-width:520px){
  header.top{margin-bottom:12px;padding-bottom:10px}
- header.top .brand h1{font-size:20px}
- .logo{height:34px}
+ header.top .brand h1{font-size:22px}
+ .logo{height:50px}
+ .brand{gap:10px}
  .kpi b{font-size:21px}
  .kpis{gap:8px}
  :root[data-estilo] .tabs button{font-size:10.5px}
@@ -287,6 +293,14 @@ header.top .brand h1{font-size:22px}
 :root[data-theme="dark"][data-estilo="ejecutivo"]{--bg:#0e141c;--surface:#171f2b;--ink:#e7ecf2;--muted:#9aa8b9;--line:#263243;--accent:#a9bedb;--accent-ink:#0e141c;--mark:#c9a867}
 :root[data-theme="dark"][data-estilo="ejecutivo"] .logo{filter:brightness(0) invert(.93)}
 :root[data-estilo="ejecutivo"] button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+/* Pulido */
+.fsub{gap:0;border-bottom:1px solid var(--line);margin-bottom:14px}
+.fsub button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:8px 12px;font-size:14px;color:var(--muted)}
+.fsub button.on{background:none;color:var(--ink);border-bottom-color:var(--mark);font-weight:600}
+:root[data-estilo] .fsub button{border-radius:0}
+[data-ftx],[data-fbud],[data-fcsv]{white-space:nowrap}
+@media (max-width:520px){button{font-size:14px}.fhead button{padding:7px 11px}.fhead h2{font-size:17px}}
 </style>
 </head>
 <body>
@@ -866,7 +880,7 @@ function finMesHtml(){
  const ahorro=T.ing>0?Math.round(bal/T.ing*100):null;
  const bud=F.budgets,conBud=Object.keys(bud).filter(k=>bud[k]>0);
  return `<div class="fhead"><button data-fm="-1" aria-label="Mes anterior">‹</button><h2>${esc(mesTxt(finMes))}</h2><button data-fm="1" aria-label="Mes siguiente">›</button></div>
- <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="primary" data-ftx="Ingreso">+ Ingreso</button><button class="primary" data-ftx="Gasto">+ Gasto</button><button data-fbud>Presupuesto</button><button data-fcsv>Descargar Excel</button></div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="primary" data-ftx="Ingreso">+ Ingreso</button><button data-ftx="Gasto">+ Gasto</button><button data-fbud>Presupuesto</button><button data-fcsv>Descargar Excel</button></div>
  <div class="kpis"><div class="kpi"><small>Ingresos</small><b class="ing" style="font-size:20px">${eur(T.ing)}</b></div><div class="kpi"><small>Gastos</small><b class="gas" style="font-size:20px">${eur(T.gas)}</b></div><div class="kpi"><small>Balance del mes</small><b style="font-size:20px;color:${bal>=0?'var(--ok)':'var(--bad)'}">${eur(bal)}</b></div><div class="kpi"><small>Ahorro del mes</small><b style="font-size:20px">${ahorro===null?'—':ahorro+'%'}</b></div></div>
  ${var_===null?'':`<p style="color:var(--muted);margin:0 0 10px">Tus gastos ${var_>0?'subieron':var_<0?'bajaron':'se mantuvieron'} ${var_===0?'':Math.abs(var_)+'%'} frente al mes anterior.</p>`}
  ${T.gas?`<div class="panel"><h3>En qué se va tu dinero</h3><p>Personal ${eur(T.personal)} · Del despacho ${eur(T.despacho)}</p>${cats.map(([k,v])=>`<div style="margin:8px 0"><div class="row" style="display:flex;justify-content:space-between;gap:8px"><span>${esc(k)}</span><span class="num">${eur(v)} · ${Math.round(v/T.gas*100)}%</span></div><div class="fbar${bud[k]&&v>bud[k]?' over':''}"><i style="width:${Math.min(100,v/T.gas*100)}%"></i></div></div>`).join('')}</div>`:''}
