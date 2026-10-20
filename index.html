@@ -1475,12 +1475,13 @@ async function loadAuto(){if(!sb||!userId)return;
  const v=await sb.from('vigilancia').select('case_id,radicado,titulo,revisado_en,ultimo_error');
  if(!v.error){vig={};watched={};(v.data||[]).forEach(x=>{vig[x.case_id]=x;watched[x.case_id]={r:x.radicado,t:x.titulo}})}
  if(!$('dlg').open)render()}
+async function traerHistorial(id){try{const x=await sb.functions.invoke('revisar-procesos',{body:{accion:'sincronizar',case_id:id}});if(!x.error&&x.data&&x.data.ok)await loadAuto()}catch(e){}}
 async function watchSync(){if(!sb||!userId)return;
  const want=db.cases.filter(c=>c.radicado&&c.status!=='Cerrado');
  for(const c of want){const t=c.client+' — '+c.title,w=watched[c.id];if(w&&w.r===c.radicado&&w.t===t)continue;
   const row={user_id:userId,case_id:c.id,radicado:c.radicado,titulo:t};
   if(!w||w.r!==c.radicado)Object.assign(row,{ultima_fecha:null,ultima_desc:null,ultimo_error:null});
-  const r=await sb.from('vigilancia').upsert(row,{onConflict:'user_id,case_id'});if(!r.error)watched[c.id]={r:c.radicado,t}}
+  const r=await sb.from('vigilancia').upsert(row,{onConflict:'user_id,case_id'});if(!r.error){watched[c.id]={r:c.radicado,t};if(!w||w.r!==c.radicado)traerHistorial(c.id)}}
  for(const id of Object.keys(watched))if(!want.find(c=>c.id===id)){await sb.from('vigilancia').delete().eq('user_id',userId).eq('case_id',id);delete watched[id]}}
 async function startCloud(user){
  if(userId===user.id)return;userId=user.id;$('auth').classList.add('hide');$('logout').classList.remove('hide');
