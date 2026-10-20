@@ -364,10 +364,10 @@ if(!db.cases.length&&!localStorage.getItem(KEY+'-init')&&!(window.APP_CONFIG&&wi
   db.payments=[{id:'p1',caseId:'c1',date:'2026-09-01',amount:900,note:'Provisión de fondos'},{id:'p2',caseId:'c2',date:'2026-09-30',amount:300,note:''}];
   save();
 }
-var cloud=null,cloudT=null,lastCloud='';
+var cloud=null,cloudT=null,lastCloud='',pendCloud=false;
 function setSync(t){const el=document.getElementById('sync');if(el)el.textContent=t}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}
- if(cloud){setSync('Guardando…');clearTimeout(cloudT);cloudT=setTimeout(async()=>{try{lastCloud=JSON.stringify(db);await cloud.set({json:lastCloud});if(window.watchSync)await watchSync();setSync('Guardado en la nube')}catch(e){setSync('No se pudo guardar en la nube')}},600)}}
+ if(cloud){setSync('Guardando…');pendCloud=true;clearTimeout(cloudT);cloudT=setTimeout(async()=>{try{lastCloud=JSON.stringify(db);await cloud.set({json:lastCloud});if(window.watchSync)await watchSync();setSync('Guardado en la nube')}catch(e){setSync('No se pudo guardar en la nube')}pendCloud=false},600)}}
 if(!db.docs)db.docs=[];if(!db.posts)db.posts=[];if(!db.updates)db.updates=[];if(!db.events)db.events=[];if(!db.invoices)db.invoices=[];
 try{if(!db.updates.length&&!db.events.length&&!localStorage.getItem(KEY+'-d2')&&db.cases.some(c=>c.id==='c2')){localStorage.setItem(KEY+'-d2','1');
  db.updates=[{id:'u1',caseId:'c1',date:'2026-09-05',stage:'Demanda presentada',court:'Juzgado de Familia nº 2',note:'Se presenta el convenio regulador firmado por ambas partes.'},{id:'u2',caseId:'c2',date:'2026-09-12',stage:'Demanda presentada',court:'Juzgado de 1ª Instancia nº 4',note:''},{id:'u3',caseId:'c2',date:'2026-09-29',stage:'Admitida a trámite',court:'Juzgado de 1ª Instancia nº 4',note:'El juzgado admite la demanda y da traslado al demandado por 20 días.'}];
@@ -1500,9 +1500,11 @@ if(sb){
   if(r.error){$('authMsg').textContent=MSG[r.error.message]||r.error.message;return}
   if(up&&!r.data.session)$('authMsg').textContent='Cuenta creada. Revisa tu correo para confirmarla y luego pulsa Entrar.';else $('authMsg').textContent=''};
  $('logout').onclick=async()=>{await sb.auth.signOut();try{localStorage.removeItem(KEY)}catch(e){}location.reload()};
- document.addEventListener('visibilitychange',async()=>{if(document.hidden||!userId||$('dlg').open)return;
+ async function refrescarNube(){if(document.hidden||!userId||!sb||pendCloud||$('dlg').open)return;
   const r=await sb.from('app_data').select('data').eq('user_id',userId).maybeSingle();
-  if(r.data&&r.data.data){const j=JSON.stringify(r.data.data);if(j!==lastCloud){lastCloud=j;applyJson(j)}}loadAuto()});
+  if(pendCloud||$('dlg').open)return;
+  if(r.data&&r.data.data){const j=JSON.stringify(r.data.data);if(j!==lastCloud){lastCloud=j;applyJson(j)}}loadAuto()}
+ document.addEventListener('visibilitychange',refrescarNube);window.addEventListener('focus',refrescarNube);setInterval(refrescarNube,20000);
 }
 const PAL=['var(--accent)','#2f5d8a','#a86a0f','#2f7d4f','#7b3f61','#8b8082','#b3382c'];
 function donut(items,total){
@@ -1563,7 +1565,7 @@ function renderDesp(){
  const ks=Object.keys(g).sort((a,b)=>g[b].length-g[a].length);
  $('despView').innerHTML='<button class="link" data-tab="mas">‹ Más</button><h2 style="margin-bottom:10px">Despachos</h2>'+(ks.length?ks.map(k=>`<div class="panel"><h3>${esc(k)}</h3><p>${g[k].length} ${g[k].length===1?'caso':'casos'}</p>${g[k].map(c=>`<button class="case" data-id="${c.id}" style="--c:${color(c.status)}"><div class="row"><span class="t">${esc(c.client)}</span><span class="num">${esc(c.radicado||c.number||'')}</span></div><div class="row m"><span>${esc(c.title)}</span><span class="tag">${c.status}</span></div></button>`).join('')}</div>`).join(''):'<div class="empty">Aún no hay casos.</div>');
 }
-if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js').then(g=>g.update()).catch(()=>{});let rec=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(rec)return;rec=true;if(!document.querySelector('dialog[open]'))location.reload()})}
 render();
 </script>
 </body>
