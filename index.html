@@ -490,6 +490,7 @@ document.addEventListener('click',ev=>{
   else if(t.dataset.pi)invPdf(db.invoices.find(i=>i.id===t.dataset.pi));
   else if(t.dataset.di){if(confirm('¿Eliminar esta factura?')){db.invoices=db.invoices.filter(i=>i.id!==t.dataset.di);save();render()}}
   else if(t.id==='addU')updForm(current);
+  else if(t.id==='traerAct')traerAhora(current);
   else if(t.id==='addEv')eventForm(null,today(),current);
   else if(t.id==='addTerm')termForm(current);
   else if(t.dataset.du){db.updates=db.updates.filter(u=>u.id!==t.dataset.du);save();render()}
@@ -510,6 +511,7 @@ function procHtml(c){
  const evs=db.events.filter(e=>e.caseId===c.id&&e.date>=today()).sort(evSort);
  return `<div class="sec"><h3>Proceso judicial${us[0]?' · '+esc(us[0].stage):''}</h3><button class="link" id="addU">Añadir actuación</button></div>
  ${vigLine(c)}
+ ${c.radicado&&c.radicado.length===23?'<div style="margin:4px 0 8px"><button class="link" id="traerAct">Traer actuaciones de la Rama</button> <span id="traerMsg" style="color:var(--muted);font-size:13px"></span></div>':''}
  ${us.length?`<ol class="tl">${us.map(u=>`<li><div class="m"><b>${esc(u.stage)}</b> · ${fdate(u.date)}${u.court?' · '+esc(u.court):''} ${u.auto?'<span class="tag">Automática</span>':`<button class="link danger" data-du="${u.id}" aria-label="Eliminar actuación">Eliminar</button>`}</div>${u.note?`<div>${esc(u.note)}</div>`:''}</li>`).join('')}</ol>`:'<div class="empty">Sin actuaciones. Registra cada notificación o resolución del juzgado para seguir el proceso.</div>'}
  <div class="sec"><h3>Próximas fechas</h3><span><button class="link" id="addTerm">Calcular término</button> · <button class="link" id="addEv">Añadir al calendario</button></span></div>
  ${evs.length?evs.map(evRow).join(''):'<div class="empty">No hay audiencias ni plazos próximos.</div>'}`;
@@ -1475,6 +1477,16 @@ async function loadAuto(){if(!sb||!userId)return;
  const v=await sb.from('vigilancia').select('case_id,radicado,titulo,revisado_en,ultimo_error');
  if(!v.error){vig={};watched={};(v.data||[]).forEach(x=>{vig[x.case_id]=x;watched[x.case_id]={r:x.radicado,t:x.titulo}})}
  if(!$('dlg').open)render()}
+async function traerAhora(id){const m=()=>document.getElementById('traerMsg'),say=t=>{if(m())m().textContent=t};
+ const c=db.cases.find(x=>x.id===id);if(!c)return;
+ if(!sb||!userId){say('Primero inicia sesión.');return}
+ say('Consultando la Rama Judicial…');
+ try{await watchSync();
+  const x=await sb.functions.invoke('revisar-procesos',{body:{accion:'sincronizar',case_id:id}});
+  if(x.error){let t='No se pudo consultar.';try{const j=await x.error.context.json();if(j&&j.error)t=j.error}catch(e){}say(t);return}
+  if(x.data&&x.data.error){say(x.data.error);return}
+  await loadAuto();say(x.data&&x.data.total?'Listo: '+x.data.total+' actuaciones.':'La Rama no muestra actuaciones públicas para este proceso.')}
+ catch(e){say('No se pudo consultar: '+(e&&e.message||e))}}
 async function traerHistorial(id){try{const x=await sb.functions.invoke('revisar-procesos',{body:{accion:'sincronizar',case_id:id}});if(!x.error&&x.data&&x.data.ok)await loadAuto()}catch(e){}}
 async function watchSync(){if(!sb||!userId)return;
  const want=db.cases.filter(c=>c.radicado&&c.status!=='Cerrado');
