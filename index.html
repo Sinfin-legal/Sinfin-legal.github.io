@@ -454,15 +454,15 @@ const F=(l,n,v='',t='text',x='')=>`<label for="f_${n}">${l}</label><input id="f_
 function caseForm(c,pre){
   const e=!!c;c=c||{status:'Activo',feeType:'hora',type:'Civil',...(pre||{})};
   form(e?'Editar caso':'Nuevo caso',
-   F('Radicado de 23 dígitos (rellena los datos solo y activa los avisos)','radicado',c.radicado||'','text','inputmode="numeric" maxlength="40" autocomplete="off"')+'<div id="rinfo" class="rinfo" aria-live="polite"></div>'+F('Cliente','client',c.client)+F('Asunto','title',c.title)+F('Número de expediente','number',c.number)+
+   F('Radicado de 23 dígitos (rellena los datos solo y activa los avisos)','radicado',c.radicado||'','text','inputmode="numeric" maxlength="40" autocomplete="off"')+'<div id="rinfo" class="rinfo" aria-live="polite"></div>'+F('Demandante','demandante',c.demandante||'')+F('Demandado','demandado',c.demandado||'')+F('Cliente','client',c.client)+F('Asunto','title',c.title)+F('Número de expediente','number',c.number)+
    `<label for="f_type">Área</label><select id="f_type" name="type">${['Civil','Penal','Mercantil','Laboral','Familia','Administrativo','Otro'].map(o=>`<option ${o===c.type?'selected':''}>${o}</option>`).join('')}</select>
    <label for="f_status">Estado</label><select id="f_status" name="status">${['Activo','En pausa','Cerrado'].map(o=>`<option ${o===c.status?'selected':''}>${o}</option>`).join('')}</select>
    <label for="f_feeType">Tipo de honorarios</label><select id="f_feeType" name="feeType"><option value="hora" ${c.feeType==='hora'?'selected':''}>Por hora</option><option value="fijo" ${c.feeType==='fijo'?'selected':''}>Tarifa fija</option><option value="exito" ${c.feeType==='exito'?'selected':''}>A éxito (porcentaje)</option></select>`+
    F('Tarifa ($ por hora, $ total o %)','amount',c.amount??'','number','step="0.01" min="0"')+
    `<div id="recw">${F('Importe recuperado ($)','recovered',c.recovered??'','number','step="0.01" min="0"')}</div>`+
    `<h3 style="margin-top:16px">Contactos</h3>`+F('Teléfono / WhatsApp del cliente','cTel',c.cTel||'','tel','inputmode="tel"')+F('Correo del cliente','cMail',c.cMail||'','email')+F('Contraparte','contra',c.contra||'')+F('Abogado de la contraparte','contraAb',c.contraAb||'')+F('Teléfono o correo de la contraparte','contraTel',c.contraTel||''),
-  f=>{const d={client:val('client'),title:val('title'),number:val('number'),radicado:val('radicado').replace(/\D/g,''),type:val('type'),status:val('status'),feeType:val('feeType'),amount:parseFloat(val('amount')),cTel:val('cTel'),cMail:val('cMail'),contra:val('contra'),contraAb:val('contraAb'),contraTel:val('contraTel')};
-    if(d.radicado.length===23){Object.assign(d,window.__rx||{});if(!d.client)d.client='Por definir cliente';if(!d.title)d.title=d.clase||('Proceso '+d.radicado.slice(12,16)+'-'+d.radicado.slice(16,21))}
+  f=>{const d={client:val('client'),title:val('title'),number:val('number'),radicado:val('radicado').replace(/\D/g,''),type:val('type'),status:val('status'),feeType:val('feeType'),amount:parseFloat(val('amount')),cTel:val('cTel'),cMail:val('cMail'),contra:val('contra'),contraAb:val('contraAb'),contraTel:val('contraTel'),demandante:val('demandante'),demandado:val('demandado')};
+    if(d.radicado.length===23){const rx=window.__rx||{};Object.assign(d,rx,{demandante:d.demandante||rx.demandante||'',demandado:d.demandado||rx.demandado||''});if(!d.client)d.client='Por definir cliente';if(!d.title)d.title=d.clase||('Proceso '+d.radicado.slice(12,16)+'-'+d.radicado.slice(16,21))}
     if(!d.client||!d.title)return 'Indica el cliente y el asunto, o escribe el radicado de 23 dígitos.';
     if(d.radicado&&d.radicado.length!==23)return 'El radicado debe tener 23 dígitos.';
     if(isNaN(d.amount)||d.amount<0)return 'Indica una tarifa válida.';
@@ -1550,10 +1550,10 @@ function initRadicado(){
    const d=await buscarRadicado(r);if(my!==tok)return;
    const dem=d.demandante||'',ddo=d.demandado||'',txt=(d.despacho||'')+' '+(d.tipo||'')+' '+(d.clase||'');
    window.__rx={despacho:d.despacho||'',depto:d.departamento||'',clase:d.clase||d.tipo||'',ponente:d.ponente||'',fechaRad:d.fechaRadicacion||'',demandante:dem,demandado:ddo,jurisdiccion:/ADMINISTRATIV/i.test(txt)?'Contencioso Administrativa':'Ordinaria'};
-   if(!val('title')&&window.__rx.clase)$('f_title').value=window.__rx.clase;
+   if(!val('title')&&window.__rx.clase)$('f_title').value=window.__rx.clase;if(!val('demandante'))$('f_demandante').value=dem;if(!val('demandado'))$('f_demandado').value=ddo;
    const a=areaDe(txt);if(a)$('f_type').value=a;
    box.innerHTML='<b>'+esc(d.despacho||'Despacho no informado')+'</b><br>'+esc(window.__rx.clase)+(d.departamento?' · '+esc(d.departamento):'')+(dem?'<br>Demandante: '+esc(dem):'')+(ddo?'<br>Demandado: '+esc(ddo):'')+((dem||ddo)?'<div class="row2">'+(dem?'<button type="button" data-cli="d1">Mi cliente es el demandante</button>':'')+(ddo?'<button type="button" data-cli="d2">Mi cliente es el demandado</button>':'')+'</div>':'');
-   box.onclick=e=>{const b=e.target.closest('[data-cli]');if(b)$('f_client').value=b.dataset.cli==='d1'?dem:ddo};
+   box.onclick=e=>{const b=e.target.closest('[data-cli]');if(b){const d1=b.dataset.cli==='d1';$('f_client').value=d1?dem:ddo;$('f_contra').value=d1?ddo:dem}};
   }catch(e){if(my!==tok)return;box.innerHTML=base+'<br><span style="color:var(--bad)">'+esc(e.message)+'</span> Puedes llenar los datos a mano.'}
  });
 }
