@@ -340,6 +340,7 @@ header.top .brand h1{font-size:24px}
       <select id="flt" aria-label="Filtrar por estado">
         <option value="">Todos los estados</option><option>Activo</option><option>En pausa</option><option>Cerrado</option>
       </select>
+      <select id="flk" aria-label="Filtrar por tipo de asunto"><option value="">Todos los asuntos</option><option value="Proceso judicial">Procesos judiciales</option><option value="Conciliación">Conciliaciones</option><option value="Contrato">Contratos</option><option value="Asesoría">Asesorías</option><option value="Otro">Otros</option></select>
     </div>
     <div id="cases"></div>
     <p style="margin-top:18px;color:var(--muted);font-size:13px">Tus datos se guardan en este navegador. <button class="link" id="bk">Descargar copia de seguridad</button> <button class="link" id="rs">Restaurar copia</button> <a href="privacidad.html" style="color:var(--accent)">Política de privacidad</a><input type="file" id="rsf" accept=".json,application/json" class="hide"></p>
@@ -413,11 +414,11 @@ function render(){
   const all=db.cases.map(stats);
   const B=all.reduce((s,x)=>s+x.billed,0),P=all.reduce((s,x)=>s+x.paid,0);
   $('totals').innerHTML=`<div><small>Facturable</small><b class="num">${eur(B)}</b></div><div class="paid"><small>Cobrado</small><b class="num">${eur(P)}</b></div><div class="pending"><small>Pendiente</small><b class="num">${eur(B-P)}</b></div>`;
-  const q=$('q').value.toLowerCase(),f=$('flt').value;
-  const list=db.cases.filter(c=>(!f||c.status===f)&&(c.client+c.title+c.number).toLowerCase().includes(q));
+  const q=$('q').value.toLowerCase(),f=$('flt').value,fk=$('flk').value,kd=c=>c.kind||'Proceso judicial';
+  const list=db.cases.filter(c=>(!f||c.status===f)&&(!fk||kd(c)===fk)&&(c.client+c.title+c.number).toLowerCase().includes(q));
   $('cases').innerHTML=list.length?list.map(c=>{const s=stats(c),pct=s.billed?Math.min(100,s.paid/s.billed*100):0;
     return `<button class="case" style="--c:${color(c.status)}" data-id="${c.id}"><div class="row"><span class="t">${esc(c.client)}</span><span class="num">${eur(s.due)} pendiente</span></div>
-    <div class="row m"><span>${esc(c.title)} · ${esc(c.number)}</span><span class="tag">${c.status}</span></div>
+    <div class="row m"><span>${esc(c.title)}${c.number?' · '+esc(c.number):''}</span><span>${!c.kind||c.kind==='Proceso judicial'?'':`<span class="tag">${esc(c.kind==='Otro'?(c.kindOtro||'Otro'):c.kind)}</span> `}<span class="tag">${c.status}</span></span></div>
     ${stageOf(c.id)?`<div class="m">Fase: ${esc(stageOf(c.id))}</div>`:''}
     <div class="bar" aria-hidden="true"><i style="width:${pct}%"></i></div></button>`}).join('')
     :`<div class="empty">${db.cases.length?'Ningún caso coincide con la búsqueda.':'Aún no hay casos. Pulsa “Nuevo caso” para registrar el primero.'}</div>`;
@@ -452,17 +453,19 @@ function form(title,fields,onOk,extra){
 const val=n=>$('frm').elements[n].value.trim();
 const F=(l,n,v='',t='text',x='')=>`<label for="f_${n}">${l}</label><input id="f_${n}" name="${n}" type="${t}" value="${esc(v)}" ${x}>`;
 
+const KINDS=['Proceso judicial','Conciliación','Contrato','Asesoría','Otro'];
 function caseForm(c,pre){
   const e=!!c;c=c||{status:'Activo',feeType:'hora',type:'Civil',...(pre||{})};
   form(e?'Editar caso':'Nuevo caso',
-   F('Radicado de 23 dígitos (rellena los datos solo y activa los avisos)','radicado',c.radicado||'','text','inputmode="numeric" maxlength="40" autocomplete="off"')+'<div id="rinfo" class="rinfo" aria-live="polite"></div>'+F('Demandante','demandante',c.demandante||'')+F('Demandado','demandado',c.demandado||'')+F('Cliente','client',c.client)+F('Asunto','title',c.title)+F('Número de expediente','number',c.number)+
+   S('Tipo de asunto','kind',KINDS,c.kind||'Proceso judicial')+`<div id="kOtro">${F('¿Cuál? (nombre del tipo de asunto)','kindOtro',c.kindOtro||'')}</div>`+`<div id="jud">`+F('Radicado de 23 dígitos (rellena los datos solo y activa los avisos)','radicado',c.radicado||'','text','inputmode="numeric" maxlength="40" autocomplete="off"')+'<div id="rinfo" class="rinfo" aria-live="polite"></div>'+F('Demandante','demandante',c.demandante||'')+F('Demandado','demandado',c.demandado||'')+'</div>'+F('Cliente','client',c.client)+F('Asunto','title',c.title)+F('Número de expediente','number',c.number)+
    `<label for="f_type">Área</label><select id="f_type" name="type">${['Civil','Penal','Mercantil','Laboral','Familia','Administrativo','Otro'].map(o=>`<option ${o===c.type?'selected':''}>${o}</option>`).join('')}</select>
    <label for="f_status">Estado</label><select id="f_status" name="status">${['Activo','En pausa','Cerrado'].map(o=>`<option ${o===c.status?'selected':''}>${o}</option>`).join('')}</select>
    <label for="f_feeType">Tipo de honorarios</label><select id="f_feeType" name="feeType"><option value="hora" ${c.feeType==='hora'?'selected':''}>Por hora</option><option value="fijo" ${c.feeType==='fijo'?'selected':''}>Tarifa fija</option><option value="exito" ${c.feeType==='exito'?'selected':''}>A éxito (porcentaje)</option></select>`+
    F('Tarifa ($ por hora, $ total o %)','amount',c.amount??'','number','step="0.01" min="0"')+
    `<div id="recw">${F('Importe recuperado ($)','recovered',c.recovered??'','number','step="0.01" min="0"')}</div>`+
    `<h3 style="margin-top:16px">Contactos</h3>`+F('Teléfono / WhatsApp del cliente','cTel',c.cTel||'','tel','inputmode="tel"')+F('Correo del cliente','cMail',c.cMail||'','email')+F('Contraparte','contra',c.contra||'')+F('Abogado de la contraparte','contraAb',c.contraAb||'')+F('Teléfono o correo de la contraparte','contraTel',c.contraTel||''),
-  f=>{const d={client:val('client'),title:val('title'),number:val('number'),radicado:val('radicado').replace(/\D/g,''),type:val('type'),status:val('status'),feeType:val('feeType'),amount:parseFloat(val('amount')),cTel:val('cTel'),cMail:val('cMail'),contra:val('contra'),contraAb:val('contraAb'),contraTel:val('contraTel'),demandante:val('demandante'),demandado:val('demandado')};
+  f=>{const d={client:val('client'),title:val('title'),number:val('number'),radicado:val('radicado').replace(/\D/g,''),type:val('type'),status:val('status'),feeType:val('feeType'),amount:parseFloat(val('amount')),cTel:val('cTel'),cMail:val('cMail'),contra:val('contra'),contraAb:val('contraAb'),contraTel:val('contraTel'),demandante:val('demandante'),demandado:val('demandado'),kind:val('kind'),kindOtro:val('kindOtro')};
+    if(d.kind!=='Proceso judicial'){d.radicado='';d.demandante='';d.demandado=''}
     if(d.radicado.length===23){const rx=window.__rx||{};Object.assign(d,rx,{demandante:d.demandante||rx.demandante||'',demandado:d.demandado||rx.demandado||''});if(!d.client)d.client='Por definir cliente';if(!d.title)d.title=d.clase||('Proceso '+d.radicado.slice(12,16)+'-'+d.radicado.slice(16,21))}
     if(!d.client||!d.title)return 'Indica el cliente y el asunto, o escribe el radicado de 23 dígitos.';
     if(d.radicado&&d.radicado.length!==23)return 'El radicado debe tener 23 dígitos.';
@@ -472,11 +475,12 @@ function caseForm(c,pre){
   e?'<button type="button" class="danger" id="delCase" style="margin-right:auto">Eliminar caso</button>':'');
   const sync=()=>$('recw').classList.toggle('hide',val('feeType')!=='exito');
   $('f_feeType').onchange=sync;sync();initRadicado();
+  const ks=()=>{const k=val('kind');$('jud').classList.toggle('hide',k!=='Proceso judicial');$('kOtro').classList.toggle('hide',k!=='Otro')};$('f_kind').onchange=ks;ks();
   if(e)$('delCase').onclick=()=>{if(confirm('¿Eliminar este caso con sus horas y pagos? No se puede deshacer.')){db.cases=db.cases.filter(x=>x.id!==c.id);db.entries=db.entries.filter(x=>x.caseId!==c.id);db.payments=db.payments.filter(x=>x.caseId!==c.id);db.updates=db.updates.filter(x=>x.caseId!==c.id);db.events=db.events.filter(x=>x.caseId!==c.id);docsBorrarCaso(c.id);current=null;$('dlg').close();save();render()}};
 }
 
 $('newCase').onclick=()=>caseForm();
-$('q').oninput=render;$('flt').onchange=render;
+$('q').oninput=render;$('flt').onchange=render;$('flk').onchange=render;
 document.addEventListener('click',ev=>{
   const t=ev.target.closest('button');if(!t)return;
   if(t.classList.contains('case')){current=t.dataset.id;view='casos';render();window.scrollTo(0,0)}
@@ -507,11 +511,13 @@ const evColor=t=>t==='Audiencia'?'var(--bad)':t==='Plazo'?'var(--warn)':t==='Cob
 const S=(l,n,opts,v)=>`<label for="f_${n}">${l}</label><select id="f_${n}" name="${n}">${opts.map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select>`;
 const evSort=(a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||''));
 function stageOf(id){const u=db.updates.filter(x=>x.caseId===id).sort((a,b)=>b.date.localeCompare(a.date))[0];return u?u.stage:''}
+function evCk(e){const c=db.cases.find(x=>x.id===e.caseId);return `<div class="tk${e.done?' hecho':''}"><button class="ck" data-ev-t="${e.id}" aria-label="${e.done?'Marcar como pendiente':'Marcar como hecho'}">${e.done?'✓':''}</button><button class="tt" data-ev="${e.id}"><div>${esc(e.title)}</div><div class="m"><span style="color:${evColor(e.type)}">●</span> ${esc(e.type)}${c?' · '+esc(c.client):''} · ${fdate(e.date)}${e.time?' · '+esc(e.time):''}</div></button></div>`}
 function evRow(e){const c=db.cases.find(x=>x.id===e.caseId);return `<button class="evrow" data-ev="${e.id}" style="--c:${evColor(e.type)}"><span><b>${esc(e.title)}</b><br><small style="color:var(--muted)">${e.type}${c?' · '+esc(c.client):''}</small></span><span class="num">${fdate(e.date)}${e.time?' · '+esc(e.time):''}</span></button>`}
 function procHtml(c){
  const us=db.updates.filter(u=>u.caseId===c.id).concat(autoActs.filter(a=>a.case_id===c.id).map(a=>({id:'a'+a.id,date:String(a.fecha||'').slice(0,10),stage:'Rama Judicial',court:'',note:(a.actuacion||'')+(a.anotacion?': '+a.anotacion:''),auto:true}))).sort((a,b)=>b.date.localeCompare(a.date));
  const evs=db.events.filter(e=>e.caseId===c.id&&e.date>=today()).sort(evSort);
- return `<div class="sec"><h3>Proceso judicial${us[0]?' · '+esc(us[0].stage):''}</h3><button class="link" id="addU">Añadir actuación</button></div>
+ const nj=c.kind&&c.kind!=='Proceso judicial';
+ return `<div class="sec"><h3>${nj?'Seguimiento':'Proceso judicial'}${us[0]?' · '+esc(us[0].stage):''}</h3><button class="link" id="addU">${nj?'Añadir avance':'Añadir actuación'}</button></div>
  ${vigLine(c)}
  ${c.radicado&&c.radicado.length===23?'<div style="margin:4px 0 8px"><button class="link" id="traerAct">Traer actuaciones de la Rama</button> <span id="traerMsg" style="color:var(--muted);font-size:13px"></span> · <button class="link" id="probEst">Probar estados electrónicos</button><pre id="estPre" style="white-space:pre-wrap;word-break:break-all;font-size:11px;color:var(--muted);margin:6px 0 0"></pre></div>':''}
  ${us.length?`<ol class="tl">${us.map(u=>`<li><div class="m"><b>${esc(u.stage)}</b> · ${fdate(u.date)}${u.court?' · '+esc(u.court):''} ${u.auto?'<span class="tag">Automática</span>':`<button class="link danger" data-du="${u.id}" aria-label="Eliminar actuación">Eliminar</button>`}</div>${u.note?`<div>${esc(u.note)}</div>`:''}</li>`).join('')}</ol>`:'<div class="empty">Sin actuaciones. Registra cada notificación o resolución del juzgado para seguir el proceso.</div>'}
@@ -1125,11 +1131,11 @@ const PRIO=['Alta','Media','Baja'],AMBITO=['Trabajo','Personal'];
 const prioCls=p=>p==='Alta'?'prio-a':p==='Media'?'prio-m':'';
 function tkRow(t){
  const c=db.cases.find(x=>x.id===t.caseId),atr=!t.done&&t.fecha&&t.fecha<today();
- return `<div class="tk${t.done?' hecho':''}"><button class="ck" data-tk-t="${t.id}" aria-label="${t.done?'Marcar como pendiente':'Marcar como hecho'}">${t.done?'✓':''}</button><button class="tt" data-tk-e="${t.id}"><div>${esc(t.title)}</div><div class="m"><span class="${prioCls(t.prio)}">${esc(t.prio||'Media')}</span> · ${esc(t.ambito||'Trabajo')}${c?' · '+esc(c.client):''}${t.fecha?' · '+(atr?'<span class="venc">venció '+fdate(t.fecha)+'</span>':fdate(t.fecha)):''}</div></button></div>`;
+ return `<div class="tk${t.done?' hecho':''}"><button class="ck" data-tk-t="${t.id}" aria-label="${t.done?'Marcar como pendiente':'Marcar como hecho'}">${t.done?'✓':''}</button><button class="tt" data-tk-e="${t.id}"><div>${esc(t.title)}</div><div class="m">${t.tipo==='Mensaje por responder'?'✉ Mensaje · ':''}<span class="${prioCls(t.prio)}">${esc(t.prio||'Media')}</span> · ${esc(t.ambito||'Trabajo')}${c?' · '+esc(c.client):''}${t.fecha?' · '+(atr?'<span class="venc">venció '+fdate(t.fecha)+'</span>':fdate(t.fecha)):''}</div></button></div>`;
 }
 function pendDashHtml(){
- const t=today(),L=tareas().filter(x=>!x.done&&x.fecha&&x.fecha<=t).sort((a,b)=>a.fecha.localeCompare(b.fecha));
- return `<div class="panel"><h3>Pendientes de hoy</h3>${L.length?L.slice(0,6).map(tkRow).join('')+(L.length>6?`<p style="margin:6px 0 0"><button class="link" data-tab="sem">Ver los ${L.length} en Semana</button></p>`:''):'<div class="empty" style="padding:6px 0">Nada pendiente para hoy. ✨</div>'}</div>`;
+ const t=today(),L=tareas().filter(x=>!x.done&&(!x.fecha||x.fecha<=t)).sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999')),M=L.filter(x=>x.tipo==='Mensaje por responder').length;
+ return `<div class="panel"><h3>Pendientes${L.length?' ('+L.length+')':''}</h3>${M?`<p style="margin:0 0 6px;color:var(--muted)">✉ ${M} ${M===1?'mensaje por responder':'mensajes por responder'}</p>`:''}${L.length?L.slice(0,8).map(tkRow).join('')+(L.length>8?`<p style="margin:6px 0 0"><button class="link" data-tab="sem">Ver los ${L.length} en Semana</button></p>`:''):'<div class="empty" style="padding:6px 0">Nada pendiente por ahora. ✨</div>'}<p style="margin:8px 0 0"><button class="link" data-tk-dash>+ Agregar pendiente o mensaje</button></p></div>`;
 }
 function renderSem(){
  $('semView').classList.remove('hide');
@@ -1151,9 +1157,9 @@ function renderSem(){
 }
 function tareaForm(t,pre){
  const e=!!t;t=t||{prio:'Media',ambito:'Trabajo',fecha:'',...(pre||{})};
- form(e?'Editar pendiente':'Nuevo pendiente',F('¿Qué hay que hacer?','title',t.title||'')+F('Fecha (opcional)','fecha',t.fecha||'','date')+S('Prioridad','prio',PRIO,t.prio)+S('Es de…','ambito',AMBITO,t.ambito||'Trabajo')+
+ form(e?'Editar pendiente':'Nuevo pendiente',F('¿Qué hay que hacer?','title',t.title||'')+F('Fecha (opcional)','fecha',t.fecha||'','date')+S('Tipo','tipo',['Tarea','Mensaje por responder'],t.tipo||'Tarea')+S('Prioridad','prio',PRIO,t.prio)+S('Es de…','ambito',AMBITO,t.ambito||'Trabajo')+
   `<label for="f_caseId">Caso relacionado (opcional)</label><select id="f_caseId" name="caseId"><option value="">Ninguno</option>${db.cases.map(c=>`<option value="${c.id}" ${c.id===t.caseId?'selected':''}>${esc(c.client)}</option>`).join('')}</select>`,
-  f=>{const d={title:val('title'),fecha:val('fecha'),prio:val('prio'),ambito:val('ambito'),caseId:val('caseId')};if(!d.title)return 'Escribe qué hay que hacer.';
+  f=>{const d={title:val('title'),fecha:val('fecha'),tipo:val('tipo'),prio:val('prio'),ambito:val('ambito'),caseId:val('caseId')};if(!d.title)return 'Escribe qué hay que hacer.';
    if(e)Object.assign(t,d);else tareas().push({id:uid('t'),done:false,...d})},
   e?'<button type="button" class="danger" id="delTk" style="margin-right:auto">Eliminar</button>':'');
  if(e)$('delTk').onclick=()=>{db.tareas=tareas().filter(x=>x.id!==t.id);$('dlg').close();save();render()};
@@ -1169,8 +1175,68 @@ document.addEventListener('submit',e=>{
  tareas().push({id:uid('t'),title:v,fecha:today(),prio:'Media',ambito:'Trabajo',done:false,caseId:''});save();render();
 });
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
- if(b.dataset.tkT){const t=tareas().find(x=>x.id===b.dataset.tkT);if(t){t.done=!t.done;t.doneAt=t.done?today():'';save();render()}}
+ if('tkDash' in b.dataset)tareaForm();
+ else if('evNew' in b.dataset)eventForm();
+ else if(b.dataset.rm){const t=today(),cur=resMes||t.slice(0,7),[y,m]=cur.split('-').map(Number),d=new Date(y,m-1+ +b.dataset.rm,1);resMes=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');render()}
+ else if(b.dataset.evT){const v=db.events.find(x=>x.id===b.dataset.evT);if(v){v.done=!v.done;save();render()}}
+ else if(b.dataset.tkT){const t=tareas().find(x=>x.id===b.dataset.tkT);if(t){t.done=!t.done;t.doneAt=t.done?today():'';save();render()}}
  else if(b.dataset.tkE)tareaForm(tareas().find(x=>x.id===b.dataset.tkE))});
+
+
+/* ===== Preparación de la demanda e impulsos (por caso) ===== */
+const addDias=(s,n)=>TERM.iso(TERM.add(TERM.parse(s),n));
+const difDias=(a,b)=>Math.round((TERM.parse(a)-TERM.parse(b))/864e5);
+function logHtml(L,att){return L&&L.length?`<ol class="tl">${[...L].sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<li><div class="m"><b>${fdate(x.date)}</b> <button class="link danger" ${att}="${x.id}" aria-label="Eliminar">Eliminar</button></div>${x.note?`<div>${esc(x.note)}</div>`:''}</li>`).join('')}</ol>`:''}
+function prepHtml(c){
+ const p=c.prep,im=c.imp,t=today();
+ let a;
+ if(!p)a=`<div class="sec"><h3>Preparación de la demanda</h3><button class="link" id="prepStart">Iniciar</button></div><div class="empty" style="padding:4px 0 10px">Anota los días que te dieron para preparar la demanda y ve registrando el avance.</div>`;
+ else{const d=difDias(p.fin,t),hecho=p.estado==='Radicada';
+  a=`<div class="sec"><h3>Preparación de la demanda</h3><span><button class="link" id="prepAdd">Registrar avance</button></span></div>
+  <div class="panel" style="margin:0 0 8px"><p style="margin:0"><b>${hecho?'Demanda radicada ✓':'En preparación'}</b> · entrega ${fdate(p.fin)}${hecho?'':(d<0?` · <span class="venc">venció hace ${-d} ${-d===1?'día':'días'}</span>`:d===0?' · <b>hoy</b>':` · faltan ${d} ${d===1?'día':'días'}`)}</p>
+  <p style="margin:6px 0 0;color:var(--muted);font-size:13px">Te dieron ${p.dias} días desde ${fdate(p.inicio)}.</p>
+  <p style="margin:8px 0 0"><button class="link" id="prepDone">${hecho?'Volver a preparación':'Marcar como radicada'}</button> · <button class="link danger" id="prepDel">Quitar</button></p></div>${logHtml(p.log,'data-pl')}${!(p.log||[]).length?'<div class="empty" style="padding:4px 0 8px">Aún no hay avances. Anota, por ejemplo, “reuní los documentos”.</div>':''}`}
+ const prox=im&&im.taskId?tareas().find(x=>x.id===im.taskId&&!x.done):null;
+ const b=`<div class="sec"><h3>Impulsos</h3><span><button class="link" id="impAdd">Registrar impulso</button> · <button class="link" id="impProg">Programar</button></span></div>
+  <p style="margin:0 0 6px;color:var(--muted);font-size:13px">${prox?'Próximo impulso: <b style="color:var(--ink)">'+fdate(prox.fecha)+'</b>':'No hay un impulso programado.'}${im&&im.cada?' · cada '+im.cada+' días':''}</p>${logHtml(im&&im.log,'data-il')}`;
+ return a+b;
+}
+{const _ph=procHtml;procHtml=c=>_ph(c)+prepHtml(c)}
+function prepForm(c){
+ form('Preparación de la demanda',F('Días que te dieron','dias',c.prep?c.prep.dias:15,'number','min="1" step="1" inputmode="numeric"')+F('Desde (fecha)','inicio',c.prep?c.prep.inicio:today(),'date'),
+  f=>{const n=parseInt(val('dias'),10),ini=val('inicio');if(!(n>0)||!ini)return 'Indica los días y la fecha de inicio.';
+   const fin=addDias(ini,n),old=c.prep||{};
+   c.prep={dias:n,inicio:ini,fin,estado:old.estado||'En preparación',log:old.log||[],evId:old.evId};
+   let ev=old.evId&&db.events.find(x=>x.id===old.evId);
+   if(ev){ev.date=fin;ev.title='Presentar demanda — '+c.client}else{const id=uid('v');db.events.push({id,caseId:c.id,date:fin,time:'',title:'Presentar demanda — '+c.client,type:'Plazo'});c.prep.evId=id}});
+}
+function prepLogForm(c){form('Registrar avance de la demanda',F('Fecha','date',today(),'date')+'<label for="f_note">¿Qué avanzaste?</label><textarea id="f_note" name="note" rows="3" placeholder="Ej.: reuní los documentos, redacté los hechos…"></textarea>',
+  f=>{if(!val('note'))return 'Escribe qué avanzaste.';c.prep.log=c.prep.log||[];c.prep.log.push({id:uid('l'),date:val('date')||today(),note:val('note')})})}
+function impTarea(c,fecha){
+ const im=c.imp;const old=im.taskId&&tareas().find(x=>x.id===im.taskId);
+ if(old&&!old.done){old.fecha=fecha;old.title='Impulsar el proceso — '+c.client}
+ else{const id=uid('t');tareas().push({id,title:'Impulsar el proceso — '+c.client,fecha,prio:'Media',ambito:'Trabajo',tipo:'Tarea',done:false,caseId:c.id});im.taskId=id}}
+function impForm(c){
+ form('Registrar impulso',F('Fecha','date',today(),'date')+'<label for="f_note">¿Qué hiciste?</label><textarea id="f_note" name="note" rows="3" placeholder="Ej.: memorial solicitando fecha, llamada al juzgado…"></textarea>'+F('Recordarme impulsar de nuevo en (días, 0 = no)','cada',(c.imp&&c.imp.cada)||30,'number','min="0" step="1" inputmode="numeric"'),
+  f=>{const n=parseInt(val('cada'),10);if(isNaN(n)||n<0)return 'Indica los días (0 si no quieres recordatorio).';
+   c.imp=c.imp||{log:[]};const d=val('date')||today();c.imp.log=c.imp.log||[];c.imp.log.push({id:uid('l'),date:d,note:val('note')});c.imp.cada=n;
+   const old=c.imp.taskId&&tareas().find(x=>x.id===c.imp.taskId);
+   if(old&&!old.done){old.done=true;old.doneAt=today()}
+   if(n>0)impTarea(c,addDias(d,n))})}
+function impProgForm(c){
+ form('Programar impulso',F('Recordarme el','fecha',addDias(today(),(c.imp&&c.imp.cada)||30),'date')+F('Repetir cada (días, 0 = no)','cada',(c.imp&&c.imp.cada)||30,'number','min="0" step="1" inputmode="numeric"'),
+  f=>{if(!val('fecha'))return 'Indica la fecha.';c.imp=c.imp||{log:[]};c.imp.cada=parseInt(val('cada'),10)||0;impTarea(c,val('fecha'))})}
+document.addEventListener('click',ev=>{
+ const t=ev.target.closest('button');if(!t||!current)return;const c=db.cases.find(x=>x.id===current);if(!c)return;
+ if(t.id==='prepStart')prepForm(c);
+ else if(t.id==='prepAdd'){if(!c.prep)prepForm(c);else prepLogForm(c)}
+ else if(t.id==='prepDone'&&c.prep){c.prep.estado=c.prep.estado==='Radicada'?'En preparación':'Radicada';const ev2=db.events.find(x=>x.id===c.prep.evId);if(ev2)ev2.done=c.prep.estado==='Radicada';save();render()}
+ else if(t.id==='prepDel'){if(confirm('¿Quitar la preparación de la demanda de este caso?')){db.events=db.events.filter(x=>x.id!==(c.prep||{}).evId);delete c.prep;save();render()}}
+ else if(t.dataset.pl&&c.prep){c.prep.log=(c.prep.log||[]).filter(x=>x.id!==t.dataset.pl);save();render()}
+ else if(t.id==='impAdd')impForm(c);
+ else if(t.id==='impProg')impProgForm(c);
+ else if(t.dataset.il&&c.imp){c.imp.log=(c.imp.log||[]).filter(x=>x.id!==t.dataset.il);save();render()}
+});
 
 /* ---------- Prospectos ---------- */
 const ESTADOS_PR=['Consulta','Propuesta enviada','Aceptó','No aceptó'],ORIGEN_PR=['Recomendación','Redes sociales','Página web','Otro'],AREAS_PR=['Civil','Penal','Mercantil','Laboral','Familia','Administrativo','Otro'];
@@ -1293,7 +1359,7 @@ function guiaPasos(){
   ['caso','Crea tu primer caso','Guarda el cliente, el asunto y los honorarios.',db.cases.length>0],
   ['rad','Agrega el radicado de 23 dígitos','Así Sinfín revisa la Rama Judicial y te avisa por correo.',db.cases.some(c=>c.radicado)],
   ['fecha','Anota un plazo o una audiencia','Queda en tu calendario y en las alertas.',db.events.length>0],
-  ['cal','Conecta tu Google Calendar','Cada fecha te llega como notificación al celular.',!!db.gcalOn],
+  ...(gDisp()?[['cal','Conecta tu Google Calendar','Cada fecha te llega como notificación al celular.',!!db.gcalOn]]:[]),
   ['mail','Prueba el correo de avisos','Comprueba que los avisos te lleguen a tu correo.',!!db.mailOk],
   ['inst','Instala la app en tu celular','Android (Chrome): menú ⋮ → Instalar aplicación. iPhone (Safari): Compartir → Añadir a pantalla de inicio.',sa]];
 }
@@ -1395,16 +1461,18 @@ function renderCal(){
  $('listView').classList.add('hide');$('detailView').classList.add('hide');$('calView').classList.remove('hide');
  const y=cal.getFullYear(),m=cal.getMonth(),off=(new Date(y,m,1).getDay()+6)%7,days=new Date(y,m+1,0).getDate(),pad=n=>String(n).padStart(2,'0');
  const cells=[];for(let i=0;i<off;i++)cells.push('<div class="day off"></div>');
- for(let d=1;d<=days;d++){const ds=`${y}-${pad(m+1)}-${pad(d)}`,es=db.events.filter(e=>e.date===ds).sort(evSort);
-  cells.push(`<div class="day${ds===today()?' now':''}" data-day="${ds}" tabindex="0" role="button" aria-label="Añadir evento el ${d}"><span class="dn">${d}</span>${es.slice(0,3).map(e=>`<span class="ev" data-ev="${e.id}" style="--c:${evColor(e.type)}">${e.time?esc(e.time)+' ':''}${esc(e.title)}</span>`).join('')}${es.length>3?`<span class="more">+${es.length-3} más</span>`:''}</div>`)}
- const up=db.events.filter(e=>e.date>=today()).sort(evSort).slice(0,8);
- $('calView').innerHTML=`<div class="calhead"><button data-nav="-1" aria-label="Mes anterior">‹</button><h2>${cap1(cal.toLocaleDateString('es-ES',{month:'long',year:'numeric'}))}</h2><button data-nav="1" aria-label="Mes siguiente">›</button><button data-gcal style="margin-left:auto">Google Calendar</button><button data-term>Calculadora de términos</button><button class="primary" data-new>Nuevo evento</button></div>
+ for(let d=1;d<=days;d++){const ds=`${y}-${pad(m+1)}-${pad(d)}`,es=db.events.filter(e=>e.date===ds).sort(evSort),tk=tareas().filter(x=>x.fecha===ds);
+  cells.push(`<div class="day${ds===today()?' now':''}" data-day="${ds}" tabindex="0" role="button" aria-label="Añadir evento el ${d}"><span class="dn">${d}</span>${es.slice(0,3).map(e=>`<span class="ev" data-ev="${e.id}" style="--c:${evColor(e.type)}">${e.time?esc(e.time)+' ':''}${esc(e.title)}</span>`).join('')}${es.length>3?`<span class="more">+${es.length-3} más</span>`:''}${tk.slice(0,2).map(x=>`<span class="ev tkc" data-tkc="${x.id}" style="--c:var(--muted)">${x.done?'●':'○'} ${esc(x.title)}</span>`).join('')}${tk.length>2?`<span class="more">+${tk.length-2} pendientes</span>`:''}</div>`)}
+ const up=db.events.filter(e=>e.date>=today()).sort(evSort).slice(0,8),mp=`${y}-${pad(m+1)}`,tm=tareas().filter(x=>x.fecha&&x.fecha.startsWith(mp)).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+ $('calView').innerHTML=`<div class="calhead"><button data-nav="-1" aria-label="Mes anterior">‹</button><h2>${cap1(cal.toLocaleDateString('es-ES',{month:'long',year:'numeric'}))}</h2><button data-nav="1" aria-label="Mes siguiente">›</button>${gDisp()?'<button data-gcal style="margin-left:auto">Google Calendar</button>':'<span style="margin-left:auto"></span>'}<button data-term>Calculadora de términos</button><button class="primary" data-new>Nuevo evento</button></div>
  <div class="grid">${['L','M','X','J','V','S','D'].map(d=>`<div class="wd">${d}</div>`).join('')}${cells.join('')}</div>
- <div class="sec"><h3>Próximos eventos</h3></div>${up.length?up.map(evRow).join(''):'<div class="empty">No hay eventos próximos. Toca un día del calendario para añadir uno.</div>'}`;
+ <div class="sec"><h3>Próximos eventos</h3></div>${up.length?up.map(evCk).join(''):'<div class="empty">No hay eventos próximos. Toca un día del calendario para añadir uno.</div>'}
+ <div class="sec"><h3>Pendientes de este mes</h3></div>${tm.length?tm.map(tkRow).join(''):'<div class="empty">No hay pendientes con fecha este mes.</div>'}`;
 }
 $('calView').addEventListener('click',e=>{
- const n=e.target.closest('[data-nav]'),v=e.target.closest('[data-ev]'),d=e.target.closest('[data-day]');
- if(n){cal.setMonth(cal.getMonth()+ +n.dataset.nav);renderCal()}
+ const n=e.target.closest('[data-nav]'),v=e.target.closest('[data-ev]'),d=e.target.closest('[data-day]'),k=e.target.closest('[data-tkc]');
+ if(k){const t=tareas().find(x=>x.id===k.dataset.tkc);if(t){t.done=!t.done;t.doneAt=t.done?today():'';save();renderCal()}}
+ else if(n){cal.setMonth(cal.getMonth()+ +n.dataset.nav);renderCal()}
  else if(v)eventForm(db.events.find(x=>x.id===v.dataset.ev));
  else if(e.target.closest('[data-gcal]'))gcalForm();
  else if(e.target.closest('[data-term]'))termForm();
@@ -1418,7 +1486,7 @@ function setHello(n){const h=new Date().getHours(),g=h<12?'Buenos días':h<19?'B
 function renderAlerts(){
  const t=today(),l=new Date();l.setDate(l.getDate()+7);
  const L=l.getFullYear()+'-'+String(l.getMonth()+1).padStart(2,'0')+'-'+String(l.getDate()).padStart(2,'0');
- const es=db.events.filter(e=>(e.type==='Plazo'||e.type==='Audiencia'||e.type==='Cobro'||e.type==='Pago')&&e.date>=t&&e.date<=L).sort(evSort);
+ const es=db.events.filter(e=>(e.type==='Plazo'||e.type==='Audiencia'||e.type==='Cobro'||e.type==='Pago')&&!e.done&&e.date>=t&&e.date<=L).sort(evSort);
  setHello(es.length);$('alerts').innerHTML=es.length?`<div class="alert"><b>Vence en los próximos 7 días</b>${es.map(e=>{const n=Math.round((new Date(e.date+'T00:00')-new Date(t+'T00:00'))/864e5),c=db.cases.find(x=>x.id===e.caseId);return `<button class="evrow" data-ev="${e.id}" style="--c:${evColor(e.type)}"><span>${esc(e.title)}${c?' · '+esc(c.client):''}</span><span class="num"><b>${n===0?'Hoy':n===1?'Mañana':'En '+n+' días'}</b></span></button>`}).join('')}</div>`:'';
 }
 function invHtml(c){
@@ -1503,8 +1571,10 @@ async function watchSync(){if(!sb||!userId)return;
   if(!w||w.r!==c.radicado)Object.assign(row,{ultima_fecha:null,ultima_desc:null,ultimo_error:null});
   const r=await sb.from('vigilancia').upsert(row,{onConflict:'user_id,case_id'});if(!r.error){watched[c.id]={r:c.radicado,t};if(!w||w.r!==c.radicado)traerHistorial(c.id)}}
  for(const id of Object.keys(watched))if(!want.find(c=>c.id===id)){await sb.from('vigilancia').delete().eq('user_id',userId).eq('case_id',id);delete watched[id]}}
+var userEmail='';
+const gDisp=()=>!!(db.gcalOn||['lorenasu.isabel@outlook.com','lorenasu.isabel@gmail.com'].includes(String(userEmail).toLowerCase()));
 async function startCloud(user){
- if(userId===user.id)return;userId=user.id;$('auth').classList.add('hide');$('logout').classList.remove('hide');
+ if(userId===user.id)return;userId=user.id;userEmail=user.email||'';$('auth').classList.add('hide');$('logout').classList.remove('hide');
  const r=await sb.from('app_data').select('data').eq('user_id',userId).maybeSingle();
  if(r.error){setSync('Sin conexión con la nube');return}
  cloud={set:async({json})=>{const x=await sb.from('app_data').upsert({user_id:userId,data:JSON.parse(json),updated_at:new Date().toISOString()});if(x.error)throw x.error}};
@@ -1533,6 +1603,16 @@ function donut(items,total){
  const segs=items.map((it,i)=>{const p=it[1]/total*100,x=`<circle r="${R}" cx="21" cy="21" fill="none" stroke-width="6" style="stroke:${PAL[i%PAL.length]}" stroke-dasharray="${p} ${100-p}" stroke-dashoffset="${25-off}"/>`;off+=p;return x}).join('');
  return `<div class="donut"><svg viewBox="0 0 42 42" width="130" height="130" role="img" aria-label="Gráfico de ${total} casos"><circle r="${R}" cx="21" cy="21" fill="none" stroke-width="6" style="stroke:var(--line)"/>${segs}<text x="21" y="23" text-anchor="middle" font-size="7" font-weight="700" style="fill:var(--ink)">${total}</text></svg><ul class="legend">${items.map((it,i)=>`<li><span><i style="background:${PAL[i%PAL.length]}"></i>${esc(it[0])}</span><b>${it[1]}</b></li>`).join('')}</ul></div>`}
 function lastAct(c){const d=db.updates.filter(u=>u.caseId===c.id).map(u=>u.date).concat(autoActs.filter(a=>a.case_id===c.id).map(a=>String(a.fecha||'').slice(0,10))).filter(Boolean).sort();return d.length?d[d.length-1]:''}
+var resMes='';
+function resumenTop(){
+ const t=today(),mes=resMes||t.slice(0,7),ahora=mes===t.slice(0,7),[y,m]=mes.split('-').map(Number);
+ const nom=cap1(new Date(y,m-1,1).toLocaleDateString('es-ES',{month:'long',year:'numeric'}));
+ const T=tareas().filter(x=>(x.fecha&&x.fecha.startsWith(mes))||(ahora&&!x.done&&(!x.fecha||x.fecha<t))).sort((a,b)=>(a.done-b.done)||(a.fecha||'0000').localeCompare(b.fecha||'0000'));
+ const E=db.events.filter(e=>e.date.startsWith(mes)).sort(evSort),pend=T.filter(x=>!x.done).length,M=T.filter(x=>!x.done&&x.tipo==='Mensaje por responder').length;
+ return `<div class="fhead" style="margin-top:4px"><button data-rm="-1" aria-label="Mes anterior">‹</button><h2 style="text-transform:none">${nom}</h2><button data-rm="1" aria-label="Mes siguiente">›</button></div>
+ <div class="panel"><h3>Pendientes${pend?' ('+pend+')':''}</h3>${M?`<p style="margin:0 0 6px;color:var(--muted)">✉ ${M} ${M===1?'mensaje por responder':'mensajes por responder'}</p>`:''}${T.length?T.map(tkRow).join(''):'<div class="empty" style="padding:6px 0">Nada pendiente este mes. ✨</div>'}<p style="margin:8px 0 0"><button class="link" data-tk-dash>+ Agregar pendiente o mensaje</button></p></div>
+ <div class="panel"><h3>Próximas fechas</h3>${E.length?E.map(evCk).join(''):'<div class="empty" style="padding:6px 0">No hay fechas este mes.</div>'}<p style="margin:8px 0 0"><button class="link" data-ev-new>+ Agregar evento</button></p></div>`;
+}
 function renderDash(){
  ['listView','detailView','calView'].forEach(i=>$(i).classList.add('hide'));$('dashView').classList.remove('hide');
  const t=today(),mes=t.slice(0,7),vivos=db.cases.filter(c=>c.status!=='Cerrado'),act=db.cases.filter(c=>c.status==='Activo');
@@ -1543,15 +1623,14 @@ function renderDash(){
  vivos.forEach(c=>{const d=lastAct(c);if(!d){ag.n++;return}const m=(new Date(t+'T00:00')-new Date(d+'T00:00'))/864e5/30.4;m<=6?ag.g++:m<=12?ag.a++:ag.r++});
  const cnt=k=>{const m={};db.cases.forEach(c=>{const v=c[k]||'Sin dato';m[v]=(m[v]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
  const prox=db.events.filter(e=>e.date>=t).sort(evSort).slice(0,5);
- $('dashView').innerHTML=`<p class="hello">${esc($('hello').textContent)}</p>${guiaHtml()}${$('alerts').innerHTML}
+ $('dashView').innerHTML=`<p class="hello">${esc($('hello').textContent)}</p>${$('alerts').innerHTML}${resumenTop()}${guiaHtml()}
  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button id="repBtn">Reporte mensual</button><button id="termBtn">Calculadora de términos</button></div>
  <div class="kpis"><div class="kpi"><small>Casos activos</small><b>${act.length}</b></div><div class="kpi"><small>Actuaciones este mes</small><b>${acts}</b></div><div class="kpi"><small>Casos nuevos este mes</small><b>${nuevos}</b></div><div class="kpi"><small>Por cobrar</small><b style="color:var(--warn);font-size:21px">${eur(due)}</b></div></div>
  <div class="panel"><h3>Antigüedad de la última actuación</h3><p>Casos no cerrados, según el tiempo desde su última actuación</p><div class="age"><div class="g"><b>${ag.g}</b><small>0–6 meses</small></div><div class="a"><b>${ag.a}</b><small>6–12 meses</small></div><div class="r"><b>${ag.r}</b><small>Más de 12 meses</small></div><div class="n"><b>${ag.n}</b><small>Sin actuación</small></div></div></div>
  <div class="charts"><div class="panel"><h3>Casos por área</h3>${donut(cnt('type'),db.cases.length)}</div><div class="panel"><h3>Casos por estado</h3>${donut(cnt('status'),db.cases.length)}</div><div class="panel"><h3>Casos por jurisdicción</h3>${donut(cnt('jurisdiccion'),db.cases.length)}</div></div>
  ${porCobrarHtml(S)}
  <div class="panel"><h3>Honorarios</h3><p>Cobrado ${eur(P)} de ${eur(B)}</p><div class="bar"><i style="width:${B?Math.min(100,P/B*100):0}%"></i></div></div>
- ${pendDashHtml()}
- <div class="panel"><h3>Próximas fechas</h3>${prox.length?prox.map(evRow).join(''):'<div class="empty">No hay fechas próximas.</div>'}</div>`;
+`;
 }
 function decodeRad(r){return{muni:r.slice(0,5),despacho:String(+r.slice(9,12)),anio:r.slice(12,16),inst:r.slice(21,23)}}
 function areaDe(t){t=String(t||'').toUpperCase();return /FAMILIA/.test(t)?'Familia':/LABORAL/.test(t)?'Laboral':/PENAL|GARANT|CONOCIMIENTO/.test(t)?'Penal':/ADMINISTRATIV/.test(t)?'Administrativo':/MERCANTIL|COMERCIAL|SOCIEDADES/.test(t)?'Mercantil':/CIVIL/.test(t)?'Civil':''}
