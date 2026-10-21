@@ -1238,6 +1238,69 @@ document.addEventListener('click',ev=>{
  else if(t.dataset.il&&c.imp){c.imp.log=(c.imp.log||[]).filter(x=>x.id!==t.dataset.il);save();render()}
 });
 
+
+/* ===== Caducidad y prescripción (por caso) ===== */
+const CAD=[
+ ['Nulidad y restablecimiento del derecho','m',4,'Desde el día siguiente a la comunicación, notificación, ejecución o publicación del acto.','CPACA, art. 164, num. 2, lit. d'],
+ ['Reparación directa','a',2,'Desde el día siguiente a la ocurrencia del hecho, omisión u operación (o desde que se conoció).','CPACA, art. 164, num. 2, lit. i'],
+ ['Controversias contractuales','a',2,'Regla general. El punto de partida cambia según la pretensión: revisa el literal j.','CPACA, art. 164, num. 2, lit. j'],
+ ['Repetición','a',2,'Desde el día siguiente a la fecha del pago total de la condena.','CPACA, art. 164, num. 2, lit. l'],
+ ['Querella (delitos que la requieren)','m',6,'Desde la comisión del hecho.','Ley 906 de 2004, art. 73'],
+ ['Impugnación de la paternidad','d',140,'Desde que se tuvo conocimiento de que no es el padre.','Ley 1060 de 2006, art. 5'],
+ ['Prestaciones laborales (prescripción)','a',3,'Desde que la obligación se hizo exigible. El reclamo escrito la interrumpe por 3 años más.','CST, art. 488; CPTSS, art. 151'],
+ ['Acción ejecutiva (civil)','a',5,'Desde que la obligación se hizo exigible.','Código Civil, art. 2536 (Ley 791 de 2002)'],
+ ['Acción ordinaria (civil)','a',10,'Desde que la obligación se hizo exigible.','Código Civil, art. 2536 (Ley 791 de 2002)'],
+ ['Responsabilidad extracontractual','a',3,'Desde la perpetración del acto.','Código Civil, art. 2358'],
+ ['Acción cambiaria directa (títulos valores)','a',3,'Desde el vencimiento del título.','Código de Comercio, art. 789'],
+ ['Acción cambiaria de regreso','a',1,'Desde la fecha del protesto o del vencimiento del plazo para el protesto.','Código de Comercio, art. 790'],
+ ['Otro (término propio)','m',1,'Escribe tú el punto de partida y el plazo.','']];
+const UNI={d:'días',m:'meses',a:'años'};
+function sumaTermino(desde,n,u){
+ const d=TERM.parse(desde);let x;
+ if(u==='d')x=TERM.add(d,n);
+ else{const meses=u==='a'?n*12:n,t=new Date(d.getFullYear(),d.getMonth()+meses,1),ult=new Date(t.getFullYear(),t.getMonth()+1,0).getDate();x=new Date(t.getFullYear(),t.getMonth(),Math.min(d.getDate(),ult))}
+ let aj=false;while(TERM.noHabil(x,true)){x=TERM.add(x,1);aj=true}
+ return{limite:TERM.iso(x),ajustado:aj}}
+function cadHtml(c){
+ const k=c.cad;
+ if(!k)return `<div class="sec"><h3>Caducidad y prescripción</h3><button class="link" id="cadStart">Calcular</button></div><div class="empty" style="padding:4px 0 10px">Calcula hasta cuándo puedes presentar la demanda y recibe avisos 30 y 7 días antes.</div>`;
+ const d=difDias(k.limite,today()),venc=d<0,cerca=!venc&&d<=30;
+ return `<div class="sec"><h3>Caducidad y prescripción</h3><button class="link" id="cadStart">Recalcular</button></div>
+ <div class="panel" style="margin:0 0 8px${venc?';border-left:4px solid var(--bad)':cerca?';border-left:4px solid var(--warn)':''}"><p style="margin:0"><b>${esc(k.tipo)}</b></p>
+ <p style="margin:6px 0 0">Fecha límite: <b>${fdate(k.limite)}</b> · ${venc?`<span class="venc">venció hace ${-d} ${-d===1?'día':'días'}</span>`:d===0?'<b>hoy</b>':`faltan ${d} ${d===1?'día':'días'}`}</p>
+ <p style="margin:6px 0 0;color:var(--muted);font-size:13px">${k.n} ${UNI[k.u]} desde ${fdate(k.desde)}${k.ajustado?' · movida al siguiente día hábil':''}${k.base?' · '+esc(k.base):''}</p>
+ <p style="margin:8px 0 0"><button class="link danger" id="cadDel">Quitar</button></p></div>`}
+{const _ph2=procHtml;procHtml=c=>_ph2(c)+cadHtml(c)}
+function cadLimpiar(c){
+ if(c.cad){db.events=db.events.filter(x=>x.id!==c.cad.evId);db.tareas=tareas().filter(x=>!(c.cad.tk||[]).includes(x.id))}}
+function cadForm(c){
+ const k=c.cad,idx=k?Math.max(0,CAD.findIndex(x=>x[0]===k.tipo)):0;
+ form('Caducidad y prescripción',
+  S('Tipo de acción','tipo',CAD.map(x=>x[0]),CAD[idx][0])+
+  `<p id="cadBase" style="margin:6px 0 0;font-size:13px;color:var(--muted)"></p>`+
+  F('Desde (fecha de inicio del término)','desde',k?k.desde:'','date')+
+  F('Plazo','n',k?k.n:CAD[idx][2],'number','min="1" step="1" inputmode="numeric"')+S('Unidad','u',['años','meses','días'],UNI[k?k.u:CAD[idx][1]])+
+  `<p id="cadPrev" style="margin:10px 0 0"></p><p style="margin:8px 0 0;font-size:12.5px;color:var(--muted)">Es una ayuda de cálculo. Verifica siempre el término y su punto de partida en la norma vigente. Si el último día no es hábil, se pasa al siguiente día hábil; si puedes, radica antes.</p>`,
+  f=>{const n=parseInt(val('n'),10),desde=val('desde'),u={años:'a',meses:'m',días:'d'}[val('u')];
+   if(!desde)return 'Indica desde qué fecha empieza a correr el término.';if(!(n>0))return 'Indica el plazo.';
+   const t=CAD.find(x=>x[0]===val('tipo'))||CAD[CAD.length-1],r=sumaTermino(desde,n,u);
+   cadLimpiar(c);
+   const evId=uid('v'),tk=[];
+   db.events.push({id:evId,caseId:c.id,date:r.limite,time:'',title:'Vence '+(/prescrip/i.test(t[0])?'prescripción':'caducidad')+' — '+c.client,type:'Plazo'});
+   [[30,'Faltan 30 días'],[7,'Faltan 7 días']].forEach(([dd,txt])=>{const f2=addDias(r.limite,-dd);if(f2>=today()){const id=uid('t');tareas().push({id,title:txt+' para presentar la demanda — '+c.client,fecha:f2,prio:'Alta',ambito:'Trabajo',tipo:'Tarea',done:false,caseId:c.id});tk.push(id)}});
+   c.cad={tipo:t[0],desde,n,u,limite:r.limite,ajustado:r.ajustado,base:t[4],evId,tk}});
+ const sync=()=>{const t=CAD.find(x=>x[0]===val('tipo'));$('cadBase').textContent=t?(t[3]+(t[4]?' ('+t[4]+')':'')):'';
+  const n=parseInt(val('n'),10),desde=val('desde'),u={años:'a',meses:'m',días:'d'}[val('u')];
+  if(desde&&n>0){const r=sumaTermino(desde,n,u);$('cadPrev').innerHTML='Fecha límite: <b>'+fdate(r.limite)+'</b>'+(r.ajustado?' <span style="color:var(--muted)">(movida al siguiente día hábil)</span>':'')}else $('cadPrev').textContent=''};
+ $('f_tipo').onchange=()=>{const t=CAD.find(x=>x[0]===val('tipo'));if(t){$('f_n').value=t[2];$('f_u').value=UNI[t[1]]}sync()};
+ $('f_desde').oninput=sync;$('f_n').oninput=sync;$('f_u').onchange=sync;sync();
+}
+document.addEventListener('click',ev=>{
+ const t=ev.target.closest('button');if(!t||!current)return;const c=db.cases.find(x=>x.id===current);if(!c)return;
+ if(t.id==='cadStart')cadForm(c);
+ else if(t.id==='cadDel'){if(confirm('¿Quitar el cálculo de caducidad? También se quitan sus avisos del calendario.')){cadLimpiar(c);delete c.cad;save();render()}}
+});
+
 /* ---------- Prospectos ---------- */
 const ESTADOS_PR=['Consulta','Propuesta enviada','Aceptó','No aceptó'],ORIGEN_PR=['Recomendación','Redes sociales','Página web','Otro'],AREAS_PR=['Civil','Penal','Mercantil','Laboral','Familia','Administrativo','Otro'];
 function renderPros(){
