@@ -1227,7 +1227,7 @@ function tkRow(t){
  return `<div class="tk${t.done?' hecho':''}"><button class="ck" data-tk-t="${t.id}" aria-label="${t.done?'Marcar como pendiente':'Marcar como hecho'}">${t.done?'✓':''}</button><button class="tt" data-tk-e="${t.id}"><div>${esc(t.title)}</div><div class="m">${t.tipo==='Mensaje por responder'?'✉ Mensaje · ':''}<span class="${prioCls(t.prio)}">${esc(t.prio||'Media')}</span> · ${esc(t.ambito||'Trabajo')}${c?' · '+esc(c.client):''}${t.fecha?' · '+(atr?'<span class="venc">venció '+fdate(t.fecha)+'</span>':fdate(t.fecha)):''}</div></button></div>`;
 }
 function pendDashHtml(){
- const t=today(),L=tareas().filter(x=>!x.done&&(!x.fecha||x.fecha<=t)).sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999')),M=L.filter(x=>x.tipo==='Mensaje por responder').length;
+ const t=today(),L=tareas().filter(x=>!x.done).sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999')),M=L.filter(x=>x.tipo==='Mensaje por responder').length;
  return `<div class="panel"><h3>Pendientes${L.length?' ('+L.length+')':''}</h3>${M?`<p style="margin:0 0 6px;color:var(--muted)">✉ ${M} ${M===1?'mensaje por responder':'mensajes por responder'}</p>`:''}${L.length?L.slice(0,8).map(tkRow).join('')+(L.length>8?`<p style="margin:6px 0 0"><button class="link" data-tab="sem">Ver los ${L.length} en Semana</button></p>`:''):'<div class="empty" style="padding:6px 0">Nada pendiente por ahora. ✨</div>'}<p style="margin:8px 0 0"><button class="link" data-tk-dash>+ Agregar pendiente o mensaje</button></p></div>`;
 }
 function renderSem(){
@@ -1522,7 +1522,7 @@ function pomoAccion(a){const s=pomoGet();
   else if(a==='saltar')pomoSiguiente(s,false);
   pomoSet(s)}
 function pomoDashHtml(){const s=pomoGet(),t=today();
- const P=tareas().filter(x=>!x.done&&(!x.fecha||x.fecha<=t)).sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999')),M=P.filter(x=>x.tipo==='Mensaje por responder').length;
+ const P=tareas().filter(x=>!x.done).sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999')),M=P.filter(x=>x.tipo==='Mensaje por responder').length;
  return `<div class="topduo"><div class="panel" id="pmDash"><h3>Pomodoro</h3><span class="tag">${POMO_N[s.fase]}</span>
  <div class="pmDashClock" style="font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2;margin:2px 0 6px">${pomoReloj(s)}</div>
  <div style="display:flex;gap:6px"><button class="primary" data-pmd="${s.run?'pausa':'inicio'}">${s.run?'Pausar':(s.resta?'Seguir':'Iniciar')}</button><button data-pmd="abrir" aria-label="Ajustes del Pomodoro">⚙</button></div></div>
@@ -1534,8 +1534,8 @@ document.addEventListener('click',ev=>{const g=ev.target.closest('[data-pend-go]
  pomoAccion(b.dataset.pmd);pomoPill();if(typeof view!=='undefined'&&view==='dash')render()});
 
 function pendLista(){const t=today();
- const P=tareas().filter(x=>!x.done&&(!x.fecha||x.fecha<=t)).sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999'));
- return (P.length?P.map(x=>{const c=db.cases.find(k=>k.id===x.caseId);return `<div class="tk"><button class="ck" data-pq-t="${x.id}" aria-label="Marcar como hecho"></button><button class="tt" data-pq-e="${x.id}"><div>${esc(x.title)}</div><div class="m">${x.tipo==='Mensaje por responder'?'✉ Mensaje · ':''}${x.fecha?fdate(x.fecha)+' · ':''}${c?esc(c.client):'General'}</div></button></div>`}).join(''):'<div class="empty">Todo al día. No tienes pendientes.</div>')+'<p style="margin:10px 0 0"><button type="button" class="link" data-pq-new>+ Agregar pendiente o mensaje</button></p>'}
+ const P=tareas().filter(x=>!x.done).sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999'));
+ return (P.length?P.map(x=>{const c=db.cases.find(k=>k.id===x.caseId);return `<div class="tk"><button class="ck" data-pq-t="${x.id}" aria-label="Marcar como hecho"></button><button class="tt" data-pq-e="${x.id}"><div>${esc(x.title)}</div><div class="m">${x.tipo==='Mensaje por responder'?'✉ Mensaje · ':''}${x.fecha?(x.fecha<t?'<b style="color:var(--bad)">Vencido</b> ':'')+fdate(x.fecha)+' · ':''}${c?esc(c.client):'General'}</div></button></div>`}).join(''):'<div class="empty">Todo al día. No tienes pendientes.</div>')+'<p style="margin:10px 0 0"><button type="button" class="link" data-pq-new>+ Agregar pendiente o mensaje</button></p>'}
 function pendForm(){
  form('Pendientes','<div id="pqBody">'+pendLista()+'</div>',()=>{});
  $('ok').classList.add('hide');$('cancel').textContent='Cerrar';
