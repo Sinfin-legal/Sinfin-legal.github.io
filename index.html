@@ -1605,8 +1605,9 @@ async function traerAhora(id){const m=()=>document.getElementById('traerMsg'),sa
  say('Consultando la Rama Judicial…');
  try{await watchSync();
   const x=await sb.functions.invoke('revisar-procesos',{body:{accion:'sincronizar',case_id:id}});
-  if(x.error){let t='No se pudo consultar.';try{const j=await x.error.context.json();if(j&&j.error)t=j.error}catch(e){}say(t);return}
-  if(x.data&&x.data.error){say(x.data.error);return}
+  const amable=t=>/404|no encontrado/i.test(t)?'Este proceso no aparece en la consulta pública de la Rama (puede ser reservado). Márcalo con “Vigilar estados electrónicos” al editar el caso.':t;
+  if(x.error){let t='No se pudo consultar.';try{const j=await x.error.context.json();if(j&&j.error)t=j.error}catch(e){}say(amable(t));return}
+  if(x.data&&x.data.error){say(amable(x.data.error));return}
   await loadAuto();say(x.data&&x.data.total?'Listo: '+x.data.total+' actuaciones.':'La Rama no muestra actuaciones públicas para este proceso.')}
  catch(e){say('No se pudo consultar: '+(e&&e.message||e))}}
 async function probarEstados(id){const c=db.cases.find(x=>x.id===id),pre=document.getElementById('estPre');if(!c||!pre)return;
