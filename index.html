@@ -457,14 +457,14 @@ const KINDS=['Proceso judicial','Conciliación','Contrato','Asesoría','Otro'];
 function caseForm(c,pre){
   const e=!!c;c=c||{status:'Activo',feeType:'hora',type:'Civil',...(pre||{})};
   form(e?'Editar caso':'Nuevo caso',
-   S('Tipo de asunto','kind',KINDS,c.kind||'Proceso judicial')+`<div id="kOtro">${F('¿Cuál? (nombre del tipo de asunto)','kindOtro',c.kindOtro||'')}</div>`+`<div id="jud">`+F('Radicado de 23 dígitos (rellena los datos solo y activa los avisos)','radicado',c.radicado||'','text','inputmode="numeric" maxlength="40" autocomplete="off"')+'<div id="rinfo" class="rinfo" aria-live="polite"></div>'+F('Demandante','demandante',c.demandante||'')+F('Demandado','demandado',c.demandado||'')+'</div>'+F('Cliente','client',c.client)+F('Asunto','title',c.title)+F('Número de expediente','number',c.number)+
+   S('Tipo de asunto','kind',KINDS,c.kind||'Proceso judicial')+`<div id="kOtro">${F('¿Cuál? (nombre del tipo de asunto)','kindOtro',c.kindOtro||'')}</div>`+`<div id="jud">`+F('Radicado de 23 dígitos (rellena los datos solo y activa los avisos)','radicado',c.radicado||'','text','inputmode="numeric" maxlength="40" autocomplete="off"')+'<div id="rinfo" class="rinfo" aria-live="polite"></div>'+F('Demandante','demandante',c.demandante||'')+F('Demandado','demandado',c.demandado||'')+`<label style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-weight:400"><input type="checkbox" name="estados" ${c.estados?'checked':''} style="width:auto;margin-top:3px"> <span>Vigilar también los <b>estados electrónicos</b> del juzgado (útil si el proceso es privado o la Rama se demora en publicarlo)</span></label></div>`+F('Cliente','client',c.client)+F('Asunto','title',c.title)+F('Número de expediente','number',c.number)+
    `<label for="f_type">Área</label><select id="f_type" name="type">${['Civil','Penal','Mercantil','Laboral','Familia','Administrativo','Otro'].map(o=>`<option ${o===c.type?'selected':''}>${o}</option>`).join('')}</select>
    <label for="f_status">Estado</label><select id="f_status" name="status">${['Activo','En pausa','Cerrado'].map(o=>`<option ${o===c.status?'selected':''}>${o}</option>`).join('')}</select>
    <label for="f_feeType">Tipo de honorarios</label><select id="f_feeType" name="feeType"><option value="hora" ${c.feeType==='hora'?'selected':''}>Por hora</option><option value="fijo" ${c.feeType==='fijo'?'selected':''}>Tarifa fija</option><option value="exito" ${c.feeType==='exito'?'selected':''}>A éxito (porcentaje)</option></select>`+
    F('Tarifa ($ por hora, $ total o %)','amount',c.amount??'','number','step="0.01" min="0"')+
    `<div id="recw">${F('Importe recuperado ($)','recovered',c.recovered??'','number','step="0.01" min="0"')}</div>`+
    `<h3 style="margin-top:16px">Contactos</h3>`+F('Teléfono / WhatsApp del cliente','cTel',c.cTel||'','tel','inputmode="tel"')+F('Correo del cliente','cMail',c.cMail||'','email')+F('Contraparte','contra',c.contra||'')+F('Abogado de la contraparte','contraAb',c.contraAb||'')+F('Teléfono o correo de la contraparte','contraTel',c.contraTel||''),
-  f=>{const d={client:val('client'),title:val('title'),number:val('number'),radicado:val('radicado').replace(/\D/g,''),type:val('type'),status:val('status'),feeType:val('feeType'),amount:parseFloat(val('amount')),cTel:val('cTel'),cMail:val('cMail'),contra:val('contra'),contraAb:val('contraAb'),contraTel:val('contraTel'),demandante:val('demandante'),demandado:val('demandado'),kind:val('kind'),kindOtro:val('kindOtro')};
+  f=>{const d={client:val('client'),title:val('title'),number:val('number'),radicado:val('radicado').replace(/\D/g,''),type:val('type'),status:val('status'),feeType:val('feeType'),amount:parseFloat(val('amount')),cTel:val('cTel'),cMail:val('cMail'),contra:val('contra'),contraAb:val('contraAb'),contraTel:val('contraTel'),demandante:val('demandante'),demandado:val('demandado'),kind:val('kind'),kindOtro:val('kindOtro'),estados:!!$('frm').elements.estados.checked};
     if(d.kind!=='Proceso judicial'){d.radicado='';d.demandante='';d.demandado=''}
     if(d.radicado.length===23){const rx=window.__rx||{};Object.assign(d,rx,{demandante:d.demandante||rx.demandante||'',demandado:d.demandado||rx.demandado||''});if(!d.client)d.client='Por definir cliente';if(!d.title)d.title=d.clase||('Proceso '+d.radicado.slice(12,16)+'-'+d.radicado.slice(16,21))}
     if(!d.client||!d.title)return 'Indica el cliente y el asunto, o escribe el radicado de 23 dígitos.';
@@ -519,7 +519,7 @@ function procHtml(c){
  const nj=c.kind&&c.kind!=='Proceso judicial';
  return `<div class="sec"><h3>${nj?'Seguimiento':'Proceso judicial'}${us[0]?' · '+esc(us[0].stage):''}</h3><button class="link" id="addU">${nj?'Añadir avance':'Añadir actuación'}</button></div>
  ${vigLine(c)}
- ${c.radicado&&c.radicado.length===23?'<div style="margin:4px 0 8px"><button class="link" id="traerAct">Traer actuaciones de la Rama</button> <span id="traerMsg" style="color:var(--muted);font-size:13px"></span> · <button class="link" id="probEst">Probar estados electrónicos</button><pre id="estPre" style="white-space:pre-wrap;word-break:break-all;font-size:11px;color:var(--muted);margin:6px 0 0"></pre></div>':''}
+ ${c.radicado&&c.radicado.length===23?'<div style="margin:4px 0 8px"><button class="link" id="traerAct">Traer actuaciones de la Rama</button> <span id="traerMsg" style="color:var(--muted);font-size:13px"></span> · <button class="link" id="probEst">Revisar estados electrónicos</button><pre id="estPre" style="white-space:pre-wrap;word-break:break-all;font-size:11px;color:var(--muted);margin:6px 0 0"></pre></div>':''}
  ${us.length?`<ol class="tl">${us.map(u=>`<li><div class="m"><b>${esc(u.stage)}</b> · ${fdate(u.date)}${u.court?' · '+esc(u.court):''} ${u.auto?'<span class="tag">Automática</span>':`<button class="link danger" data-du="${u.id}" aria-label="Eliminar actuación">Eliminar</button>`}</div>${u.note?`<div>${esc(u.note)}</div>`:''}</li>`).join('')}</ol>`:'<div class="empty">Sin actuaciones. Registra cada notificación o resolución del juzgado para seguir el proceso.</div>'}
  <div class="sec"><h3>Próximas fechas</h3><span><button class="link" id="addTerm">Calcular término</button> · <button class="link" id="addEv">Añadir al calendario</button></span></div>
  ${evs.length?evs.map(evRow).join(''):'<div class="empty">No hay audiencias ni plazos próximos.</div>'}`;
@@ -1611,10 +1611,14 @@ async function traerAhora(id){const m=()=>document.getElementById('traerMsg'),sa
  catch(e){say('No se pudo consultar: '+(e&&e.message||e))}}
 async function probarEstados(id){const c=db.cases.find(x=>x.id===id),pre=document.getElementById('estPre');if(!c||!pre)return;
  if(!sb||!userId){pre.textContent='Primero inicia sesión.';return}
- pre.textContent='Consultando el portal de publicaciones…';
- try{const x=await sb.functions.invoke('revisar-procesos',{body:{accion:'estados_prueba',radicado:c.radicado}});
+ pre.style.whiteSpace='pre-wrap';pre.style.wordBreak='normal';pre.style.fontSize='13px';
+ pre.textContent='Consultando el portal de publicaciones procesales…';
+ try{const x=await sb.functions.invoke('revisar-procesos',{body:{accion:'estados_caso',radicado:c.radicado}});
   if(x.error){let t='No se pudo consultar.';try{const j=await x.error.context.json();if(j&&j.error)t=j.error}catch(e){}pre.textContent=t;return}
-  pre.textContent=JSON.stringify(x.data,null,1)}catch(e){pre.textContent='Error: '+(e&&e.message||e)}}
+  if(x.data&&x.data.error){pre.textContent=x.data.error;return}
+  const d=x.data||{},m=d.coincidencias||[];
+  pre.textContent=m.length?m.map(e=>'• '+(e.titulo||'Publicación')+(e.fila?'\n  '+e.fila:'')+((e.docs||[]).length?'\n  Documentos: '+e.docs.join(', '):'')).join('\n'):'No aparece este proceso en las publicaciones recientes de su juzgado ('+(d.publicaciones||0)+' revisadas).'}
+ catch(e){pre.textContent='Error: '+(e&&e.message||e)}}
 async function traerHistorial(id){try{const x=await sb.functions.invoke('revisar-procesos',{body:{accion:'sincronizar',case_id:id}});if(!x.error&&x.data&&x.data.ok)await loadAuto()}catch(e){}}
 async function watchSync(){if(!sb||!userId)return;
  const want=db.cases.filter(c=>c.radicado&&c.status!=='Cerrado');
