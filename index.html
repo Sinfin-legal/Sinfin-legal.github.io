@@ -390,6 +390,7 @@ header.top .brand h1{font-size:24px}
 :root[data-estilo] header.top #sync::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px;vertical-align:1px}
 :root[data-estilo] header.top #newCase{padding:10px 18px}
 @media (max-width:520px){:root[data-estilo] header.top{padding:8px 8px 8px 10px;border-radius:22px}:root[data-estilo] header.top .logo{height:40px}:root[data-estilo] header.top .brand h1{font-size:19px}}
+@media (max-width:520px){.detail .fsub button{padding:8px 7px;font-size:13px}}
 </style>
 </head>
 <body>
@@ -420,7 +421,7 @@ header.top .brand h1{font-size:24px}
       <select id="flt" aria-label="Filtrar por estado">
         <option value="">Todos los estados</option><option>Activo</option><option>En pausa</option><option>Cerrado</option>
       </select>
-      <select id="flk" aria-label="Filtrar por tipo de asunto"><option value="">Todos los asuntos</option><option value="Proceso judicial">Procesos judiciales</option><option value="Conciliación">Conciliaciones</option><option value="Contrato">Contratos</option><option value="Asesoría">Asesorías</option><option value="Otro">Otros</option></select>
+      <select id="flk" aria-label="Filtrar por tipo de asunto"><option value="">Todos los asuntos</option><option value="Proceso judicial">Procesos judiciales</option><option value="Conciliación">Conciliaciones</option><option value="Contrato">Contratos</option><option value="Asesoría">Asesorías</option><option value="Consulta">Consultas</option><option value="Notarial">Notariales</option><option value="Otro">Otros</option></select>
     </div>
     <div id="cases"></div>
     <p style="margin-top:18px;color:var(--muted);font-size:13px">Tus datos se guardan en este navegador. <button class="link" id="bk">Descargar copia de seguridad</button> <button class="link" id="rs">Restaurar copia</button> <a href="privacidad.html" style="color:var(--accent)">Política de privacidad</a><input type="file" id="rsf" accept=".json,application/json" class="hide"></p>
@@ -473,7 +474,8 @@ function stats(c){
 const feeLabel=c=>c.feeType==='hora'?eur(c.amount)+' / hora':c.feeType==='fijo'?'Tarifa fija '+eur(c.amount):c.amount+'% sobre lo recuperado';
 const color=s=>s==='Activo'?'var(--ok)':s==='En pausa'?'var(--warn)':'var(--muted)';
 
-let current=null;
+let current=null,caseSub='seg',caseSubFor=null;
+document.addEventListener('click',ev=>{const t=ev.target.closest('[data-cs]');if(t&&current){caseSub=t.dataset.cs;render();const o=document.querySelector('[data-cs].on');if(o)o.scrollIntoView({block:'nearest',inline:'center'})}});
 function render(){
   try{if(pagosSync())save()}catch(e){}
   document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===(['desp','cont','pros','calc'].includes(view)?'mas':view)&&!b.classList.contains('link')));
@@ -509,17 +511,22 @@ function renderDetail(){
   const es=db.entries.filter(e=>e.caseId===c.id).sort((a,b)=>b.date.localeCompare(a.date));
   const ps=db.payments.filter(p=>p.caseId===c.id).sort((a,b)=>b.date.localeCompare(a.date));
   const hourly=c.feeType==='hora';
+  if(caseSubFor!==c.id){caseSubFor=c.id;caseSub='seg'}
+  const esJud=!c.kind||c.kind==='Proceso judicial';
+  const TS=[['seg',esJud?'Proceso':'Seguimiento'],...(esJud?[['dem','Demanda']]:[]),['hon','Honorarios'],['doc','Documentos'],['cli','Cliente']];
+  if(!TS.some(t=>t[0]===caseSub))caseSub='seg';
+  const sub=caseSub,nav=`<div class="fsub">${TS.map(([k,n])=>`<button data-cs="${k}" class="${k===sub?'on':''}">${n}</button>`).join('')}</div>`;
   $('detailView').innerHTML=`<button class="link" id="back">‹ Todos los casos</button>
   <div class="detail"><div class="head"><div><h2>${esc(c.client)}</h2><div class="m" style="color:var(--muted)">${[c.title,c.number,c.type].filter(Boolean).map(esc).join(' · ')}</div></div>
   <div><span class="tag">${c.status}</span> <button class="link" id="editCase">Editar</button></div></div>
   <div class="kv"><div><small>Honorarios</small><b>${feeLabel(c)}</b></div><div><small>Facturable</small><b class="num">${eur(s.billed)}</b></div><div><small>Cobrado</small><b class="num" style="color:var(--ok)">${eur(s.paid)}</b></div><div><small>Pendiente</small><b class="num" style="color:var(--warn)">${eur(s.due)}</b></div></div>
   ${c.feeType==='exito'?`<div style="color:var(--muted)">Importe recuperado: ${eur(c.recovered)}</div>`:''}
-  ${contactosHtml(c)}${procHtml(c)}${hourly?`<div class="sec"><h3>Horas (${s.hrs.toLocaleString('es-ES')} h)</h3><button class="link" id="addE">Añadir horas</button></div>
+  ${nav}${sub==='cli'?contactosHtml(c)+portalInvHtml(c):''}${sub==='seg'?procHtml(c):''}${sub==='dem'&&esJud?prepHtml(c)+cadHtml(c):''}${hourly&&sub==='hon'?`<div class="sec"><h3>Horas (${s.hrs.toLocaleString('es-ES')} h)</h3><button class="link" id="addE">Añadir horas</button></div>
   ${es.length?`<div class="scroll"><table><tr><th>Fecha</th><th>Trabajo</th><th class="r">Horas</th><th class="r">Importe</th><th></th></tr>${es.map(e=>`<tr><td>${fdate(e.date)}</td><td>${esc(e.desc)}</td><td class="r num">${e.hours}</td><td class="r num">${eur(e.hours*c.amount)}</td><td><button class="link danger" data-de="${e.id}" aria-label="Eliminar registro">Eliminar</button></td></tr>`).join('')}</table></div>`:'<div class="empty">Sin horas registradas. Añade la primera para calcular los honorarios.</div>'}`:''}
-  <div class="sec"><h3>Pagos recibidos</h3><span><button class="link" id="addCobro">Recordar cobro</button> · <button class="link" id="addP">Registrar pago</button></span></div>
-  ${ps.length?`<div class="scroll"><table><tr><th>Fecha</th><th>Concepto</th><th class="r">Importe</th><th></th></tr>${ps.map(p=>`<tr><td>${fdate(p.date)}</td><td>${esc(p.note)||'—'}</td><td class="r num">${eur(p.amount)}</td><td><button class="link danger" data-dp="${p.id}" aria-label="Eliminar pago">Eliminar</button></td></tr>`).join('')}</table></div>`:'<div class="empty">Aún no hay pagos de este cliente.</div>'}
-  ${docsHtml(c)}
-  ${invHtml(c)}
+  ${sub==='hon'?`<div class="sec"><h3>Pagos recibidos</h3><span><button class="link" id="addCobro">Recordar cobro</button> · <button class="link" id="addP">Registrar pago</button></span></div>
+  ${ps.length?`<div class="scroll"><table><tr><th>Fecha</th><th>Concepto</th><th class="r">Importe</th><th></th></tr>${ps.map(p=>`<tr><td>${fdate(p.date)}</td><td>${esc(p.note)||'—'}</td><td class="r num">${eur(p.amount)}</td><td><button class="link danger" data-dp="${p.id}" aria-label="Eliminar pago">Eliminar</button></td></tr>`).join('')}</table></div>`:'<div class="empty">Aún no hay pagos de este cliente.</div>'}`:''}
+  ${sub==='doc'?docsHtml(c)+portalDocsHtml(c):''}
+  ${sub==='hon'?invHtml(c):''}
   </div>`;
 }
 
@@ -533,7 +540,7 @@ function form(title,fields,onOk,extra){
 const val=n=>$('frm').elements[n].value.trim();
 const F=(l,n,v='',t='text',x='')=>`<label for="f_${n}">${l}</label><input id="f_${n}" name="${n}" type="${t}" value="${esc(v)}" ${x}>`;
 
-const KINDS=['Proceso judicial','Conciliación','Contrato','Asesoría','Otro'];
+const KINDS=['Proceso judicial','Conciliación','Contrato','Asesoría','Consulta','Notarial','Otro'];
 function caseForm(c,pre){
   const e=!!c;c=c||{status:'Activo',feeType:'hora',type:'Civil',...(pre||{})};
   form(e?'Editar caso':'Nuevo caso',
@@ -585,6 +592,7 @@ document.addEventListener('click',ev=>{
   else if(t.dataset.dp){db.payments=db.payments.filter(p=>p.id!==t.dataset.dp);save();render()}
 });
 let view='dash',cal=new Date();cal.setDate(1);
+const STAGES_NOT=['Presentación de documentos','Firma de escritura','Entregada al cliente','Otro'];
 const STAGES=['Demanda presentada','Admitida a trámite','Contestación','Audiencia previa','Prueba','Juicio','Sentencia','Recurso','Ejecución','Archivo','Otro'];
 const EVT=['Audiencia','Plazo','Cobro','Pago','Publicación','Reunión','Otro'];
 const evColor=t=>t==='Audiencia'?'var(--bad)':t==='Plazo'?'var(--warn)':t==='Cobro'?'var(--ok)':t==='Pago'?'var(--warn)':t==='Publicación'?'#b02a5b':t==='Reunión'?'var(--info)':'var(--muted)';
@@ -605,7 +613,8 @@ function procHtml(c){
  ${evs.length?evs.map(evRow).join(''):'<div class="empty">No hay audiencias ni plazos próximos.</div>'}`;
 }
 function updForm(caseId){
- form('Nueva actuación',S('Fase o estado','stage',STAGES,stageOf(caseId)||STAGES[0])+F('Fecha','date',today(),'date')+F('Juzgado o referencia (opcional)','court')+'<label for="f_note">Detalle (opcional)</label><textarea id="f_note" name="note" rows="3"></textarea><label style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-weight:400"><input type="checkbox" name="cli" style="width:auto;margin-top:3px"> <span>Mostrar al cliente en su portal</span></label>',
+ const _cs=db.cases.find(x=>x.id===caseId),_ST=_cs&&_cs.kind==='Notarial'?STAGES_NOT:STAGES;
+ form('Nueva actuación',S('Fase o estado','stage',_ST,(_ST.includes(stageOf(caseId))&&stageOf(caseId))||_ST[0])+F('Fecha','date',today(),'date')+F('Juzgado o referencia (opcional)','court')+'<label for="f_note">Detalle (opcional)</label><textarea id="f_note" name="note" rows="3"></textarea><label style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-weight:400"><input type="checkbox" name="cli" style="width:auto;margin-top:3px"> <span>Mostrar al cliente en su portal</span></label>',
   f=>{if(!val('date'))return 'Indica la fecha.';db.updates.push({id:uid('u'),caseId,date:val('date'),stage:val('stage'),court:val('court'),note:val('note'),cli:!!$('frm').elements.cli.checked})});
 }
 
@@ -1281,7 +1290,6 @@ function prepHtml(c){
   <p style="margin:0 0 6px;color:var(--muted);font-size:13px">${prox?'Próximo impulso: <b style="color:var(--ink)">'+fdate(prox.fecha)+'</b>':'No hay un impulso programado.'}${im&&im.cada?' · cada '+im.cada+' días':''}</p>${logHtml(im&&im.log,'data-il')}`;
  return a+b;
 }
-{const _ph=procHtml;procHtml=c=>_ph(c)+prepHtml(c)}
 function prepForm(c){
  form('Preparación de la demanda',F('Días que te dieron','dias',c.prep?c.prep.dias:15,'number','min="1" step="1" inputmode="numeric"')+F('Desde (fecha)','inicio',c.prep?c.prep.inicio:today(),'date'),
   f=>{const n=parseInt(val('dias'),10),ini=val('inicio');if(!(n>0)||!ini)return 'Indica los días y la fecha de inicio.';
@@ -1350,7 +1358,6 @@ function cadHtml(c){
  <p style="margin:6px 0 0">Fecha límite: <b>${fdate(k.limite)}</b> · ${venc?`<span class="venc">venció hace ${-d} ${-d===1?'día':'días'}</span>`:d===0?'<b>hoy</b>':`faltan ${d} ${d===1?'día':'días'}`}</p>
  <p style="margin:6px 0 0;color:var(--muted);font-size:13px">${k.n} ${UNI[k.u]} desde ${fdate(k.desde)}${k.ajustado?' · movida al siguiente día hábil':''}${k.base?' · '+esc(k.base):''}</p>
  <p style="margin:8px 0 0"><button class="link danger" id="cadDel">Quitar</button></p></div>`}
-{const _ph2=procHtml;procHtml=c=>_ph2(c)+cadHtml(c)}
 function cadLimpiar(c){
  if(c.cad){db.events=db.events.filter(x=>x.id!==c.cad.evId);db.tareas=tareas().filter(x=>!(c.cad.tk||[]).includes(x.id))}}
 function cadForm(c){
@@ -1398,8 +1405,8 @@ function portalHtml(c){
  if(!sb||!userId)b+='<div class="empty" style="padding:4px 0 10px">Inicia sesión para invitar a tu cliente.</div>';
  else{portalCargar(c.id);const L=portalInv[c.id];
   b+=L==null?'<div class="empty" style="padding:4px 0 10px">Cargando…</div>':L.length?L.map(x=>`<div class="panel" style="margin:0 0 8px"><p style="margin:0"><b>${esc(x.email)}</b> · ${x.user_id?'ya entró a su cuenta':'aún no ha entrado'}</p><p style="margin:4px 0 0;color:var(--muted);font-size:13px">Verá: estado y actuaciones marcadas${x.mostrar&&x.mostrar.rama?', actuaciones de la Rama':''}${x.mostrar&&x.mostrar.pagos?', honorarios y pagos':''}, y los documentos por aportar.</p><p style="margin:8px 0 0"><button class="link" data-pc-ver="${x.id}">Ver invitación</button> · <button class="link danger" data-pc-del="${x.id}">Quitar acceso</button></p></div>`).join(''):'<div class="empty" style="padding:4px 0 10px">Invita a tu cliente para que vea el estado de su caso, sus pagos y lo que falta entregar.</div>'}
- return a+b}
-{const _ph3=procHtml;procHtml=c=>_ph3(c)+portalHtml(c)}
+ return {docs:a,inv:b}}
+const portalDocsHtml=c=>portalHtml(c).docs,portalInvHtml=c=>portalHtml(c).inv;
 function portalMensaje(c,x){
  const url=db.portalUrl||'',firma=(db.firm&&db.firm.name)||'tu abogada';
  return `Hola ${c.client||''}, soy ${firma}. Ya puedes ver el estado de tu caso aquí: ${url}\n\n1) Crea tu cuenta con este correo: ${x.email}\n2) Cuando te lo pida, escribe este código: ${x.codigo}\n\nCualquier duda, me escribes.`}
