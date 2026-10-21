@@ -390,7 +390,7 @@ header.top .brand h1{font-size:24px}
 :root[data-estilo] header.top #sync::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px;vertical-align:1px}
 :root[data-estilo] header.top #newCase{padding:10px 18px}
 @media (max-width:520px){:root[data-estilo] header.top{padding:8px 8px 8px 10px;border-radius:22px}:root[data-estilo] header.top .logo{height:40px}:root[data-estilo] header.top .brand h1{font-size:19px}}
-@media (max-width:520px){.detail .fsub button{padding:8px 7px;font-size:13px}}
+@media (max-width:520px){.detail .fsub button{padding:8px 5px;font-size:12.5px}}
 </style>
 </head>
 <body>
@@ -521,7 +521,7 @@ function renderDetail(){
   <div><span class="tag">${c.status}</span> <button class="link" id="editCase">Editar</button></div></div>
   <div class="kv"><div><small>Honorarios</small><b>${feeLabel(c)}</b></div><div><small>Facturable</small><b class="num">${eur(s.billed)}</b></div><div><small>Cobrado</small><b class="num" style="color:var(--ok)">${eur(s.paid)}</b></div><div><small>Pendiente</small><b class="num" style="color:var(--warn)">${eur(s.due)}</b></div></div>
   ${c.feeType==='exito'?`<div style="color:var(--muted)">Importe recuperado: ${eur(c.recovered)}</div>`:''}
-  ${nav}${sub==='cli'?contactosHtml(c)+portalInvHtml(c):''}${sub==='seg'?procHtml(c):''}${sub==='dem'&&esJud?prepHtml(c)+cadHtml(c):''}${hourly&&sub==='hon'?`<div class="sec"><h3>Horas (${s.hrs.toLocaleString('es-ES')} h)</h3><button class="link" id="addE">Añadir horas</button></div>
+  ${nav}${sub==='hon'?tiempoHtml(c):''}${sub==='cli'?contactosHtml(c)+portalInvHtml(c):''}${sub==='seg'?procHtml(c):''}${sub==='dem'&&esJud?prepHtml(c)+cadHtml(c):''}${hourly&&sub==='hon'?`<div class="sec"><h3>Horas (${s.hrs.toLocaleString('es-ES')} h)</h3><button class="link" id="addE">Añadir horas</button></div>
   ${es.length?`<div class="scroll"><table><tr><th>Fecha</th><th>Trabajo</th><th class="r">Horas</th><th class="r">Importe</th><th></th></tr>${es.map(e=>`<tr><td>${fdate(e.date)}</td><td>${esc(e.desc)}</td><td class="r num">${e.hours}</td><td class="r num">${eur(e.hours*c.amount)}</td><td><button class="link danger" data-de="${e.id}" aria-label="Eliminar registro">Eliminar</button></td></tr>`).join('')}</table></div>`:'<div class="empty">Sin horas registradas. Añade la primera para calcular los honorarios.</div>'}`:''}
   ${sub==='hon'?`<div class="sec"><h3>Pagos recibidos</h3><span><button class="link" id="addCobro">Recordar cobro</button> · <button class="link" id="addP">Registrar pago</button></span></div>
   ${ps.length?`<div class="scroll"><table><tr><th>Fecha</th><th>Concepto</th><th class="r">Importe</th><th></th></tr>${ps.map(p=>`<tr><td>${fdate(p.date)}</td><td>${esc(p.note)||'—'}</td><td class="r num">${eur(p.amount)}</td><td><button class="link danger" data-dp="${p.id}" aria-label="Eliminar pago">Eliminar</button></td></tr>`).join('')}</table></div>`:'<div class="empty">Aún no hay pagos de este cliente.</div>'}`:''}
@@ -1443,6 +1443,39 @@ document.addEventListener('click',async ev=>{
  else if(t.dataset.dpD){if(confirm('¿Quitar este documento de la lista?')){c.docsPend=(c.docsPend||[]).filter(d=>d.id!==t.dataset.dpD);save();render()}}
  else if(t.dataset.pcVer){const x=(portalInv[c.id]||[]).find(i=>i.id===t.dataset.pcVer);if(x)portalCompartir(c,x)}
  else if(t.dataset.pcDel){if(confirm('¿Quitar el acceso de este cliente? Dejará de ver su caso.')){const x=await sb.from('portal_clientes').delete().eq('id',t.dataset.pcDel);if(!x.error){portalInv[c.id]=(portalInv[c.id]||[]).filter(i=>i.id!==t.dataset.pcDel);render()}else alert('No se pudo quitar el acceso.')}}
+});
+
+
+/* ===== Temporizador por caso ===== */
+const hms=ms=>{const s=Math.max(0,Math.floor(ms/1000)),p=n=>String(n).padStart(2,'0');return p(Math.floor(s/3600))+':'+p(Math.floor(s%3600/60))+':'+p(s%60)};
+const fmtH=n=>{const m=Math.round(n*60),hh=Math.floor(m/60),mm=m%60;return (hh?hh+' h ':'')+mm+' min'};
+function tiempoHtml(c){
+ const es=db.entries.filter(e=>e.caseId===c.id).sort((a,b)=>b.date.localeCompare(a.date)),tot=es.reduce((s,e)=>s+e.hours,0),run=c.timer&&c.timer.start;
+ const lista=c.feeType==='hora'?'':(es.length?`<div class="scroll"><table><tr><th>Fecha</th><th>Trabajo</th><th class="r">Tiempo</th><th></th></tr>${es.map(e=>`<tr><td>${fdate(e.date)}</td><td>${esc(e.desc)}</td><td class="r num">${fmtH(e.hours)}</td><td><button class="link danger" data-de="${e.id}" aria-label="Eliminar registro">Eliminar</button></td></tr>`).join('')}</table></div>`:'');
+ return `<div class="panel" style="margin-top:12px"><h3>Tiempo trabajado</h3>
+ ${run?`<p style="margin:6px 0 2px;color:var(--muted)">Corriendo desde las ${new Date(run).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</p><div style="font-size:34px;font-weight:600;font-variant-numeric:tabular-nums" class="tmClock" data-st="${run}">${hms(Date.now()-run)}</div>
+ <div style="display:flex;gap:8px;margin-top:10px"><button class="primary" id="tmStop">Detener y guardar</button><button id="tmDiscard">Descartar</button></div>`
+ :`<p style="margin:6px 0 10px;color:var(--muted)">${es.length?'Total en este caso: <b style="color:var(--ink)">'+fmtH(tot)+'</b>':'Mide cuánto tiempo dedicas a este caso.'}</p><button class="primary" id="tmStart">▶ Iniciar temporizador</button>`}
+ </div>${lista}`}
+function tmPill(){
+ let el=document.getElementById('tmPill');
+ const act=db.cases.filter(c=>c.timer&&c.timer.start);
+ if(!act.length){if(el)el.remove();return}
+ if(!el){el=document.createElement('button');el.id='tmPill';el.className='primary';el.style.cssText='position:fixed;right:12px;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:40;box-shadow:0 6px 18px rgba(0,0,0,.25);padding:9px 14px';document.body.appendChild(el)}
+ const c=act[0];el.dataset.tmOpen=c.id;el.textContent='⏱ '+hms(Date.now()-c.timer.start)+(act.length>1?' (+'+(act.length-1)+')':'')+' · '+(c.client||'caso');
+}
+setInterval(()=>{document.querySelectorAll('.tmClock').forEach(e=>e.textContent=hms(Date.now()-Number(e.dataset.st)));tmPill()},1000);
+document.addEventListener('click',ev=>{
+ const t=ev.target.closest('button');if(!t)return;
+ if(t.dataset.tmOpen){current=t.dataset.tmOpen;view='casos';caseSub='hon';caseSubFor=current;render();window.scrollTo(0,0);return}
+ if(!current)return;const c=db.cases.find(x=>x.id===current);if(!c)return;
+ if(t.id==='tmStart'){c.timer={start:Date.now()};save();render();tmPill()}
+ else if(t.id==='tmDiscard'){if(confirm('¿Descartar este tiempo sin guardarlo?')){delete c.timer;save();render();tmPill()}}
+ else if(t.id==='tmStop'){
+  const ms=Date.now()-c.timer.start,hrs=Math.max(0.01,Math.round(ms/36000)/100);
+  form('Guardar el tiempo',`<p style="margin:0 0 6px">Trabajaste <b>${hms(ms)}</b>. Puedes ajustar las horas si hace falta.</p>`+F('¿En qué trabajaste?','desc','','text','placeholder="Ej.: revisión del expediente"')+F('Horas (en decimal: 1,5 = una hora y media)','hours',String(hrs).replace('.',','),'text','inputmode="decimal"'),
+   f=>{const hh=parseFloat(val('hours').replace(',','.'));if(!(hh>0))return 'Escribe las horas, por ejemplo 0,5.';if(!val('desc'))return 'Cuéntame en qué trabajaste.';db.entries.push({id:uid('e'),caseId:c.id,date:today(),desc:val('desc'),hours:hh});delete c.timer});
+  $('dlg').addEventListener('close',()=>tmPill(),{once:true})}
 });
 
 /* ---------- Prospectos ---------- */
