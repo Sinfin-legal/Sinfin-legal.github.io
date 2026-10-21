@@ -391,10 +391,15 @@ header.top .brand h1{font-size:24px}
 :root[data-estilo] header.top #newCase{padding:10px 18px}
 @media (max-width:520px){:root[data-estilo] header.top{padding:8px 8px 8px 10px;border-radius:22px}:root[data-estilo] header.top .logo{height:40px}:root[data-estilo] header.top .brand h1{font-size:19px}}
 @media (max-width:520px){.detail .fsub button{padding:8px 5px;font-size:12.5px}}
-.topduo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.topduo{display:grid;grid-template-columns:minmax(0,.72fr) minmax(0,1.28fr);gap:10px;margin-bottom:12px;align-items:start}
+#pmDash{padding:10px 12px!important}#pmDash .pmDashClock{font-size:23px!important;margin:2px 0 6px!important}#pmDash .tag{font-size:11px}#pmDash button{padding:5px 10px!important;font-size:13px!important}#pmDash div[style*='display:flex']{flex-wrap:wrap}
 .topduo .panel{margin:0;padding:12px 14px;min-width:0;border:0;width:100%;font:inherit;color:var(--ink)}
 .topduo .panel h3{font-size:14px;margin:0 0 4px}
 .topduo .panel button{padding:6px 12px;font-size:13.5px}
+.tk.mini{display:flex;align-items:center;gap:8px;padding:3px 0;min-width:0}
+.tk.mini span{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.tk.mini.hecho span{text-decoration:line-through;color:var(--muted)}
+.topduo .tk.mini .ck{padding:0;flex:none}
 </style>
 </head>
 <body>
@@ -1526,9 +1531,12 @@ function pomoDashHtml(){const s=pomoGet(),t=today();
  return `<div class="topduo"><div class="panel" id="pmDash"><h3>Pomodoro</h3><span class="tag">${POMO_N[s.fase]}</span>
  <div class="pmDashClock" style="font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2;margin:2px 0 6px">${pomoReloj(s)}</div>
  <div style="display:flex;gap:6px"><button class="primary" data-pmd="${s.run?'pausa':'inicio'}">${s.run?'Pausar':(s.resta?'Seguir':'Iniciar')}</button><button data-pmd="abrir" aria-label="Ajustes del Pomodoro">⚙</button></div></div>
- <button class="panel" id="pendMini" data-pend-go style="text-align:left;display:block"><h3>Pendientes</h3><div style="font-size:28px;font-weight:600;line-height:1.2">${P.length}</div>
- <div style="color:var(--muted);font-size:12.5px;margin-top:4px;overflow:hidden">${P.length?P.slice(0,2).map(x=>'· '+esc(x.title)).join('<br>'):'Todo al día'}${M?'<br>✉ '+M+(M===1?' mensaje':' mensajes'):''}</div></button></div>`}
+ <div class="panel" id="pendMini"><h3>Pendientes${P.length?' ('+P.length+')':''}</h3>
+ ${P.length?P.slice(0,4).map(x=>`<div class="tk mini"><button class="ck" data-pm-ck="${x.id}" aria-label="Marcar como hecho"></button><span>${x.tipo==='Mensaje por responder'?'✉ ':''}${esc(x.title)}</span></div>`).join(''):'<div style="color:var(--muted);font-size:13px">Todo al día ✨</div>'}
+ <p style="margin:6px 0 0;font-size:13px">${P.length>4?'<button class="link" data-pend-go style="padding:2px 0">Ver todos</button> · ':''}<button class="link" data-pend-new style="padding:2px 0">+ Agregar</button></p></div></div>`}
 document.addEventListener('click',ev=>{const g=ev.target.closest('[data-pend-go]');if(g){pendForm();return}
+ const pn=ev.target.closest('[data-pend-new]');if(pn){tareaForm();return}
+ const ck=ev.target.closest('[data-pm-ck]');if(ck){const x=tareas().find(k=>k.id===ck.dataset.pmCk);if(x&&!x.done){x.done=true;x.doneAt=today();save();ck.textContent='✓';const r=ck.closest('.tk');if(r)r.classList.add('hecho');setTimeout(()=>{if(view==='dash'&&!$('dlg').open)render()},1000)}return}
  const b=ev.target.closest('[data-pmd]');if(!b)return;
  if(b.dataset.pmd==='abrir'){pomoForm();return}
  pomoAccion(b.dataset.pmd);pomoPill();if(typeof view!=='undefined'&&view==='dash')render()});
