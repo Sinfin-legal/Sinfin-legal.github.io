@@ -1333,11 +1333,11 @@ $('calcView').addEventListener('click',e=>{const b=e.target.closest('button');if
 function renderMas(){
  $('masView').classList.remove('hide');
  const pin=!!(()=>{try{return localStorage.getItem('sinfin-pin')}catch(e){return ''}})();
- const I=[['guia','Guía de inicio','Los primeros pasos para sacarle provecho a Sinfín'],['desp','Despachos','Tus casos agrupados por juzgado'],['pros','Prospectos','Seguimiento de personas que te consultan'],['calc','Calculadoras jurídicas','Liquidación laboral, mora, indexación y términos'],['cont','Contenido','Planifica tus publicaciones en redes'],['estilo','Estilo','Clásico, rosa, lila o ejecutivo'],['pin',pin?'Candado con PIN (activado)':'Candado con PIN','Protege la app en este dispositivo'],['copias','Copias automáticas','Una cada día en la nube; restaura una versión anterior'],['bk','Copia de seguridad','Descarga tus datos'],['mail','Enviar correo de prueba','Comprueba que los avisos de la Rama Judicial te lleguen'],['rs','Restaurar copia','Recupera una copia descargada']].concat($('logout').classList.contains('hide')?[]:[['out','Cerrar sesión','Salir de tu cuenta en este dispositivo']]);
+ const I=[['guia','Guía de inicio','Los primeros pasos para sacarle provecho a Sinfín'],['desp','Despachos','Tus casos agrupados por juzgado'],['pros','Prospectos','Seguimiento de personas que te consultan'],['calc','Calculadoras jurídicas','Liquidación laboral, mora, indexación y términos'],['cont','Contenido','Planifica tus publicaciones en redes'],['estilo','Estilo','Clásico, rosa, lila o ejecutivo'],['pin',pin?'Candado con PIN (activado)':'Candado con PIN','Protege la app en este dispositivo'],['copias','Copias automáticas','Una cada día en la nube; restaura una versión anterior'],['bk','Copia de seguridad','Descarga tus datos'],['push','Notificaciones en el celular','Resumen diario y avisos de novedades, sin abrir la app'],['mail','Enviar correo de prueba','Comprueba que los avisos de la Rama Judicial te lleguen'],['rs','Restaurar copia','Recupera una copia descargada']].concat($('logout').classList.contains('hide')?[]:[['out','Cerrar sesión','Salir de tu cuenta en este dispositivo']]);
  $('masView').innerHTML=`<h2 style="margin-bottom:10px">Más</h2><div class="mas">${I.map(([k,n,d])=>`<button class="go" data-go="${k}"><span><b>${n}</b><small>${d}</small></span></button>`).join('')}</div>`;
 }
 $('masView').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!b.dataset.go)return;const k=b.dataset.go;
- if(['desp','pros','calc','cont'].includes(k)){view=k;render();window.scrollTo(0,0)}else if(k==='estilo')estiloForm();else if(k==='pin')pinForm();else if(k==='bk')$('bk').click();else if(k==='mail')correoPrueba(b);else if(k==='copias')copiasForm();else if(k==='guia'){db.guiaOff=false;save();view='dash';render();window.scrollTo(0,0)}else if(k==='rs')$('rs').click();else if(k==='out')$('logout').click()});
+ if(['desp','pros','calc','cont'].includes(k)){view=k;render();window.scrollTo(0,0)}else if(k==='estilo')estiloForm();else if(k==='pin')pinForm();else if(k==='bk')$('bk').click();else if(k==='push')pushForm();else if(k==='mail')correoPrueba(b);else if(k==='copias')copiasForm();else if(k==='guia'){db.guiaOff=false;save();view='dash';render();window.scrollTo(0,0)}else if(k==='rs')$('rs').click();else if(k==='out')$('logout').click()});
 
 async function correoPrueba(btn){
  if(!sb||!userId){alert('Inicia sesión para probar los avisos.');return}
@@ -1360,6 +1360,7 @@ function guiaPasos(){
   ['rad','Agrega el radicado de 23 dígitos','Así Sinfín revisa la Rama Judicial y te avisa por correo.',db.cases.some(c=>c.radicado)],
   ['fecha','Anota un plazo o una audiencia','Queda en tu calendario y en las alertas.',db.events.length>0],
   ...(gDisp()?[['cal','Conecta tu Google Calendar','Cada fecha te llega como notificación al celular.',!!db.gcalOn]]:[]),
+  ['push','Activa las notificaciones del celular','Te avisan de plazos y novedades aunque no tengas la app abierta.',(()=>{try{return !!localStorage.getItem('sinfin-push')}catch(e){return false}})()],
   ['mail','Prueba el correo de avisos','Comprueba que los avisos te lleguen a tu correo.',!!db.mailOk],
   ['inst','Instala la app en tu celular','Android (Chrome): menú ⋮ → Instalar aplicación. iPhone (Safari): Compartir → Añadir a pantalla de inicio.',sa]];
 }
@@ -1377,9 +1378,60 @@ document.addEventListener('click',e=>{
  else if(k==='rad'){const c=db.cases.find(x=>!x.radicado);if(c)caseForm(c);else $('newCase').click()}
  else if(k==='fecha')eventForm(null,today());
  else if(k==='cal')gcalForm();
+ else if(k==='push')pushForm();
  else if(k==='mail'){if(!sb||!userId)alert('Inicia sesión para probar los avisos.');else correoPrueba(null)}
  else if(k==='inst')alert('Android (Chrome): toca el menú ⋮ y elige "Instalar aplicación".\n\niPhone (Safari): toca Compartir y elige "Añadir a pantalla de inicio".');
 });
+
+
+/* ===== Notificaciones en el celular (Web Push) ===== */
+const VAPID_PUB='BDyrCogYzxC0LBhb6UESo7LnQuXEBKDOCzPWtOyRRJHKo4tOWQWy7WI0zxzDsPt1onkJEzyo4kxdZwlRmqSzJKM';
+const b64u=s=>{const p='='.repeat((4-s.length%4)%4),b=(s+p).replace(/-/g,'+').replace(/_/g,'/'),x=atob(b),o=new Uint8Array(x.length);for(let i=0;i<x.length;i++)o[i]=x.charCodeAt(i);return o};
+const esIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const esApp=()=>(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+const pushOk=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+async function pushEstado(){
+ if(!pushOk())return 'no';if(Notification.permission==='denied')return 'negado';
+ try{const r=await Promise.race([navigator.serviceWorker.ready,new Promise((_,no)=>setTimeout(no,4000))]),s=await r.pushManager.getSubscription();return s?'activo':'inactivo'}catch(e){return 'inactivo'}}
+async function pushActivar(){
+ const r=await navigator.serviceWorker.ready,perm=await Notification.requestPermission();
+ if(perm!=='granted')throw new Error('No diste el permiso. Puedes cambiarlo en los ajustes del navegador o del teléfono.');
+ let s=await r.pushManager.getSubscription();if(!s)s=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
+ const j=s.toJSON(),x=await sb.from('push_subs').upsert({user_id:userId,endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth},{onConflict:'endpoint'});
+ if(x.error)throw new Error('No se pudo guardar el aviso en la nube. ¿Ya ejecutaste el SQL de notificaciones?');
+ try{localStorage.setItem('sinfin-push','1')}catch(e){}}
+async function pushDesactivar(){
+ const r=await navigator.serviceWorker.ready,s=await r.pushManager.getSubscription();
+ if(s){await sb.from('push_subs').delete().eq('endpoint',s.endpoint);await s.unsubscribe()}
+ try{localStorage.removeItem('sinfin-push')}catch(e){}}
+async function pushForm(){
+ form('Notificaciones en el celular','<div id="pst" style="margin:0 0 8px"></div><div id="pmsg" class="err" role="alert"></div>',()=>{},
+  '<button type="button" id="pTest" class="hide" style="margin-right:auto">Enviar prueba</button><button type="button" class="primary hide" id="pOn">Activar</button>');
+ $('ok').classList.add('hide');$('cancel').textContent='Cerrar';$('pst').textContent='Comprobando…';
+ const msg=(t,bad)=>{$('pmsg').style.color=bad?'var(--bad)':'var(--ink)';$('pmsg').textContent=t};
+ const pintar=async()=>{
+  const st=await pushEstado();let t='';
+  if(!sb||!userId)t='Inicia sesión para activar las notificaciones.';
+  else if(st==='no')t=esIOS&&!esApp()?'<b>En iPhone, primero instala Sinfín.</b><ol style="margin:6px 0 0;padding-left:20px"><li>Abre Sinfín en <b>Safari</b>.</li><li>Toca <b>Compartir</b> (el cuadro con la flecha).</li><li>Elige <b>Añadir a pantalla de inicio</b>.</li><li>Abre Sinfín desde el ícono nuevo y vuelve aquí.</li></ol>':'Este navegador no permite notificaciones. Prueba con Chrome (Android) o con la app instalada en el iPhone.';
+  else if(st==='negado')t='Las notificaciones están bloqueadas. Actívalas en los ajustes del navegador o del teléfono para Sinfín y vuelve a intentarlo.';
+  else if(st==='activo')t='<b>Activadas en este dispositivo.</b> Te llegará un resumen cada mañana a las 7:00 con tus fechas y pendientes, y un aviso cuando haya una novedad en tus procesos.';
+  else t='Recibe un resumen cada mañana a las 7:00 con tus fechas y pendientes, y un aviso cuando haya una novedad en tus procesos, aunque no tengas la app abierta.';
+  $('pst').innerHTML='<p style="margin:0">'+t+'</p>';
+  const puede=sb&&userId&&st!=='no'&&st!=='negado';
+  $('pOn').classList.toggle('hide',!puede);$('pOn').textContent=st==='activo'?'Desactivar':'Activar';$('pTest').classList.toggle('hide',!(puede&&st==='activo'));
+  return st};
+ await pintar();
+ $('pOn').onclick=async()=>{$('pOn').disabled=true;msg('');
+  try{const st=await pushEstado();if(st==='activo'){await pushDesactivar();msg('Notificaciones desactivadas en este dispositivo.')}else{await pushActivar();msg('Listo. Toca “Enviar prueba” para comprobarlo.')}}
+  catch(e){msg(e.message||String(e),true)}
+  $('pOn').disabled=false;await pintar()};
+ $('pTest').onclick=async()=>{$('pTest').disabled=true;msg('Enviando…');
+  try{const x=await sb.functions.invoke('revisar-procesos',{body:{accion:'probar_push'}});
+   if(x.error){let m='No se pudo enviar la prueba.';try{const j=await x.error.context.json();if(j&&j.error)m=j.error}catch(e){}throw new Error(m)}
+   if(x.data&&x.data.error)throw new Error(x.data.error);msg('Enviada. Debería llegarte en unos segundos.')}
+  catch(e){msg(e.message||String(e),true)}
+  $('pTest').disabled=false};
+}
 
 /* ===== Copias de seguridad automáticas ===== */
 const COPIA_TIPO={auto:'Automática',manual:'Manual','antes-de-restaurar':'Antes de restaurar'};
