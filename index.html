@@ -1613,11 +1613,11 @@ async function probarEstados(id){const c=db.cases.find(x=>x.id===id),pre=documen
  if(!sb||!userId){pre.textContent='Primero inicia sesión.';return}
  pre.style.whiteSpace='pre-wrap';pre.style.wordBreak='normal';pre.style.fontSize='13px';
  pre.textContent='Consultando el portal de publicaciones procesales…';
- try{const x=await sb.functions.invoke('revisar-procesos',{body:{accion:'estados_caso',radicado:c.radicado}});
+ try{const x=await conTiempo(sb.functions.invoke('revisar-procesos',{body:{accion:'estados_caso',radicado:c.radicado}}),110000,'Está tardando mucho. Vuelve a tocar el botón: cada vez avanza un poco más.');
   if(x.error){let t='No se pudo consultar.';try{const j=await x.error.context.json();if(j&&j.error)t=j.error}catch(e){}pre.textContent=t;return}
   if(x.data&&x.data.error){pre.textContent=x.data.error;return}
   const d=x.data||{},m=d.coincidencias||[];
-  pre.textContent=m.length?m.map(e=>'• '+(e.titulo||'Publicación')+(e.fila?'\n  '+e.fila:'')+((e.docs||[]).length?'\n  Documentos: '+e.docs.join(', '):'')).join('\n'):'No aparece este proceso en las publicaciones recientes de su juzgado ('+(d.publicaciones||0)+' revisadas).'}
+  pre.textContent=m.length?m.map(e=>'• '+(e.titulo||'Publicación')+(e.fila?'\n  '+e.fila:'')+((e.docs||[]).length?'\n  Documentos: '+e.docs.join(', '):'')).join('\n'):'Se han leído '+(d.publicaciones||0)+' publicaciones del juzgado'+(d.leidos?' ('+d.leidos+' nuevas ahora)':'')+' y este proceso no aparece en ellas. Si son muchas, vuelve a tocar el botón para seguir leyendo.'}
  catch(e){pre.textContent='Error: '+(e&&e.message||e)}}
 async function traerHistorial(id){try{const x=await sb.functions.invoke('revisar-procesos',{body:{accion:'sincronizar',case_id:id}});if(!x.error&&x.data&&x.data.ok)await loadAuto()}catch(e){}}
 async function watchSync(){if(!sb||!userId)return;
