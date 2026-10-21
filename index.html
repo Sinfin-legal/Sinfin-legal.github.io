@@ -1499,8 +1499,8 @@ const pomoLeft=s=>s.run?Math.max(0,s.fin-Date.now()):(s.resta||pomoDur(s,s.fase)
 let pomoCtx=null;
 function pomoSonido(){try{pomoCtx=pomoCtx||new (window.AudioContext||window.webkitAudioContext)();if(pomoCtx.state==='suspended')pomoCtx.resume();
  [0,.28,.56].forEach((t,i)=>{const o=pomoCtx.createOscillator(),g=pomoCtx.createGain();o.type='sine';o.frequency.value=[660,880,1100][i];o.connect(g);g.connect(pomoCtx.destination);const a=pomoCtx.currentTime+t;g.gain.setValueAtTime(0,a);g.gain.linearRampToValueAtTime(.35,a+.03);g.gain.exponentialRampToValueAtTime(.001,a+.25);o.start(a);o.stop(a+.27)})}catch(e){}}
-function pomoAviso(txt){pomoSonido();try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}
- try{if('Notification' in window&&Notification.permission==='granted'){if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.ready.then(r=>r.showNotification('🍅 Sinfín',{body:txt,icon:'icon-192.png',tag:'pomodoro'})).catch(()=>{new Notification('🍅 Sinfín',{body:txt})});else new Notification('🍅 Sinfín',{body:txt})}}catch(e){}}
+function pomoAviso(txt,srv){pomoSonido();try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}
+ try{if(!srv&&'Notification' in window&&Notification.permission==='granted'){if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.ready.then(r=>r.showNotification('🍅 Sinfín',{body:txt,icon:'icon-192.png',tag:'pomodoro'})).catch(()=>{new Notification('🍅 Sinfín',{body:txt})});else new Notification('🍅 Sinfín',{body:txt})}}catch(e){}}
 function pomoSiguiente(s,hecho){
  if(s.fase==='foco'){
   if(hecho){s.n++;const c=db.cases.find(x=>x.id===s.caso);
@@ -1519,13 +1519,26 @@ function pomoCuerpo(){
  <select id="pmCaso"><option value="">No anotar en ningún caso</option>${casos.map(c=>`<option value="${c.id}" ${c.id===s.caso?'selected':''}>${esc(c.client)}${c.title?' · '+esc(c.title):''}</option>`).join('')}</select>
  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div><label for="pmF">Enfoque (min)</label><input id="pmF" type="number" min="1" max="180" value="${s.cfg.foco}"></div><div><label for="pmC">Corto (min)</label><input id="pmC" type="number" min="1" max="60" value="${s.cfg.corto}"></div><div><label for="pmL">Largo (min)</label><input id="pmL" type="number" min="1" max="90" value="${s.cfg.largo}"></div></div>
  <p style="margin:10px 0 0;color:var(--muted);font-size:13px">Después de 4 enfoques viene un descanso largo. Para oír el aviso, deja la app abierta; si das permiso a las notificaciones, también te llega un aviso.</p>`}
+async function pomoNube(s){
+ if(!sb||!userId)return false;
+ try{
+  if(s.run){const r=await sb.from('avisos_programados').upsert({user_id:userId,clave:'pomo',enviar_en:new Date(s.fin).toISOString(),titulo:s.fase==='foco'?'🍅 Terminó el enfoque':'🍅 Terminó el descanso',cuerpo:s.fase==='foco'?'Toma un descanso.':'¿Seguimos con el siguiente enfoque?',enviado:false},{onConflict:'user_id,clave'});return !r.error}
+  await sb.from('avisos_programados').delete().eq('user_id',userId).eq('clave','pomo');return false
+ }catch(e){return false}}
+async function pomoEnCurso(s){
+ try{if(!('Notification' in window)||Notification.permission!=='granted'||!navigator.serviceWorker)return;
+  const r=await Promise.race([navigator.serviceWorker.ready,new Promise((_,j)=>setTimeout(j,3000))]);
+  (await r.getNotifications({tag:'pomo-run'})).forEach(n=>n.close());
+  if(s.run)await r.showNotification('🍅 '+POMO_N[s.fase]+' en curso',{body:'Termina a las '+new Date(s.fin).toLocaleTimeString('es-CO',{hour:'numeric',minute:'2-digit'}),icon:'icon-192.png',tag:'pomo-run',silent:true,data:{url:'./'}})
+ }catch(e){}}
+function pomoSync(s){pomoNube(s).then(ok=>{const x=pomoGet();x.srv=!!(ok&&x.run);pomoSet(x)});pomoEnCurso(s)}
 function pomoAccion(a){const s=pomoGet();
   if(a==='inicio'){s.run=true;s.fin=Date.now()+(s.resta||pomoDur(s,s.fase));try{pomoCtx=pomoCtx||new (window.AudioContext||window.webkitAudioContext)();pomoCtx.resume&&pomoCtx.resume()}catch(e){}
    try{if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()}catch(e){}}
   else if(a==='pausa'){s.resta=pomoLeft(s);s.run=false}
   else if(a==='reinicio'){s.run=false;s.resta=0}
   else if(a==='saltar')pomoSiguiente(s,false);
-  pomoSet(s)}
+  pomoSet(s);pomoSync(s)}
 function pomoDashHtml(){const s=pomoGet(),t=today();
  const P=tareas().filter(x=>!x.done).sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999')),M=P.filter(x=>x.tipo==='Mensaje por responder').length;
  return `<div class="topduo"><div class="panel" id="pmDash"><h3>Pomodoro</h3><span class="tag">${POMO_N[s.fase]}</span>
@@ -1567,8 +1580,8 @@ function pomoPill(){
  if(!el){el=document.createElement('button');el.id='pmPill';el.style.cssText='position:fixed;left:12px;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:40;box-shadow:0 6px 18px rgba(0,0,0,.2);padding:9px 14px;background:var(--surface);font-weight:600';el.onclick=()=>{if(!$('dlg').open)pomoForm()};document.body.appendChild(el)}
  el.textContent='🍅 '+pomoReloj(s)+' · '+POMO_N[s.fase]}
 setInterval(()=>{const s=pomoGet();
- if(s.run&&Date.now()>=s.fin){const f=s.fase;pomoSiguiente(s,true);pomoSet(s);
-  pomoAviso(f==='foco'?'¡Terminó el enfoque! Toma un descanso.':'Terminó el descanso. ¿Seguimos?');
+ if(s.run&&Date.now()>=s.fin){const f=s.fase,srv=s.srv;pomoSiguiente(s,true);s.srv=false;pomoSet(s);
+  pomoAviso(f==='foco'?'¡Terminó el enfoque! Toma un descanso.':'Terminó el descanso. ¿Seguimos?',srv);pomoSync(s);
   if($('dlg').open&&$('pmBody'))$('pmBody').innerHTML=pomoCuerpo();if(view==='dash'&&!$('dlg').open)render()}
  const c=document.getElementById('pmClock');if(c&&$('dlg').open)c.textContent=pomoReloj(pomoGet());
  document.querySelectorAll('.pmDashClock').forEach(e=>e.textContent=pomoReloj(pomoGet()));
