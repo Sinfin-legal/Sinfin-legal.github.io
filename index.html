@@ -373,6 +373,14 @@ header.top .brand h1{font-size:24px}
 @media (min-width:900px){:root[data-estilo] .tabs button.on{background:var(--tint3);border-left-color:transparent;border-radius:16px}:root[data-estilo] .tabs button{border-radius:16px}}
 :root[data-estilo="clasico"] h1,:root[data-estilo="clasico"] h2{font-style:italic;font-weight:600}
 :root[data-estilo="ejecutivo"] h1,:root[data-estilo="ejecutivo"] h2{font-weight:700;letter-spacing:-.025em}
+
+/* Pantalla de entrada */
+:root[data-estilo] #auth,:root[data-estilo] #lock{background:linear-gradient(160deg,var(--tint4) 0,var(--tint3) 55%,var(--tint2) 100%);overflow:hidden}
+:root[data-estilo] .authbox,:root[data-estilo] #lock .box{position:relative;z-index:1;border:0;border-radius:32px;padding:30px 24px;text-align:center;box-shadow:0 14px 44px color-mix(in srgb,var(--accent) 16%,transparent)}
+:root[data-estilo] .authbox h2,:root[data-estilo] #lock h2{font-size:30px}
+:root[data-estilo] .authbox label{text-align:left}:root[data-estilo] .authbox .logo,:root[data-estilo] #lock .logo{margin:0 auto 4px}
+:root[data-estilo] .authbox input,:root[data-estilo] #lock input{background:var(--bg)}
+:root[data-estilo] .authbox button.primary,:root[data-estilo] #lock button.primary{padding:12px 14px}
 </style>
 </head>
 <body>
