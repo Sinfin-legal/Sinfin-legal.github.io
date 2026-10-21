@@ -11,7 +11,7 @@
 <script>window.supabase||document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>')</script>
 <meta name="theme-color" content="#620209">
 <script>try{if(localStorage.getItem('sinfin-pin'))document.documentElement.dataset.lock='1'}catch(e){}</script>
-<script>try{document.documentElement.dataset.estilo=localStorage.getItem('sinfin-estilo')||'clasico'}catch(e){document.documentElement.dataset.estilo='clasico'}</script>
+<script>try{var e=localStorage.getItem('sinfin-estilo');if(e==='rosa'||e==='lila')e='jardin';if(!localStorage.getItem('sinfin-jardin')){localStorage.setItem('sinfin-jardin','1');e='jardin';localStorage.setItem('sinfin-estilo',e)}document.documentElement.dataset.estilo=e||'jardin'}catch(e){document.documentElement.dataset.estilo='jardin'}</script>
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:wght@500;600;700&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -310,6 +310,69 @@ header.top .brand h1{font-size:24px}
 .guia .gk{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:13px;color:var(--accent-ink);margin-top:1px}
 .guia .gp.ok .gk{background:var(--ok);border-color:var(--ok)}
 .guia .gp.ok b{color:var(--muted);font-weight:500}
+
+/* Estilos suaves: Jardín, Clásico y Ejecutivo comparten forma y cambian de color */
+:root[data-estilo]{--r:22px;--rb:99px}
+@media (prefers-color-scheme:dark){:root[data-estilo]:not([data-theme="light"]){--tint1:#1f3027;--tint2:#34301c;--tint3:#38222a;--tint4:#2a2438}}
+:root[data-theme="dark"][data-estilo]{--tint1:#1f3027;--tint2:#34301c;--tint3:#38222a;--tint4:#2a2438}
+:root[data-estilo="jardin"]{--em:" 🌱";--em2:"🌱";--em3:"🌱 ";--k1:"🌿 ";--k2:"☀️ ";--k3:"🌸 ";--k4:"💜 "}
+@media (prefers-color-scheme:light){:root[data-estilo="jardin"]:not([data-theme="dark"]){--bg:#f7f2fb;--surface:#fff;--ink:#2a1d28;--muted:#8a7a88;--line:#efe6ee;--accent:#620209;--accent-ink:#fff;--mark:#620209;--tint1:#e9f6ee;--tint2:#fff6dc;--tint3:#fbe9ec;--tint4:#efe9fb}
+:root[data-estilo="jardin"]:not([data-theme="dark"]) body{background:linear-gradient(180deg,#efe9fb 0,#f9eff3 240px,#f7f2fb 560px) fixed}}
+:root[data-theme="light"][data-estilo="jardin"]{--bg:#f7f2fb;--surface:#fff;--ink:#2a1d28;--muted:#8a7a88;--line:#efe6ee;--accent:#620209;--accent-ink:#fff;--mark:#620209;--tint1:#e9f6ee;--tint2:#fff6dc;--tint3:#fbe9ec;--tint4:#efe9fb}
+:root[data-theme="light"][data-estilo="jardin"] body{background:linear-gradient(180deg,#efe9fb 0,#f9eff3 240px,#f7f2fb 560px) fixed}
+:root[data-estilo="clasico"]{--em:" 🌸";--em2:"🌷";--em3:"🌷 ";--k1:"🌷 ";--k2:"✨ ";--k3:"🤍 ";--k4:"🪷 "}
+@media (prefers-color-scheme:light){:root[data-estilo="clasico"]:not([data-theme="dark"]){--bg:#fbf3f3;--surface:#fff;--ink:#2b161b;--muted:#8c6f76;--line:#f0dfe1;--accent:#620209;--accent-ink:#fff;--mark:#b08d57;--tint1:#f8e6e8;--tint2:#f6ecd9;--tint3:#f3e1e6;--tint4:#efe4ea}
+:root[data-estilo="clasico"]:not([data-theme="dark"]) body{background:linear-gradient(180deg,#f6e4e7 0,#faeeee 240px,#fbf3f3 560px) fixed}}
+:root[data-theme="light"][data-estilo="clasico"]{--bg:#fbf3f3;--surface:#fff;--ink:#2b161b;--muted:#8c6f76;--line:#f0dfe1;--accent:#620209;--accent-ink:#fff;--mark:#b08d57;--tint1:#f8e6e8;--tint2:#f6ecd9;--tint3:#f3e1e6;--tint4:#efe4ea}
+:root[data-theme="light"][data-estilo="clasico"] body{background:linear-gradient(180deg,#f6e4e7 0,#faeeee 240px,#fbf3f3 560px) fixed}
+:root[data-estilo="ejecutivo"]{--em:" 🏛️";--em2:"📂";--em3:"▪ ";--k1:"📈 ";--k2:"💼 ";--k3:"🔹 ";--k4:"🗂️ "}
+@media (prefers-color-scheme:light){:root[data-estilo="ejecutivo"]:not([data-theme="dark"]){--bg:#eef1f6;--surface:#fff;--ink:#121b27;--muted:#5b6a7c;--line:#dce2ea;--accent:#17263c;--accent-ink:#fff;--mark:#b08d4f;--tint1:#e1e9f4;--tint2:#efe7d6;--tint3:#dbe5ee;--tint4:#e4e7ee}
+:root[data-estilo="ejecutivo"]:not([data-theme="dark"]) body{background:linear-gradient(180deg,#dfe6f1 0,#e9edf4 240px,#eef1f6 560px) fixed}}
+:root[data-theme="light"][data-estilo="ejecutivo"]{--bg:#eef1f6;--surface:#fff;--ink:#121b27;--muted:#5b6a7c;--line:#dce2ea;--accent:#17263c;--accent-ink:#fff;--mark:#b08d4f;--tint1:#e1e9f4;--tint2:#efe7d6;--tint3:#dbe5ee;--tint4:#e4e7ee}
+:root[data-theme="light"][data-estilo="ejecutivo"] body{background:linear-gradient(180deg,#dfe6f1 0,#e9edf4 240px,#eef1f6 560px) fixed}
+
+:root[data-estilo] .case,:root[data-estilo] .detail,:root[data-estilo] .totals,:root[data-estilo] .panel,:root[data-estilo] .kpi,:root[data-estilo] .alert{border:0;border-radius:22px;box-shadow:0 6px 22px color-mix(in srgb,var(--accent) 9%,transparent)}
+:root[data-estilo] .case{border-left:0;padding:14px 16px}
+:root[data-estilo] .case::before{content:"";display:block;width:34px;height:5px;border-radius:9px;background:var(--c,var(--line));margin-bottom:8px}
+:root[data-estilo] .kpi:nth-child(4n+1){background:var(--tint1)}
+:root[data-estilo] .kpi:nth-child(4n+2){background:var(--tint2)}
+:root[data-estilo] .kpi:nth-child(4n+3){background:var(--tint3)}
+:root[data-estilo] .kpi:nth-child(4n+4){background:var(--tint4)}
+:root[data-estilo] .kpi:nth-child(4n+1) small::before{content:var(--k1)}
+:root[data-estilo] .kpi:nth-child(4n+2) small::before{content:var(--k2)}
+:root[data-estilo] .kpi:nth-child(4n+3) small::before{content:var(--k3)}
+:root[data-estilo] .kpi:nth-child(4n+4) small::before{content:var(--k4)}
+:root[data-estilo] .panel h3::before,:root[data-estilo] .sec h3::before{content:var(--em3)}
+:root[data-estilo] .alert{background:var(--tint2)}
+:root[data-estilo] .alert>b::before{content:"🔔 "}
+:root[data-estilo] button{border-radius:99px;border-color:var(--line)}
+:root[data-estilo] button.primary{box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 28%,transparent)}
+:root[data-estilo] button.link{border:0;box-shadow:none}
+:root[data-estilo] input,:root[data-estilo] select,:root[data-estilo] textarea{border-radius:16px;border-color:var(--line)}
+:root[data-estilo] dialog{border:0;border-radius:28px}
+:root[data-estilo] .tag{border-radius:99px;background:var(--tint4);border-color:transparent;color:var(--ink)}
+:root[data-estilo] header.top{border-bottom:0}
+:root[data-estilo] header.top .brand h1::after{content:var(--em);font-size:.8em}
+:root[data-estilo] .empty{text-align:center;padding:26px 10px}
+:root[data-estilo] .empty::before{content:var(--em2);display:block;font-size:38px;margin-bottom:4px}
+:root[data-estilo] .bar,:root[data-estilo] .bar i{border-radius:9px}
+:root[data-estilo] .tabs button svg{display:none}
+:root[data-estilo] .tabs button span::before{display:block;font-size:21px;line-height:1.25;margin-bottom:1px}
+:root[data-estilo] .tabs button[data-tab=dash] span::before{content:"🏡"}
+:root[data-estilo] .tabs button[data-tab=casos] span::before{content:"⚖️"}
+:root[data-estilo] .tabs button[data-tab=sem] span::before{content:"✅"}
+:root[data-estilo] .tabs button[data-tab=cal] span::before{content:"🗓️"}
+:root[data-estilo] .tabs button[data-tab=fin] span::before{content:"💰"}
+:root[data-estilo] .tabs button[data-tab=mas] span::before{content:"✨"}
+@media (max-width:899px){
+ :root[data-estilo] .tabs{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));border-radius:28px;border:0;padding:6px;box-shadow:0 8px 30px color-mix(in srgb,var(--accent) 16%,transparent);background:color-mix(in srgb,var(--surface) 92%,transparent)}
+ :root[data-estilo] .tabs button.on{background:var(--tint3);border-radius:20px}
+ :root[data-estilo] .tabs button.on::before{display:none}
+ :root[data-estilo] .tabs button span{font-size:10.5px}
+}
+@media (min-width:900px){:root[data-estilo] .tabs button.on{background:var(--tint3);border-left-color:transparent;border-radius:16px}:root[data-estilo] .tabs button{border-radius:16px}}
+:root[data-estilo="clasico"] h1,:root[data-estilo="clasico"] h2{font-style:italic;font-weight:600}
+:root[data-estilo="ejecutivo"] h1,:root[data-estilo="ejecutivo"] h2{font-weight:700;letter-spacing:-.025em}
 </style>
 </head>
 <body>
@@ -520,13 +583,13 @@ function procHtml(c){
  return `<div class="sec"><h3>${nj?'Seguimiento':'Proceso judicial'}${us[0]?' · '+esc(us[0].stage):''}</h3><button class="link" id="addU">${nj?'Añadir avance':'Añadir actuación'}</button></div>
  ${vigLine(c)}
  ${c.radicado&&c.radicado.length===23?'<div style="margin:4px 0 8px"><button class="link" id="traerAct">Traer actuaciones de la Rama</button> <span id="traerMsg" style="color:var(--muted);font-size:13px"></span> · <button class="link" id="probEst">Revisar estados electrónicos</button><pre id="estPre" style="white-space:pre-wrap;word-break:break-all;font-size:11px;color:var(--muted);margin:6px 0 0"></pre></div>':''}
- ${us.length?`<ol class="tl">${us.map(u=>`<li><div class="m"><b>${esc(u.stage)}</b> · ${fdate(u.date)}${u.court?' · '+esc(u.court):''} ${u.auto?'<span class="tag">Automática</span>':`<button class="link danger" data-du="${u.id}" aria-label="Eliminar actuación">Eliminar</button>`}</div>${u.note?`<div>${esc(u.note)}</div>`:''}</li>`).join('')}</ol>`:'<div class="empty">Sin actuaciones. Registra cada notificación o resolución del juzgado para seguir el proceso.</div>'}
+ ${us.length?`<ol class="tl">${us.map(u=>`<li><div class="m"><b>${esc(u.stage)}</b> · ${fdate(u.date)}${u.court?' · '+esc(u.court):''} ${u.auto?'<span class="tag">Automática</span>':`${u.cli?'<span class="tag">Visible al cliente</span> ':''}<button class="link danger" data-du="${u.id}" aria-label="Eliminar actuación">Eliminar</button>`}</div>${u.note?`<div>${esc(u.note)}</div>`:''}</li>`).join('')}</ol>`:'<div class="empty">Sin actuaciones. Registra cada notificación o resolución del juzgado para seguir el proceso.</div>'}
  <div class="sec"><h3>Próximas fechas</h3><span><button class="link" id="addTerm">Calcular término</button> · <button class="link" id="addEv">Añadir al calendario</button></span></div>
  ${evs.length?evs.map(evRow).join(''):'<div class="empty">No hay audiencias ni plazos próximos.</div>'}`;
 }
 function updForm(caseId){
- form('Nueva actuación',S('Fase o estado','stage',STAGES,stageOf(caseId)||STAGES[0])+F('Fecha','date',today(),'date')+F('Juzgado o referencia (opcional)','court')+'<label for="f_note">Detalle (opcional)</label><textarea id="f_note" name="note" rows="3"></textarea>',
-  f=>{if(!val('date'))return 'Indica la fecha.';db.updates.push({id:uid('u'),caseId,date:val('date'),stage:val('stage'),court:val('court'),note:val('note')})});
+ form('Nueva actuación',S('Fase o estado','stage',STAGES,stageOf(caseId)||STAGES[0])+F('Fecha','date',today(),'date')+F('Juzgado o referencia (opcional)','court')+'<label for="f_note">Detalle (opcional)</label><textarea id="f_note" name="note" rows="3"></textarea><label style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-weight:400"><input type="checkbox" name="cli" style="width:auto;margin-top:3px"> <span>Mostrar al cliente en su portal</span></label>',
+  f=>{if(!val('date'))return 'Indica la fecha.';db.updates.push({id:uid('u'),caseId,date:val('date'),stage:val('stage'),court:val('court'),note:val('note'),cli:!!$('frm').elements.cli.checked})});
 }
 
 /* ===== Calculadora de términos judiciales ===== */
@@ -724,20 +787,20 @@ function reportePdf(mes){
  saveFile({filename:'reporte-'+mes+'.pdf',data:d.output('blob')});
 }
 function estiloForm(){
- const cur=document.documentElement.dataset.estilo||'clasico';
- const E=[['clasico','Clásico (el original)','#620209','Vino tinto sobrio'],['rosa','Rosa','#b02a5b','Suave, con formas redondeadas'],['lila','Lila','#6b3fa0','Elegante y tranquilo'],['ejecutivo','Ejecutivo','#17263c','Azul noche y bronce, serio y limpio']];
+ const cur=document.documentElement.dataset.estilo||'jardin';
+ const E=[['jardin','Jardín','#620209','Suave, con colores pastel, caritas y plantitas'],['clasico','Clásico','#620209','Vino tinto, elegante y femenino'],['ejecutivo','Ejecutivo','#17263c','Azul noche y bronce, sobrio y firme']];
  form('Elige tu estilo','<div class="estilos">'+E.map(e=>`<button type="button" data-es="${e[0]}" class="${e[0]===cur?'on':''}"><i style="background:${e[2]}"></i><span><b>${e[1]}</b><br><small style="color:var(--muted)">${e[3]}</small></span></button>`).join('')+'</div>',()=>{});
  $('ok').classList.add('hide');$('cancel').textContent='Cerrar';
  $('frm').querySelectorAll('[data-es]').forEach(b=>b.onclick=()=>{aplicarEstilo(b.dataset.es);$('dlg').close()});
 }
 function aplicarEstilo(n){
  document.documentElement.dataset.estilo=n;try{localStorage.setItem('sinfin-estilo',n)}catch(e){}
- const m=document.querySelector('meta[name="theme-color"]');if(m)m.content={rosa:'#b02a5b',lila:'#6b3fa0',ejecutivo:'#17263c',clasico:'#620209'}[n]||'#620209';
+ const m=document.querySelector('meta[name="theme-color"]');if(m)m.content={rosa:'#b02a5b',lila:'#6b3fa0',ejecutivo:'#17263c',clasico:'#620209',jardin:'#620209'}[n]||'#620209';
 }
 
 /* Iconos del menú */
 (function(){const IC={"dash": "<rect x=\"3\" y=\"3\" width=\"7\" height=\"9\" rx=\"1.5\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"5\" rx=\"1.5\"/><rect x=\"14\" y=\"12\" width=\"7\" height=\"9\" rx=\"1.5\"/><rect x=\"3\" y=\"16\" width=\"7\" height=\"5\" rx=\"1.5\"/>", "casos": "<path d=\"M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2.5h7.5A2.5 2.5 0 0 1 21 10v7.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z\"/>", "sem": "<path d=\"M9 6h11M9 12h11M9 18h11\"/><path d=\"m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17\"/>", "cal": "<rect x=\"3.5\" y=\"5\" width=\"17\" height=\"15.5\" rx=\"2.5\"/><path d=\"M8 3v4M16 3v4M3.5 10h17\"/>", "fin": "<path d=\"M4 7.5A2.5 2.5 0 0 1 6.5 5H19v3\"/><path d=\"M4 7.5v10A2.5 2.5 0 0 0 6.5 20H20a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H6.5A2.5 2.5 0 0 1 4 7.5z\"/><circle cx=\"16.5\" cy=\"14.5\" r=\"1.1\"/>", "mas": "<circle cx=\"5\" cy=\"12\" r=\"1.3\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/><circle cx=\"19\" cy=\"12\" r=\"1.3\"/>"};document.querySelectorAll('.tabs button[data-tab]').forEach(b=>{const t=b.textContent;b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+(IC[b.dataset.tab]||'')+'</svg><span>'+t+'</span>'})})();
-aplicarEstilo(document.documentElement.dataset.estilo||'clasico');
+aplicarEstilo(document.documentElement.dataset.estilo||'jardin');
 document.addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
  if(b.id==='estiloBtn')estiloForm();
@@ -1299,6 +1362,63 @@ document.addEventListener('click',ev=>{
  const t=ev.target.closest('button');if(!t||!current)return;const c=db.cases.find(x=>x.id===current);if(!c)return;
  if(t.id==='cadStart')cadForm(c);
  else if(t.id==='cadDel'){if(confirm('¿Quitar el cálculo de caducidad? También se quitan sus avisos del calendario.')){cadLimpiar(c);delete c.cad;save();render()}}
+});
+
+
+/* ===== Portal del cliente ===== */
+var portalInv={},portalPide={};
+const CODIGO_ABC='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function codigoPortal(){const a=new Uint32Array(8);crypto.getRandomValues(a);return Array.from(a,x=>CODIGO_ABC[x%CODIGO_ABC.length]).join('')}
+function portalCargar(id){
+ if(!sb||!userId||portalPide[id])return;portalPide[id]=1;
+ sb.from('portal_clientes').select('id,email,codigo,user_id,activo,mostrar').eq('case_id',id).then(x=>{
+  portalInv[id]=x.error?null:(x.data||[]);if(current===id&&!$('dlg').open)render()},()=>{portalPide[id]=0})}
+function portalHtml(c){
+ const dp=c.docsPend||[];
+ let a=`<div class="sec"><h3>Documentos por aportar</h3><button class="link" id="dpAdd">Agregar</button></div>`+
+  (dp.length?dp.map(x=>`<div class="tk${x.done?' hecho':''}"><button class="ck" data-dp-t="${x.id}" aria-label="${x.done?'Marcar como pendiente':'Marcar como entregado'}">${x.done?'✓':''}</button><button class="tt" data-dp-d="${x.id}"><div>${esc(x.txt)}</div><div class="m" style="color:var(--muted)">${x.done?'Entregado':'Pendiente · toca para quitar'}</div></button></div>`).join(''):'<div class="empty" style="padding:4px 0 10px">Anota qué documentos debe entregarte el cliente. Los verá en su portal.</div>');
+ let b=`<div class="sec"><h3>Portal del cliente</h3><button class="link" id="pcInv">Invitar al cliente</button></div>`;
+ if(!sb||!userId)b+='<div class="empty" style="padding:4px 0 10px">Inicia sesión para invitar a tu cliente.</div>';
+ else{portalCargar(c.id);const L=portalInv[c.id];
+  b+=L==null?'<div class="empty" style="padding:4px 0 10px">Cargando…</div>':L.length?L.map(x=>`<div class="panel" style="margin:0 0 8px"><p style="margin:0"><b>${esc(x.email)}</b> · ${x.user_id?'ya entró a su cuenta':'aún no ha entrado'}</p><p style="margin:4px 0 0;color:var(--muted);font-size:13px">Verá: estado y actuaciones marcadas${x.mostrar&&x.mostrar.rama?', actuaciones de la Rama':''}${x.mostrar&&x.mostrar.pagos?', honorarios y pagos':''}, y los documentos por aportar.</p><p style="margin:8px 0 0"><button class="link" data-pc-ver="${x.id}">Ver invitación</button> · <button class="link danger" data-pc-del="${x.id}">Quitar acceso</button></p></div>`).join(''):'<div class="empty" style="padding:4px 0 10px">Invita a tu cliente para que vea el estado de su caso, sus pagos y lo que falta entregar.</div>'}
+ return a+b}
+{const _ph3=procHtml;procHtml=c=>_ph3(c)+portalHtml(c)}
+function portalMensaje(c,x){
+ const url=db.portalUrl||'',firma=(db.firm&&db.firm.name)||'tu abogada';
+ return `Hola ${c.client||''}, soy ${firma}. Ya puedes ver el estado de tu caso aquí: ${url}\n\n1) Crea tu cuenta con este correo: ${x.email}\n2) Cuando te lo pida, escribe este código: ${x.codigo}\n\nCualquier duda, me escribes.`}
+function portalCompartir(c,x){
+ const msg=portalMensaje(c,x),tel=String(c.cTel||'').replace(/\D/g,'');
+ form('Invitación para '+esc(x.email),`<p style="margin:0 0 8px">Envíale este mensaje a tu cliente. El código es personal: solo funciona con ese correo.</p><textarea id="f_msg" rows="8" readonly style="width:100%">${esc(msg)}</textarea><div class="err" id="pcMsg" role="status" style="color:var(--ink)"></div>`,()=>{},
+  '<button type="button" id="pcCopy" style="margin-right:auto">Copiar mensaje</button><button type="button" class="primary" id="pcWa">Enviar por WhatsApp</button>');
+ $('ok').classList.add('hide');$('cancel').textContent='Cerrar';
+ $('pcCopy').onclick=async()=>{try{await navigator.clipboard.writeText(msg);$('pcMsg').textContent='Copiado.'}catch(e){$('f_msg').select();$('pcMsg').textContent='Selecciona el texto y cópialo.'}};
+ $('pcWa').onclick=()=>window.open('https://wa.me/'+(tel?(tel.length===10?'57'+tel:tel):'')+'?text='+encodeURIComponent(msg),'_blank','noopener')}
+function portalForm(c){
+ if(!sb||!userId){alert('Inicia sesión para invitar a tu cliente.');return}
+ form('Invitar al cliente',F('Correo del cliente','email','','email','autocomplete="off"')+
+  F('Dirección de tu página para clientes',"url",db.portalUrl||'https://','url','placeholder="https://tupagina.com/cliente.html"')+
+  `<p style="margin:10px 0 4px"><b>Qué podrá ver</b></p><p style="margin:0 0 6px;color:var(--muted);font-size:13px">Siempre: el estado, las actuaciones que marques como visibles y los documentos por aportar.</p>`+
+  `<label style="display:flex;gap:8px;align-items:flex-start;font-weight:400;margin-top:6px"><input type="checkbox" name="pagos" checked style="width:auto;margin-top:3px"> <span>Honorarios y pagos</span></label>`+
+  `<label style="display:flex;gap:8px;align-items:flex-start;font-weight:400;margin-top:6px"><input type="checkbox" name="rama" style="width:auto;margin-top:3px"> <span>También las actuaciones que trae la Rama Judicial</span></label>`,
+  ()=>{},'');
+ $('frm').onsubmit=async ev=>{ev.preventDefault();
+  const email=val('email').toLowerCase(),url=val('url');
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){$('err').textContent='Escribe un correo válido.';return}
+  if(!/^https:\/\/.+\..+/.test(url)){$('err').textContent='Escribe la dirección completa de tu página, que empiece por https://';return}
+  $('ok').disabled=true;
+  const fila={owner_id:userId,case_id:c.id,email,codigo:codigoPortal(),mostrar:{pagos:!!$('frm').elements.pagos.checked,rama:!!$('frm').elements.rama.checked}};
+  const x=await sb.from('portal_clientes').insert(fila).select('id,email,codigo,user_id,activo,mostrar').single();
+  $('ok').disabled=false;
+  if(x.error){$('err').textContent=/duplicate|unique/i.test(x.error.message||'')?'Ya invitaste a ese correo para este caso.':'No se pudo crear la invitación. ¿Ya ejecutaste el SQL del portal?';return}
+  db.portalUrl=url;save();(portalInv[c.id]=portalInv[c.id]||[]).push(x.data);$('dlg').close();render();portalCompartir(c,x.data)}}
+document.addEventListener('click',async ev=>{
+ const t=ev.target.closest('button');if(!t||!current)return;const c=db.cases.find(x=>x.id===current);if(!c)return;
+ if(t.id==='pcInv')portalForm(c);
+ else if(t.id==='dpAdd')form('Documento por aportar',F('¿Qué debe entregar el cliente?','txt','','text','placeholder="Ej.: copia de la cédula"'),f=>{if(!val('txt'))return 'Escribe qué documento falta.';(c.docsPend=c.docsPend||[]).push({id:uid('d'),txt:val('txt'),done:false})});
+ else if(t.dataset.dpT){const x=(c.docsPend||[]).find(d=>d.id===t.dataset.dpT);if(x){x.done=!x.done;save();render()}}
+ else if(t.dataset.dpD){if(confirm('¿Quitar este documento de la lista?')){c.docsPend=(c.docsPend||[]).filter(d=>d.id!==t.dataset.dpD);save();render()}}
+ else if(t.dataset.pcVer){const x=(portalInv[c.id]||[]).find(i=>i.id===t.dataset.pcVer);if(x)portalCompartir(c,x)}
+ else if(t.dataset.pcDel){if(confirm('¿Quitar el acceso de este cliente? Dejará de ver su caso.')){const x=await sb.from('portal_clientes').delete().eq('id',t.dataset.pcDel);if(!x.error){portalInv[c.id]=(portalInv[c.id]||[]).filter(i=>i.id!==t.dataset.pcDel);render()}else alert('No se pudo quitar el acceso.')}}
 });
 
 /* ---------- Prospectos ---------- */
