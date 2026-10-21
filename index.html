@@ -391,6 +391,10 @@ header.top .brand h1{font-size:24px}
 :root[data-estilo] header.top #newCase{padding:10px 18px}
 @media (max-width:520px){:root[data-estilo] header.top{padding:8px 8px 8px 10px;border-radius:22px}:root[data-estilo] header.top .logo{height:40px}:root[data-estilo] header.top .brand h1{font-size:19px}}
 @media (max-width:520px){.detail .fsub button{padding:8px 5px;font-size:12.5px}}
+.topduo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.topduo .panel{margin:0;padding:12px 14px;min-width:0;border:0;width:100%;font:inherit;color:var(--ink)}
+.topduo .panel h3{font-size:14px;margin:0 0 4px}
+.topduo .panel button{padding:6px 12px;font-size:13.5px}
 </style>
 </head>
 <body>
@@ -401,7 +405,7 @@ header.top .brand h1{font-size:24px}
     <button class="primary" id="newCase">Nuevo caso</button>
   </header>
 
-  <nav class="tabs"><button data-tab="dash" class="on">Resumen</button><button data-tab="casos">Casos</button><button data-tab="sem">Semana</button><button data-tab="cal">Calendario</button><button data-tab="fin">Finanzas</button><button data-tab="mas">Más</button></nav>
+  <nav class="tabs"><button data-tab="dash" class="on">Inicio</button><button data-tab="casos">Casos</button><button data-tab="sem">Semana</button><button data-tab="cal">Calendario</button><button data-tab="fin">Finanzas</button><button data-tab="mas">Más</button></nav>
 
   <section id="dashView" class="hide"></section>
   <section id="despView" class="hide"></section>
@@ -1478,6 +1482,90 @@ document.addEventListener('click',ev=>{
   $('dlg').addEventListener('close',()=>tmPill(),{once:true})}
 });
 
+
+/* ===== Pomodoro ===== */
+const PK='sinfin-pomo',POMO_N={foco:'Enfoque',corto:'Descanso corto',largo:'Descanso largo'};
+const POMO0=()=>({fase:'foco',fin:0,resta:0,run:false,n:0,dia:'',caso:'',cfg:{foco:25,corto:5,largo:15}});
+function pomoGet(){let s=POMO0();try{const x=JSON.parse(localStorage.getItem(PK)||'{}');s=Object.assign(s,x);s.cfg=Object.assign({foco:25,corto:5,largo:15},x.cfg||{})}catch(e){}
+ if(s.dia!==today()){s.dia=today();s.n=0}return s}
+function pomoSet(s){try{localStorage.setItem(PK,JSON.stringify(s))}catch(e){}}
+const pomoDur=(s,f)=>(Number(s.cfg[f])||25)*60000;
+const pomoLeft=s=>s.run?Math.max(0,s.fin-Date.now()):(s.resta||pomoDur(s,s.fase));
+let pomoCtx=null;
+function pomoSonido(){try{pomoCtx=pomoCtx||new (window.AudioContext||window.webkitAudioContext)();if(pomoCtx.state==='suspended')pomoCtx.resume();
+ [0,.28,.56].forEach((t,i)=>{const o=pomoCtx.createOscillator(),g=pomoCtx.createGain();o.type='sine';o.frequency.value=[660,880,1100][i];o.connect(g);g.connect(pomoCtx.destination);const a=pomoCtx.currentTime+t;g.gain.setValueAtTime(0,a);g.gain.linearRampToValueAtTime(.35,a+.03);g.gain.exponentialRampToValueAtTime(.001,a+.25);o.start(a);o.stop(a+.27)})}catch(e){}}
+function pomoAviso(txt){pomoSonido();try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}
+ try{if('Notification' in window&&Notification.permission==='granted'){if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.ready.then(r=>r.showNotification('🍅 Sinfín',{body:txt,icon:'icon-192.png',tag:'pomodoro'})).catch(()=>{new Notification('🍅 Sinfín',{body:txt})});else new Notification('🍅 Sinfín',{body:txt})}}catch(e){}}
+function pomoSiguiente(s,hecho){
+ if(s.fase==='foco'){
+  if(hecho){s.n++;const c=db.cases.find(x=>x.id===s.caso);
+   if(c){db.entries.push({id:uid('e'),caseId:c.id,date:today(),desc:'Pomodoro de enfoque',hours:Math.round(Number(s.cfg.foco)/60*100)/100});save();if(!$('dlg').open)try{render()}catch(e){}}}
+  s.fase=(hecho&&s.n%4===0)?'largo':'corto'}
+ else s.fase='foco';
+ s.run=false;s.resta=0;s.fin=0}
+function pomoReloj(s){const ms=pomoLeft(s),sec=Math.ceil(ms/1000);return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
+function pomoCuerpo(){
+ const s=pomoGet(),casos=db.cases.filter(c=>c.status!=='Cerrado');
+ return `<div style="text-align:center"><span class="tag">${POMO_N[s.fase]}</span>
+ <div id="pmClock" style="font-size:64px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.15;margin:8px 0">${pomoReloj(s)}</div>
+ <p style="margin:0 0 12px;color:var(--muted)">${s.n?'🍅'.repeat(Math.min(s.n,12))+' · ':''}${s.n} enfoque${s.n===1?'':'s'} hoy</p>
+ <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button type="button" class="primary" data-pm="${s.run?'pausa':'inicio'}">${s.run?'Pausar':(s.resta?'Continuar':'Iniciar')}</button><button type="button" data-pm="reinicio">Reiniciar</button><button type="button" data-pm="saltar">Saltar</button></div></div>
+ <label for="pmCaso">Anotar el tiempo de enfoque en un caso (opcional)</label>
+ <select id="pmCaso"><option value="">No anotar en ningún caso</option>${casos.map(c=>`<option value="${c.id}" ${c.id===s.caso?'selected':''}>${esc(c.client)}${c.title?' · '+esc(c.title):''}</option>`).join('')}</select>
+ <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div><label for="pmF">Enfoque (min)</label><input id="pmF" type="number" min="1" max="180" value="${s.cfg.foco}"></div><div><label for="pmC">Corto (min)</label><input id="pmC" type="number" min="1" max="60" value="${s.cfg.corto}"></div><div><label for="pmL">Largo (min)</label><input id="pmL" type="number" min="1" max="90" value="${s.cfg.largo}"></div></div>
+ <p style="margin:10px 0 0;color:var(--muted);font-size:13px">Después de 4 enfoques viene un descanso largo. Para oír el aviso, deja la app abierta; si das permiso a las notificaciones, también te llega un aviso.</p>`}
+function pomoAccion(a){const s=pomoGet();
+  if(a==='inicio'){s.run=true;s.fin=Date.now()+(s.resta||pomoDur(s,s.fase));try{pomoCtx=pomoCtx||new (window.AudioContext||window.webkitAudioContext)();pomoCtx.resume&&pomoCtx.resume()}catch(e){}
+   try{if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()}catch(e){}}
+  else if(a==='pausa'){s.resta=pomoLeft(s);s.run=false}
+  else if(a==='reinicio'){s.run=false;s.resta=0}
+  else if(a==='saltar')pomoSiguiente(s,false);
+  pomoSet(s)}
+function pomoDashHtml(){const s=pomoGet(),t=today();
+ const P=tareas().filter(x=>!x.done&&(!x.fecha||x.fecha<=t)).sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999')),M=P.filter(x=>x.tipo==='Mensaje por responder').length;
+ return `<div class="topduo"><div class="panel" id="pmDash"><h3>Pomodoro</h3><span class="tag">${POMO_N[s.fase]}</span>
+ <div class="pmDashClock" style="font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2;margin:2px 0 6px">${pomoReloj(s)}</div>
+ <div style="display:flex;gap:6px"><button class="primary" data-pmd="${s.run?'pausa':'inicio'}">${s.run?'Pausar':(s.resta?'Seguir':'Iniciar')}</button><button data-pmd="abrir" aria-label="Ajustes del Pomodoro">⚙</button></div></div>
+ <button class="panel" id="pendMini" data-pend-go style="text-align:left;display:block"><h3>Pendientes</h3><div style="font-size:28px;font-weight:600;line-height:1.2">${P.length}</div>
+ <div style="color:var(--muted);font-size:12.5px;margin-top:4px;overflow:hidden">${P.length?P.slice(0,2).map(x=>'· '+esc(x.title)).join('<br>'):'Todo al día'}${M?'<br>✉ '+M+(M===1?' mensaje':' mensajes'):''}</div></button></div>`}
+document.addEventListener('click',ev=>{const g=ev.target.closest('[data-pend-go]');if(g){pendForm();return}
+ const b=ev.target.closest('[data-pmd]');if(!b)return;
+ if(b.dataset.pmd==='abrir'){pomoForm();return}
+ pomoAccion(b.dataset.pmd);pomoPill();if(typeof view!=='undefined'&&view==='dash')render()});
+
+function pendLista(){const t=today();
+ const P=tareas().filter(x=>!x.done&&(!x.fecha||x.fecha<=t)).sort((a,b)=>(a.fecha||'9999').localeCompare(b.fecha||'9999'));
+ return (P.length?P.map(x=>{const c=db.cases.find(k=>k.id===x.caseId);return `<div class="tk"><button class="ck" data-pq-t="${x.id}" aria-label="Marcar como hecho"></button><button class="tt" data-pq-e="${x.id}"><div>${esc(x.title)}</div><div class="m">${x.tipo==='Mensaje por responder'?'✉ Mensaje · ':''}${x.fecha?fdate(x.fecha)+' · ':''}${c?esc(c.client):'General'}</div></button></div>`}).join(''):'<div class="empty">Todo al día. No tienes pendientes.</div>')+'<p style="margin:10px 0 0"><button type="button" class="link" data-pq-new>+ Agregar pendiente o mensaje</button></p>'}
+function pendForm(){
+ form('Pendientes','<div id="pqBody">'+pendLista()+'</div>',()=>{});
+ $('ok').classList.add('hide');$('cancel').textContent='Cerrar';
+ $('frm').onclick=ev=>{const b=ev.target.closest('button');if(!b)return;const D=b.dataset;
+  if(D.pqT){const x=tareas().find(k=>k.id===D.pqT);if(x){x.done=true;x.doneAt=today();save();$('pqBody').innerHTML=pendLista();render()}}
+  else if(D.pqE){const x=tareas().find(k=>k.id===D.pqE);$('dlg').close();if(x)tareaForm(x)}
+  else if('pqNew' in D){$('dlg').close();tareaForm()}}}
+function pomoForm(){
+ form('🍅 Pomodoro','<div id="pmBody">'+pomoCuerpo()+'</div>',()=>{});
+ $('ok').classList.add('hide');$('cancel').textContent='Cerrar';
+ const body=()=>{$('pmBody').innerHTML=pomoCuerpo()};
+ $('frm').onclick=ev=>{const b=ev.target.closest('[data-pm]');if(!b)return;pomoAccion(b.dataset.pm);body();pomoPill()};
+ $('frm').onchange=ev=>{const s=pomoGet(),t=ev.target;
+  if(t.id==='pmCaso')s.caso=t.value;
+  else if(t.id==='pmF'||t.id==='pmC'||t.id==='pmL'){const k={pmF:'foco',pmC:'corto',pmL:'largo'}[t.id],v=Math.max(1,Math.min(180,parseInt(t.value)||0));if(v){s.cfg[k]=v;if(!s.run&&s.fase===k)s.resta=0}}
+  pomoSet(s);body()};
+}
+function pomoPill(){
+ const s=pomoGet();let el=document.getElementById('pmPill');
+ if(!s.run||(view==='dash'&&!$('dlg').open)){if(el)el.remove();return}
+ if(!el){el=document.createElement('button');el.id='pmPill';el.style.cssText='position:fixed;left:12px;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:40;box-shadow:0 6px 18px rgba(0,0,0,.2);padding:9px 14px;background:var(--surface);font-weight:600';el.onclick=()=>{if(!$('dlg').open)pomoForm()};document.body.appendChild(el)}
+ el.textContent='🍅 '+pomoReloj(s)+' · '+POMO_N[s.fase]}
+setInterval(()=>{const s=pomoGet();
+ if(s.run&&Date.now()>=s.fin){const f=s.fase;pomoSiguiente(s,true);pomoSet(s);
+  pomoAviso(f==='foco'?'¡Terminó el enfoque! Toma un descanso.':'Terminó el descanso. ¿Seguimos?');
+  if($('dlg').open&&$('pmBody'))$('pmBody').innerHTML=pomoCuerpo();if(view==='dash'&&!$('dlg').open)render()}
+ const c=document.getElementById('pmClock');if(c&&$('dlg').open)c.textContent=pomoReloj(pomoGet());
+ document.querySelectorAll('.pmDashClock').forEach(e=>e.textContent=pomoReloj(pomoGet()));
+ pomoPill()},1000);
+
 /* ---------- Prospectos ---------- */
 const ESTADOS_PR=['Consulta','Propuesta enviada','Aceptó','No aceptó'],ORIGEN_PR=['Recomendación','Redes sociales','Página web','Otro'],AREAS_PR=['Civil','Penal','Mercantil','Laboral','Familia','Administrativo','Otro'];
 function renderPros(){
@@ -1573,11 +1661,11 @@ $('calcView').addEventListener('click',e=>{const b=e.target.closest('button');if
 function renderMas(){
  $('masView').classList.remove('hide');
  const pin=!!(()=>{try{return localStorage.getItem('sinfin-pin')}catch(e){return ''}})();
- const I=[['guia','Guía de inicio','Los primeros pasos para sacarle provecho a Sinfín'],['desp','Despachos','Tus casos agrupados por juzgado'],['pros','Prospectos','Seguimiento de personas que te consultan'],['calc','Calculadoras jurídicas','Liquidación laboral, mora, indexación y términos'],['cont','Contenido','Planifica tus publicaciones en redes'],['estilo','Estilo','Clásico, rosa, lila o ejecutivo'],['pin',pin?'Candado con PIN (activado)':'Candado con PIN','Protege la app en este dispositivo'],['copias','Copias automáticas','Una cada día en la nube; restaura una versión anterior'],['bk','Copia de seguridad','Descarga tus datos'],['push','Notificaciones en el celular','Resumen diario y avisos de novedades, sin abrir la app'],['mail','Enviar correo de prueba','Comprueba que los avisos de la Rama Judicial te lleguen'],['rs','Restaurar copia','Recupera una copia descargada']].concat($('logout').classList.contains('hide')?[]:[['out','Cerrar sesión','Salir de tu cuenta en este dispositivo']]);
+ const I=[['guia','Guía de inicio','Los primeros pasos para sacarle provecho a Sinfín'],['desp','Despachos','Tus casos agrupados por juzgado'],['pros','Prospectos','Seguimiento de personas que te consultan'],['pomo','Temporizador Pomodoro','Enfoque y descansos, con aviso sonoro'],['calc','Calculadoras jurídicas','Liquidación laboral, mora, indexación y términos'],['cont','Contenido','Planifica tus publicaciones en redes'],['estilo','Estilo','Clásico, rosa, lila o ejecutivo'],['pin',pin?'Candado con PIN (activado)':'Candado con PIN','Protege la app en este dispositivo'],['copias','Copias automáticas','Una cada día en la nube; restaura una versión anterior'],['bk','Copia de seguridad','Descarga tus datos'],['push','Notificaciones en el celular','Resumen diario y avisos de novedades, sin abrir la app'],['mail','Enviar correo de prueba','Comprueba que los avisos de la Rama Judicial te lleguen'],['rs','Restaurar copia','Recupera una copia descargada']].concat($('logout').classList.contains('hide')?[]:[['out','Cerrar sesión','Salir de tu cuenta en este dispositivo']]);
  $('masView').innerHTML=`<h2 style="margin-bottom:10px">Más</h2><div class="mas">${I.map(([k,n,d])=>`<button class="go" data-go="${k}"><span><b>${n}</b><small>${d}</small></span></button>`).join('')}</div>`;
 }
 $('masView').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!b.dataset.go)return;const k=b.dataset.go;
- if(['desp','pros','calc','cont'].includes(k)){view=k;render();window.scrollTo(0,0)}else if(k==='estilo')estiloForm();else if(k==='pin')pinForm();else if(k==='bk')$('bk').click();else if(k==='push')pushForm();else if(k==='mail')correoPrueba(b);else if(k==='copias')copiasForm();else if(k==='guia'){db.guiaOff=false;save();view='dash';render();window.scrollTo(0,0)}else if(k==='rs')$('rs').click();else if(k==='out')$('logout').click()});
+ if(['desp','pros','calc','cont'].includes(k)){view=k;render();window.scrollTo(0,0)}else if(k==='estilo')estiloForm();else if(k==='pomo')pomoForm();else if(k==='pin')pinForm();else if(k==='bk')$('bk').click();else if(k==='push')pushForm();else if(k==='mail')correoPrueba(b);else if(k==='copias')copiasForm();else if(k==='guia'){db.guiaOff=false;save();view='dash';render();window.scrollTo(0,0)}else if(k==='rs')$('rs').click();else if(k==='out')$('logout').click()});
 
 async function correoPrueba(btn){
  if(!sb||!userId){alert('Inicia sesión para probar los avisos.');return}
@@ -1907,7 +1995,6 @@ function resumenTop(){
  const T=tareas().filter(x=>(x.fecha&&x.fecha.startsWith(mes))||(ahora&&!x.done&&(!x.fecha||x.fecha<t))).sort((a,b)=>(a.done-b.done)||(a.fecha||'0000').localeCompare(b.fecha||'0000'));
  const E=db.events.filter(e=>e.date.startsWith(mes)).sort(evSort),pend=T.filter(x=>!x.done).length,M=T.filter(x=>!x.done&&x.tipo==='Mensaje por responder').length;
  return `<div class="fhead" style="margin-top:4px"><button data-rm="-1" aria-label="Mes anterior">‹</button><h2 style="text-transform:none">${nom}</h2><button data-rm="1" aria-label="Mes siguiente">›</button></div>
- <div class="panel"><h3>Pendientes${pend?' ('+pend+')':''}</h3>${M?`<p style="margin:0 0 6px;color:var(--muted)">✉ ${M} ${M===1?'mensaje por responder':'mensajes por responder'}</p>`:''}${T.length?T.map(tkRow).join(''):'<div class="empty" style="padding:6px 0">Nada pendiente este mes. ✨</div>'}<p style="margin:8px 0 0"><button class="link" data-tk-dash>+ Agregar pendiente o mensaje</button></p></div>
  <div class="panel"><h3>Próximas fechas</h3>${E.length?E.map(evCk).join(''):'<div class="empty" style="padding:6px 0">No hay fechas este mes.</div>'}<p style="margin:8px 0 0"><button class="link" data-ev-new>+ Agregar evento</button></p></div>`;
 }
 function renderDash(){
@@ -1920,7 +2007,7 @@ function renderDash(){
  vivos.forEach(c=>{const d=lastAct(c);if(!d){ag.n++;return}const m=(new Date(t+'T00:00')-new Date(d+'T00:00'))/864e5/30.4;m<=6?ag.g++:m<=12?ag.a++:ag.r++});
  const cnt=k=>{const m={};db.cases.forEach(c=>{const v=c[k]||'Sin dato';m[v]=(m[v]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
  const prox=db.events.filter(e=>e.date>=t).sort(evSort).slice(0,5);
- $('dashView').innerHTML=`<p class="hello">${esc($('hello').textContent)}</p>${$('alerts').innerHTML}${resumenTop()}${guiaHtml()}
+ $('dashView').innerHTML=`<p class="hello">${esc($('hello').textContent)}</p>${pomoDashHtml()}${$('alerts').innerHTML}${resumenTop()}${guiaHtml()}
  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button id="repBtn">Reporte mensual</button><button id="termBtn">Calculadora de términos</button></div>
  <div class="kpis"><div class="kpi"><small>Casos activos</small><b>${act.length}</b></div><div class="kpi"><small>Actuaciones este mes</small><b>${acts}</b></div><div class="kpi"><small>Casos nuevos este mes</small><b>${nuevos}</b></div><div class="kpi"><small>Por cobrar</small><b style="color:var(--warn);font-size:21px">${eur(due)}</b></div></div>
  <div class="panel"><h3>Antigüedad de la última actuación</h3><p>Casos no cerrados, según el tiempo desde su última actuación</p><div class="age"><div class="g"><b>${ag.g}</b><small>0–6 meses</small></div><div class="a"><b>${ag.a}</b><small>6–12 meses</small></div><div class="r"><b>${ag.r}</b><small>Más de 12 meses</small></div><div class="n"><b>${ag.n}</b><small>Sin actuación</small></div></div></div>
