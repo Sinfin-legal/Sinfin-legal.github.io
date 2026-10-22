@@ -1517,24 +1517,25 @@ function pomoCuerpo(){
  return `<div style="text-align:center"><span class="tag">${POMO_N[s.fase]}</span>
  <div id="pmClock" style="font-size:64px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.15;margin:8px 0">${pomoReloj(s)}</div>
  <p style="margin:0 0 12px;color:var(--muted)">${s.n?'🍅'.repeat(Math.min(s.n,12))+' · ':''}${s.n} enfoque${s.n===1?'':'s'} hoy</p>
+ ${s.run?(s.srv?`<p style="margin:0 0 10px;font-size:13px">✅ Aviso al celular programado para las ${new Date(s.fin).toLocaleTimeString('es-CO',{hour:'numeric',minute:'2-digit'})}</p>`:`<p style="margin:0 0 10px;font-size:13px;color:var(--bad)">⚠ El aviso al celular no quedó programado${s.srvErr?': '+esc(s.srvErr):' (revisando…)'}</p>`):''}
  <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button type="button" class="primary" data-pm="${s.run?'pausa':'inicio'}">${s.run?'Pausar':(s.resta?'Continuar':'Iniciar')}</button><button type="button" data-pm="reinicio">Reiniciar</button><button type="button" data-pm="saltar">Saltar</button></div></div>
  <label for="pmCaso">Anotar el tiempo de enfoque en un caso (opcional)</label>
  <select id="pmCaso"><option value="">No anotar en ningún caso</option>${casos.map(c=>`<option value="${c.id}" ${c.id===s.caso?'selected':''}>${esc(c.client)}${c.title?' · '+esc(c.title):''}</option>`).join('')}</select>
  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div><label for="pmF">Enfoque (min)</label><input id="pmF" type="number" min="1" max="180" value="${s.cfg.foco}"></div><div><label for="pmC">Corto (min)</label><input id="pmC" type="number" min="1" max="60" value="${s.cfg.corto}"></div><div><label for="pmL">Largo (min)</label><input id="pmL" type="number" min="1" max="90" value="${s.cfg.largo}"></div></div>
  <p style="margin:10px 0 0;color:var(--muted);font-size:13px">Después de 4 enfoques viene un descanso largo. Para oír el aviso, deja la app abierta; si das permiso a las notificaciones, también te llega un aviso.</p>`}
 async function pomoNube(s){
- if(!sb||!userId)return false;
+ if(!sb||!userId)return {ok:false,err:'no has iniciado sesión en la nube'};
  try{
-  if(s.run){const r=await sb.from('avisos_programados').upsert({user_id:userId,clave:'pomo',enviar_en:new Date(s.fin).toISOString(),titulo:s.fase==='foco'?'🍅 Terminó el enfoque':'🍅 Terminó el descanso',cuerpo:s.fase==='foco'?'Toma un descanso.':'¿Seguimos con el siguiente enfoque?',enviado:false},{onConflict:'user_id,clave'});return !r.error}
-  await sb.from('avisos_programados').delete().eq('user_id',userId).eq('clave','pomo');return false
- }catch(e){return false}}
+  if(s.run){const r=await sb.from('avisos_programados').upsert({user_id:userId,clave:'pomo',enviar_en:new Date(s.fin).toISOString(),titulo:s.fase==='foco'?'🍅 Terminó el enfoque':'🍅 Terminó el descanso',cuerpo:s.fase==='foco'?'Toma un descanso.':'¿Seguimos con el siguiente enfoque?',enviado:false},{onConflict:'user_id,clave'});return r.error?{ok:false,err:String(r.error.message||r.error.code||'error')}:{ok:true,err:''}}
+  await sb.from('avisos_programados').delete().eq('user_id',userId).eq('clave','pomo');return {ok:false,err:''}
+ }catch(e){return {ok:false,err:String(e&&e.message||e)}}}
 async function pomoEnCurso(s){
  try{if(!('Notification' in window)||Notification.permission!=='granted'||!navigator.serviceWorker)return;
   const r=await Promise.race([navigator.serviceWorker.ready,new Promise((_,j)=>setTimeout(j,3000))]);
   (await r.getNotifications({tag:'pomo-run'})).forEach(n=>n.close());
   if(s.run)await r.showNotification('🍅 '+POMO_N[s.fase]+' en curso',{body:'Termina a las '+new Date(s.fin).toLocaleTimeString('es-CO',{hour:'numeric',minute:'2-digit'}),icon:'icon-192.png',tag:'pomo-run',silent:true,data:{url:'./'}})
  }catch(e){}}
-function pomoSync(s){pomoNube(s).then(ok=>{const x=pomoGet();x.srv=!!(ok&&x.run);pomoSet(x)});pomoEnCurso(s)}
+function pomoSync(s){pomoNube(s).then(res=>{const x=pomoGet();x.srv=!!(res.ok&&x.run);x.srvErr=res.err||'';pomoSet(x);const b=document.getElementById('pmBody');if(b&&$('dlg').open)b.innerHTML=pomoCuerpo()});pomoEnCurso(s)}
 function pomoAccion(a){const s=pomoGet();
   if(a==='inicio'){s.run=true;s.fin=Date.now()+(s.resta||pomoDur(s,s.fase));try{pomoCtx=pomoCtx||new (window.AudioContext||window.webkitAudioContext)();pomoCtx.resume&&pomoCtx.resume()}catch(e){}
    try{if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()}catch(e){}}
