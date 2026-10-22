@@ -1779,7 +1779,7 @@ async function pushForm(){
   $('pOn').disabled=false;await pintar()};
  $('pTest').onclick=async()=>{$('pTest').disabled=true;msg('Enviando…');
   try{const x=await sb.functions.invoke('revisar-procesos',{body:{accion:'probar_push'}});
-   if(x.error){let m='No se pudo enviar la prueba.';try{const j=await x.error.context.json();if(j&&j.error)m=j.error}catch(e){}throw new Error(m)}
+   if(x.error){let m='No se pudo enviar la prueba.',det=String(x.error.name||'')+' '+String(x.error.message||'');try{const c=x.error.context;if(c&&c.status)det+=' · código '+c.status;const t=c&&c.text?await c.text():'';if(t){det+=' · '+t.slice(0,160);try{const j=JSON.parse(t);if(j&&j.error)m=j.error}catch(e){}}}catch(e){}throw new Error(m+' (Detalle: '+det.trim()+')')}
    if(x.data&&x.data.error)throw new Error(x.data.error);msg('Enviada. Debería llegarte en unos segundos.')}
   catch(e){msg(e.message||String(e),true)}
   $('pTest').disabled=false};
