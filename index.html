@@ -1501,7 +1501,7 @@ const pomoDur=(s,f)=>(Number(s.cfg[f])||25)*60000;
 const pomoLeft=s=>s.run?Math.max(0,s.fin-Date.now()):(s.resta||pomoDur(s,s.fase));
 let pomoCtx=null;
 function pomoSonido(){try{pomoCtx=pomoCtx||new (window.AudioContext||window.webkitAudioContext)();if(pomoCtx.state==='suspended')pomoCtx.resume();
- [0,.28,.56].forEach((t,i)=>{const o=pomoCtx.createOscillator(),g=pomoCtx.createGain();o.type='sine';o.frequency.value=[660,880,1100][i];o.connect(g);g.connect(pomoCtx.destination);const a=pomoCtx.currentTime+t;g.gain.setValueAtTime(0,a);g.gain.linearRampToValueAtTime(.35,a+.03);g.gain.exponentialRampToValueAtTime(.001,a+.25);o.start(a);o.stop(a+.27)})}catch(e){}}
+ for(let i=0;i<10;i++){const o=pomoCtx.createOscillator(),g=pomoCtx.createGain();o.type='square';o.frequency.value=i%2?1175:880;o.connect(g);g.connect(pomoCtx.destination);const a=pomoCtx.currentTime+i*.32;g.gain.setValueAtTime(0,a);g.gain.linearRampToValueAtTime(.3,a+.02);g.gain.setValueAtTime(.3,a+.2);g.gain.linearRampToValueAtTime(0,a+.28);o.start(a);o.stop(a+.3)}}catch(e){}}
 function pomoAviso(txt,srv){pomoSonido();try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}
  try{if(!srv&&'Notification' in window&&Notification.permission==='granted'){if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.ready.then(r=>r.showNotification('🍅 Sinfín',{body:txt,icon:'icon-192.png',tag:'pomodoro'})).catch(()=>{new Notification('🍅 Sinfín',{body:txt})});else new Notification('🍅 Sinfín',{body:txt})}}catch(e){}}
 function pomoSiguiente(s,hecho){
@@ -1518,7 +1518,8 @@ function pomoCuerpo(){
  <div id="pmClock" style="font-size:64px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.15;margin:8px 0">${pomoReloj(s)}</div>
  <p style="margin:0 0 12px;color:var(--muted)">${s.n?'🍅'.repeat(Math.min(s.n,12))+' · ':''}${s.n} enfoque${s.n===1?'':'s'} hoy</p>
  ${s.run?(s.srv?`<p style="margin:0 0 10px;font-size:13px">✅ Aviso al celular programado para las ${new Date(s.fin).toLocaleTimeString('es-CO',{hour:'numeric',minute:'2-digit'})}</p>`:`<p style="margin:0 0 10px;font-size:13px;color:var(--bad)">⚠ El aviso al celular no quedó programado${s.srvErr?': '+esc(s.srvErr):' (revisando…)'}</p>`):''}
- <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button type="button" class="primary" data-pm="${s.run?'pausa':'inicio'}">${s.run?'Pausar':(s.resta?'Continuar':'Iniciar')}</button><button type="button" data-pm="reinicio">Reiniciar</button><button type="button" data-pm="saltar">Saltar</button></div></div>
+ <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button type="button" class="primary" data-pm="${s.run?'pausa':'inicio'}">${s.run?'Pausar':(s.resta?'Continuar':'Iniciar')}</button><button type="button" data-pm="reinicio">Reiniciar</button><button type="button" data-pm="saltar">Saltar</button></div>
+ <div style="margin-top:8px"><button type="button" data-pm="reloj">⏰ Alarma en el Reloj del iPhone</button></div></div>
  <label for="pmCaso">Anotar el tiempo de enfoque en un caso (opcional)</label>
  <select id="pmCaso"><option value="">No anotar en ningún caso</option>${casos.map(c=>`<option value="${c.id}" ${c.id===s.caso?'selected':''}>${esc(c.client)}${c.title?' · '+esc(c.title):''}</option>`).join('')}</select>
  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div><label for="pmF">Enfoque (min)</label><input id="pmF" type="number" min="1" max="180" value="${s.cfg.foco}"></div><div><label for="pmC">Corto (min)</label><input id="pmC" type="number" min="1" max="60" value="${s.cfg.corto}"></div><div><label for="pmL">Largo (min)</label><input id="pmL" type="number" min="1" max="90" value="${s.cfg.largo}"></div></div>
@@ -1537,6 +1538,7 @@ async function pomoEnCurso(s){
  }catch(e){}}
 function pomoSync(s){pomoNube(s).then(res=>{const x=pomoGet();x.srv=!!(res.ok&&x.run);x.srvErr=res.err||'';pomoSet(x);const b=document.getElementById('pmBody');if(b&&$('dlg').open)b.innerHTML=pomoCuerpo()});pomoEnCurso(s)}
 function pomoAccion(a){const s=pomoGet();
+  if(a==='reloj'){try{location.href='shortcuts://run-shortcut?name='+encodeURIComponent(s.fase==='foco'?'Pomodoro':'Descanso')}catch(e){}return}
   if(a==='inicio'){s.run=true;s.fin=Date.now()+(s.resta||pomoDur(s,s.fase));try{pomoCtx=pomoCtx||new (window.AudioContext||window.webkitAudioContext)();pomoCtx.resume&&pomoCtx.resume()}catch(e){}
    try{if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()}catch(e){}}
   else if(a==='pausa'){s.resta=pomoLeft(s);s.run=false}
