@@ -1585,7 +1585,7 @@ function pomoPill(){
  el.textContent='🍅 '+pomoReloj(s)+' · '+POMO_N[s.fase]}
 setInterval(()=>{const s=pomoGet();
  if(s.run&&Date.now()>=s.fin){const f=s.fase,srv=s.srv;pomoSiguiente(s,true);s.srv=false;pomoSet(s);
-  pomoAviso(f==='foco'?'¡Terminó el enfoque! Toma un descanso.':'Terminó el descanso. ¿Seguimos?',srv);pomoSync(s);
+  pomoAviso(f==='foco'?'¡Terminó el enfoque! Toma un descanso.':'Terminó el descanso. ¿Seguimos?',srv);pomoEnCurso(s);
   if($('dlg').open&&$('pmBody'))$('pmBody').innerHTML=pomoCuerpo();if(view==='dash'&&!$('dlg').open)render()}
  const c=document.getElementById('pmClock');if(c&&$('dlg').open)c.textContent=pomoReloj(pomoGet());
  document.querySelectorAll('.pmDashClock').forEach(e=>e.textContent=pomoReloj(pomoGet()));
