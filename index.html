@@ -1888,7 +1888,7 @@ $('calView').addEventListener('click',e=>{
 });
 $('calView').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset.day)eventForm(null,e.target.dataset.day)});
 const money=n=>'$ '+Math.round(n||0).toLocaleString('es-CO')+' COP';
-const invTotal=i=>i.base*(1+(i.iva-i.irpf)/100);
+const invTotal=i=>i.base*(1-(i.irpf||0)/100);
 function setHello(n){const h=new Date().getHours(),g=h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches';$('hello').textContent=g+'. '+(n?`Tienes ${n} ${n===1?'fecha importante':'fechas importantes'} en los próximos 7 días.`:'No hay plazos ni audiencias esta semana.')}
 function renderAlerts(){
  const t=today(),l=new Date();l.setDate(l.getDate()+7);
@@ -1900,31 +1900,83 @@ function invHtml(c){
  const is=db.invoices.filter(i=>i.caseId===c.id).sort((a,b)=>b.date.localeCompare(a.date));
  return `<div class="sec"><h3>Facturas</h3><button class="link" id="addI">Nueva factura</button></div>`+(is.length?`<div class="scroll"><table><tr><th>Número</th><th>Fecha</th><th class="r">Total</th><th></th></tr>${is.map(i=>`<tr><td>${esc(i.num)}</td><td>${fdate(i.date)}</td><td class="r num">${eur(invTotal(i))}</td><td><button class="link" data-pi="${i.id}">Descargar PDF</button> <button class="link danger" data-di="${i.id}" aria-label="Eliminar factura">Eliminar</button></td></tr>`).join('')}</table></div>`:'<div class="empty">Aún no has emitido facturas de este caso.</div>');
 }
+function firmInfo(){const f=db.firm||{},own=/lorenasu\.isabel/i.test(String(typeof userEmail!=='undefined'?userEmail:''));
+ return {name:f.name||(own?'Lorena Suárez':''),title:(f.title&&!(own&&f.title==='Abogada'))?f.title:(own?'Abogada especialista en Derecho Civil y Familia · Especialista en Derecho Penal y Criminología':''),nif:f.nif||(own?'1.103.120.435':''),tel:f.tel||(own?'311 881 3245':''),mail:f.mail||(own?'Lorenasu.isabel@outlook.com':''),addr:f.addr||''}}
 function invForm(c){
- const s=stats(c),f=db.firm||{},y=today().slice(0,4),n=db.invoices.filter(i=>i.num.startsWith('F-'+y)).length+1;
- form('Nueva factura',F('Número','num','F-'+y+'-'+String(n).padStart(3,'0'))+F('Fecha','date',today(),'date')+F('Concepto','concept','Honorarios profesionales: '+c.title)+F('Base imponible ($)','base',Math.max(0,s.due).toFixed(2),'number','step="0.01" min="0"')+F('IVA (%)','iva',19,'number','step="0.01"')+F('Retención en la fuente (%)','irpf',0,'number','step="0.01"')+'<hr style="border:0;border-top:1px solid var(--line);margin:14px 0 0">'+F('Tu despacho o nombre','firm',f.name)+F('Tu NIT o cédula','fnif',f.nif)+F('Dirección del despacho','faddr',f.addr)+F('NIT o cédula del cliente','cnif',c.nif),
-  g=>{const base=parseFloat(val('base'));
-   if(!val('num')||!(base>0))return 'Indica el número y una base imponible mayor que cero.';
-   if(!val('firm'))return 'Indica el nombre del despacho.';
-   db.firm={name:val('firm'),nif:val('fnif'),addr:val('faddr')};c.nif=val('cnif');
-   db.invoices.push({id:uid('i'),caseId:c.id,num:val('num'),date:val('date')||today(),concept:val('concept'),base,iva:parseFloat(val('iva'))||0,irpf:parseFloat(val('irpf'))||0})});
+ const s=stats(c),f=firmInfo(),y=today().slice(0,4),n=db.invoices.filter(i=>i.num.startsWith('F-'+y)).length+1,ff=db.firm||{};
+ const fila=(k,ph)=>F('Concepto '+k+(k>1?' (opcional)':''),'c'+k,k===1?'Honorarios profesionales: '+c.title:'','text',ph?'placeholder="'+ph+'"':'')+F('Valor del concepto '+k+' ($)','v'+k,k===1?Math.max(0,Math.round(s.due)):'','number','step="1" min="0"');
+ form('Nueva factura',F('Número','num','F-'+y+'-'+String(n).padStart(3,'0'))+F('Fecha','date',today(),'date')+fila(1)+fila(2,'Ej.: Copias y desplazamientos')+fila(3)+F('Retención en la fuente (%) — déjala en 0 si no aplica','irpf',0,'number','step="0.01"')+
+  '<hr style="border:0;border-top:1px solid var(--line);margin:14px 0 0"><p style="margin:8px 0 0;color:var(--muted);font-size:13px">Cobro</p>'+F('Fecha límite de pago','venc',today(),'date')+F('Forma de pago','forma',ff.forma||'Transferencia')+F('Cuenta de pago (banco y número, Nequi…)','cuenta',ff.cuenta||'')+
+  '<hr style="border:0;border-top:1px solid var(--line);margin:14px 0 0"><p style="margin:8px 0 0;color:var(--muted);font-size:13px">Tus datos</p>'+F('Tu nombre','firm',f.name)+F('Profesión y especialidades (separa con · para otra línea)','ftitle',f.title)+F('Tu cédula o NIT','fnif',f.nif)+F('Teléfono','ftel',f.tel,'tel')+F('Correo','fmail',f.mail,'email')+F('Dirección (opcional)','faddr',f.addr)+F('Cédula o NIT del cliente','cnif',c.nif),
+  g=>{const items=[1,2,3].map(k=>({desc:val('c'+k),val:parseFloat(val('v'+k))||0})).filter(x=>x.desc&&x.val>0);
+   if(!val('num')||!items.length)return 'Indica el número y al menos un concepto con valor mayor que cero.';
+   if(!val('firm'))return 'Indica tu nombre.';
+   const base=items.reduce((t,x)=>t+x.val,0);
+   db.firm=Object.assign({},db.firm,{name:val('firm'),title:val('ftitle'),nif:val('fnif'),tel:val('ftel'),mail:val('fmail'),addr:val('faddr'),forma:val('forma'),cuenta:val('cuenta')});c.nif=val('cnif');
+   db.invoices.push({id:uid('i'),caseId:c.id,num:val('num'),date:val('date')||today(),concept:items[0].desc,items,base,irpf:parseFloat(val('irpf'))||0,venc:val('venc')||val('date')||today(),forma:val('forma'),cuenta:val('cuenta')})});
 }
+async function logoDataUrl(){try{const r=await fetch('logo-s.png'),b=await r.blob();return await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>res(null);fr.readAsDataURL(b)})}catch(e){return null}}
 async function invPdf(i){
- const c=db.cases.find(x=>x.id===i.caseId)||{},f=db.firm||{};
+ const c=db.cases.find(x=>x.id===i.caseId)||{},f=firmInfo();
  const dl={save:saveFile};
  if(!window.jspdf){alert('No se pudo cargar el generador de PDF. Recarga la página.');return}
- const d=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),ivaA=i.base*i.iva/100,irA=i.base*i.irpf/100;let y=22;
- d.setFont('helvetica','bold');d.setFontSize(20);d.text('FACTURA',20,y);d.setFontSize(11);d.text(i.num,190,y,{align:'right'});
- d.setFont('helvetica','normal');y+=7;d.text('Fecha: '+fdate(i.date),190,y,{align:'right'});
- y+=12;d.setFont('helvetica','bold');d.text('Emisor',20,y);d.text('Cliente',110,y);d.setFont('helvetica','normal');y+=6;
- const L=(a,x)=>d.text(d.splitTextToSize(a.filter(Boolean).join('\n'),80),x,y);
- L([f.name,f.nif&&'NIT/CC: '+f.nif,f.addr],20);L([c.client,c.nif&&'NIT/CC: '+c.nif],110);
- y+=34;d.setDrawColor(150);d.line(20,y,190,y);y+=7;
- d.setFont('helvetica','bold');d.text('Concepto',20,y);d.text('Importe',190,y,{align:'right'});d.setFont('helvetica','normal');y+=7;
- const cl=d.splitTextToSize(i.concept||'Honorarios profesionales',130);d.text(cl,20,y);d.text(money(i.base),190,y,{align:'right'});
- y+=cl.length*5+8;d.line(20,y,190,y);y+=8;
- const row=(a,b,bold)=>{d.setFont('helvetica',bold?'bold':'normal');d.text(a,120,y);d.text(b,190,y,{align:'right'});y+=7};
- row('Base imponible',money(i.base));row('IVA ('+i.iva+'%)',money(ivaA));if(i.irpf)row('Retención en la fuente ('+i.irpf+'%)','-'+money(irA));row('TOTAL',money(invTotal(i)),true);
+ const d=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),irA=i.base*(i.irpf||0)/100;
+ const WINE=[98,2,9],GOLD=[176,141,87],INK=[42,29,32],MUT=[110,98,101],ROSE=[243,236,235];
+ const m=n=>'$ '+Math.round(n||0).toLocaleString('es-CO');
+ const items=(i.items&&i.items.length)?i.items:[{desc:i.concept||'Honorarios profesionales',val:i.base}];
+ let y=18;
+ // título entre barras
+ d.setFillColor(...WINE);d.rect(20,y-3.2,62,3.6,'F');d.rect(128,y-3.2,62,3.6,'F');
+ d.setFont('helvetica','bold');d.setFontSize(15);d.setTextColor(...INK);d.text('FACTURA',105,y+.4,{align:'center'});
+ y+=9;d.setFont('helvetica','normal');d.setFontSize(9.5);d.setTextColor(...MUT);
+ d.text('FECHA: '+fdate(i.date)+'     |     NÚMERO: '+i.num,105,y,{align:'center'});
+ y+=5;d.setDrawColor(...GOLD);d.setLineWidth(.3);d.line(20,y,190,y);
+ // emisor (izquierda) y cliente (derecha)
+ y+=9;const top=y,logo=await logoDataUrl();
+ if(logo){try{d.addImage(logo,'PNG',20,top,13,19.4)}catch(e){}}
+ const x0=logo?37:20;
+ d.setTextColor(...WINE);d.setFont('times','bold');d.setFontSize(17);d.text(f.name||'',x0,top+7);
+ d.setFont('helvetica','normal');d.setFontSize(8);d.setTextColor(...GOLD);let ty=top+12;
+ String(f.title||'').split(/\s*[·|]\s*/).filter(Boolean).forEach(t=>d.splitTextToSize(t,66).forEach(z=>{d.text(z,x0,ty);ty+=3.7}));
+ let ey=Math.max(ty,top+22)+3;d.setFontSize(9);d.setTextColor(...MUT);
+ [f.nif&&'C.C. / NIT: '+f.nif,f.tel&&'Tel.: '+f.tel,f.mail,f.addr].filter(Boolean).forEach(t=>{d.text(d.splitTextToSize(t,80),20,ey);ey+=4.4});
+ d.setDrawColor(210,200,200);d.setLineWidth(.3);d.line(112,top-2,112,Math.max(ey,top+30));
+ d.setFont('helvetica','normal');d.setFontSize(8);d.setTextColor(...GOLD);d.text('CLIENTE',118,top+1);
+ d.setFont('helvetica','bold');d.setFontSize(11);d.setTextColor(...INK);
+ let cy=top+8;d.splitTextToSize(c.client||'',70).forEach(z=>{d.text(z,118,cy);cy+=5});
+ d.setFont('helvetica','normal');d.setFontSize(9);d.setTextColor(...MUT);
+ [c.nif&&'C.C. / NIT: '+c.nif,c.cTel&&'Tel.: '+c.cTel,c.cMail].filter(Boolean).forEach(t=>{d.text(d.splitTextToSize(t,70),118,cy);cy+=4.4});
+ // tabla de conceptos
+ y=Math.max(ey,cy,top+30)+10;
+ d.setFillColor(...WINE);d.rect(20,y-5,170,8,'F');d.setTextColor(255,255,255);d.setFont('helvetica','bold');d.setFontSize(9);
+ d.text('CANTIDAD',22,y);d.text('CONCEPTO',44,y);d.text('PRECIO',150,y,{align:'right'});d.text('NETO',187,y,{align:'right'});
+ y+=4;items.forEach((it,k)=>{const cl=d.splitTextToSize(it.desc,95),hh=Math.max(9,cl.length*4.6+4.5);
+  d.setFillColor(...(k%2?[250,247,246]:ROSE));d.rect(20,y,170,hh,'F');
+  d.setFont('helvetica','normal');d.setFontSize(9.5);d.setTextColor(...INK);const ty0=y+5.8;
+  d.text('1,00',22,ty0);d.text(cl,44,ty0);d.text(m(it.val),150,ty0,{align:'right'});d.text(m(it.val),187,ty0,{align:'right'});y+=hh});
+ // totales
+ y+=9;const lineH=(yy)=>{d.setDrawColor(...INK);d.setLineWidth(.4);d.line(112,yy,190,yy)};
+ if(i.irpf){
+  d.setDrawColor(...INK);d.setLineWidth(.4);d.line(20,y,100,y);
+  d.setFont('helvetica','bold');d.setFontSize(8);d.setTextColor(...INK);
+  d.text('BASE DE RETENCIÓN:',20,y+5);d.text(m(i.base),100,y+5,{align:'right'});
+  d.text('RETENCIÓN EN LA FUENTE ('+i.irpf+'%):',20,y+10);d.text(m(irA),100,y+10,{align:'right'});d.line(20,y+13,100,y+13)}
+ lineH(y);d.setFont('helvetica','bold');d.setFontSize(9.5);d.setTextColor(...INK);
+ if(i.irpf){d.text('TOTAL RETENCIÓN:',115,y+6);d.text('-'+m(irA),187,y+6,{align:'right'});y+=9}
+ d.setFillColor(...WINE);d.rect(112,y+3,78,11,'F');d.setTextColor(255,255,255);d.setFontSize(11.5);d.text('TOTAL FACTURA',116,y+10.2);d.text(m(invTotal(i)),187,y+10.2,{align:'right'});
+ y+=26;
+ // cobros
+ d.setFont('times','bold');d.setFontSize(13);d.setTextColor(...WINE);d.text('COBROS / VENCIMIENTOS',105,y,{align:'center'});y+=6;
+ d.setFillColor(...WINE);d.rect(20,y,170,7.5,'F');d.setTextColor(255,255,255);d.setFont('helvetica','bold');d.setFontSize(9);
+ d.text('FECHA',22,y+5);d.text('IMPORTE',55,y+5);d.text('FORMA DE PAGO',92,y+5);d.text('CUENTA DE PAGO',135,y+5);y+=7.5;
+ const ctl=d.splitTextToSize(i.cuenta||(db.firm&&db.firm.cuenta)||'—',52),ftl=d.splitTextToSize(i.forma||'Transferencia',38),rh=Math.max(12,Math.max(ctl.length,ftl.length)*4.5+5);
+ d.setFillColor(...ROSE);d.rect(20,y,170,rh,'F');d.setFont('helvetica','normal');d.setFontSize(9.5);d.setTextColor(...INK);
+ d.text(fdate(i.venc||i.date),22,y+5.5);d.text(m(invTotal(i)),55,y+5.5);d.text(ftl,92,y+5.5);d.text(ctl,135,y+5.5);
+ // pie
+ d.setDrawColor(...GOLD);d.setLineWidth(.3);d.line(20,276,190,276);
+ d.setFont('helvetica','normal');d.setFontSize(9);d.setTextColor(...MUT);
+ d.text('Gracias por su confianza.',105,282,{align:'center'});
+ d.text([f.name,[f.tel&&'Tel. '+f.tel,f.mail].filter(Boolean).join(' · ')].filter(Boolean).join('   |   '),105,287,{align:'center'});
  try{await dl.save({filename:i.num+'.pdf',data:d.output('blob')})}catch(e){}
 }
 (async()=>{try{
