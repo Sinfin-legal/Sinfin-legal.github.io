@@ -11,9 +11,10 @@
 <script>window.supabase||document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>')</script>
 <meta name="theme-color" content="#620209">
 <script>try{if(localStorage.getItem('sinfin-pin'))document.documentElement.dataset.lock='1'}catch(e){}</script>
-<script>try{var e=localStorage.getItem('sinfin-estilo');if(e==='rosa'||e==='lila')e='jardin';if(!localStorage.getItem('sinfin-jardin')){localStorage.setItem('sinfin-jardin','1');e='jardin';localStorage.setItem('sinfin-estilo',e)}document.documentElement.dataset.estilo=e||'jardin'}catch(e){document.documentElement.dataset.estilo='jardin'}</script>
+<script>try{var e=localStorage.getItem('sinfin-estilo');if(e==='rosa'||e==='lila')e='jardin';if(!localStorage.getItem('sinfin-botanico')){localStorage.setItem('sinfin-botanico','1');e='botanico';localStorage.setItem('sinfin-estilo',e)}document.documentElement.dataset.estilo=e||'botanico'}catch(e){document.documentElement.dataset.estilo='botanico'}</script>
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:wght@500;600;700&family=Nunito+Sans:wght@400;600;700&display=swap">
 <style>
 :root{--bg:#f6f3f2;--surface:#fff;--ink:#2a1d20;--muted:#75686b;--line:#e6dcdc;--accent:#620209;--accent-ink:#fff;--ok:#2f7d4f;--warn:#a86a0f;--bad:#b3382c;--info:#2f5d8a;
@@ -404,6 +405,102 @@ header.top .brand h1{font-size:24px}
 .authbox .logo.logoc,#lock .logo.logoc{height:104px!important;width:auto!important;margin:0 auto 6px}
 @media (max-width:520px){header.top .logo.logoc{height:50px!important;width:auto!important}}
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,500;6..12,600;6..12,700;6..12,800&display=swap" rel="stylesheet">
+<style>
+/* ===== Estilo Mercado (blanco limpio, naranja y verde, formas redondeadas) ===== */
+html:root[data-estilo="mercado"]{color-scheme:light;--em:" 🍊";--em2:"🍋";--em3:"";--k1:"🥬 ";--k2:"🍊 ";--k3:"🫐 ";--k4:"🍇 ";
+ --hf:"Nunito Sans","DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--r:26px;--rb:26px;
+ --bg:#fff;--surface:#f5f5f5;--ink:#2f2f2f;--muted:#6b6b6b;--line:#ebebeb;--accent:#e44a04;--accent-ink:#fff;--mark:#ff5406;
+ --ok:#00963a;--warn:#c75600;--bad:#e62b00;--tint1:#e5f7ec;--tint2:#fff0e4;--tint3:#e3f5fb;--tint4:#f5eafc}
+html:root[data-estilo="mercado"] body{background:#fff;font-family:var(--hf)}
+html:root[data-estilo="mercado"] button,html:root[data-estilo="mercado"] input,html:root[data-estilo="mercado"] select,html:root[data-estilo="mercado"] textarea{font-family:inherit}
+html:root[data-estilo="mercado"] *{box-shadow:none!important;text-shadow:none!important}
+html:root[data-estilo="mercado"] h1,html:root[data-estilo="mercado"] h2,html:root[data-estilo="mercado"] h3{font-family:var(--hf);font-weight:800;letter-spacing:-.02em;font-style:normal}
+html:root[data-estilo="mercado"] h2{font-size:28px;line-height:1.2}
+html:root[data-estilo="mercado"] h2 .t1{color:var(--mark)}
+html:root[data-estilo="mercado"] .panel h3{font-size:19px;color:var(--ink)}
+html:root[data-estilo="mercado"] .panel,html:root[data-estilo="mercado"] .case,html:root[data-estilo="mercado"] .detail,html:root[data-estilo="mercado"] .totals,html:root[data-estilo="mercado"] .alert,html:root[data-estilo="mercado"] .kpi{border:0;border-radius:26px;background:var(--surface);padding:20px 22px}
+html:root[data-estilo="mercado"] .case{padding:14px 18px;margin-bottom:10px}
+html:root[data-estilo="mercado"] .panel .case,html:root[data-estilo="mercado"] .panel .panel{background:#fff}
+html:root[data-estilo="mercado"] .kpi:nth-child(4n+1){background:var(--tint1)}
+html:root[data-estilo="mercado"] .kpi:nth-child(4n+2){background:var(--tint2)}
+html:root[data-estilo="mercado"] .kpi:nth-child(4n+3){background:var(--tint3)}
+html:root[data-estilo="mercado"] .kpi:nth-child(4n+4){background:var(--tint4)}
+html:root[data-estilo="mercado"] .kpi b,html:root[data-estilo="mercado"] .age b{font-family:var(--hf);font-weight:800}
+html:root[data-estilo="mercado"] button{border-radius:26px;font-weight:600}
+html:root[data-estilo="mercado"] button.primary{background:#ff5406;border-color:#ff5406;color:#fff;font-weight:700;padding:11px 20px}
+html:root[data-estilo="mercado"] button.link{background:none;border:0;color:var(--accent);font-weight:700}
+html:root[data-estilo="mercado"] input,html:root[data-estilo="mercado"] select,html:root[data-estilo="mercado"] textarea{border-radius:26px;border:2px solid transparent;background:var(--surface);padding:11px 16px}
+html:root[data-estilo="mercado"] textarea{border-radius:22px}
+html:root[data-estilo="mercado"] input:focus,html:root[data-estilo="mercado"] select:focus,html:root[data-estilo="mercado"] textarea:focus{outline:0;border-color:#ff5406;background:#fff}
+html:root[data-estilo="mercado"] dialog{border:0;border-radius:26px;background:#fff;padding:26px}
+html:root[data-estilo="mercado"] dialog input,html:root[data-estilo="mercado"] dialog select,html:root[data-estilo="mercado"] dialog textarea{background:var(--surface)}
+html:root[data-estilo="mercado"] .tag{border-radius:26px;background:#fff;border:0;font-weight:700}
+html:root[data-estilo="mercado"] .case .tag{background:#fff}
+html:root[data-estilo="mercado"] .bar,html:root[data-estilo="mercado"] .bar i{border-radius:26px;height:10px}
+html:root[data-estilo="mercado"] .bar{background:#e6e6e6}
+html:root[data-estilo="mercado"] .bar i{background:var(--ok)}
+html:root[data-estilo="mercado"] header.top{background:#fff;border:0}
+html:root[data-estilo="mercado"] .logo{filter:none}
+html:root[data-estilo="mercado"] .tabs{background:#fff;border-top:1px solid var(--line)}
+html:root[data-estilo="mercado"] .tabs button.on{color:#e44a04}
+html:root[data-estilo="mercado"] .tabs button.on::before{height:3px;background:#ff5406}
+html:root[data-estilo="mercado"] .hello{font-weight:600;color:var(--muted)}
+html:root[data-estilo="mercado"] .empty{color:var(--muted)}
+html:root[data-estilo="mercado"] .fsub button{border-radius:26px;background:var(--surface);border:0;color:var(--ink)}
+html:root[data-estilo="mercado"] .fsub button.on{background:#ff5406;color:#fff}
+html:root[data-estilo="mercado"] .mas button.go{background:var(--surface);border:0;border-radius:26px;padding:16px 20px}
+html:root[data-estilo="mercado"] .estilos button{border-radius:26px}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,500&display=swap" rel="stylesheet">
+<style>
+/* ===== Estilo Botánico (pergamino, verde bosque, serifa liviana) ===== */
+html:root[data-estilo="botanico"]{color-scheme:light;--em:" 🌿";--em2:"🌿";--em3:"";--k1:"🌿 ";--k2:"🌼 ";--k3:"🪻 ";--k4:"🍃 ";
+ --hf:"Source Serif 4",Georgia,"Times New Roman",serif;--ui:Inter,-apple-system,"Segoe UI",system-ui,sans-serif;--r:12px;--rb:40px;
+ --bg:#faf8f5;--surface:#fff;--ink:#271a00;--muted:#7c7464;--line:rgba(39,26,0,.12);--accent:#0f3639;--accent-ink:#faf8f5;--mark:#0f3639;
+ --ok:#3f6b4e;--warn:#9a6a1c;--bad:#a63d2f;--tint1:#eef1ea;--tint2:#f4eee2;--tint3:#e8eeee;--tint4:#f0e9e4}
+html:root[data-estilo="botanico"] body{background:#faf8f5;font-family:var(--ui);font-size:15px;line-height:1.5;letter-spacing:-.02em;color:var(--ink);
+ background-image:radial-gradient(60% 220px at 12% 0,rgba(86,120,84,.16),transparent 70%),radial-gradient(50% 200px at 92% 0,rgba(15,54,57,.12),transparent 70%);background-repeat:no-repeat}
+html:root[data-estilo="botanico"] button,html:root[data-estilo="botanico"] input,html:root[data-estilo="botanico"] select,html:root[data-estilo="botanico"] textarea{font-family:var(--ui);letter-spacing:-.02em}
+html:root[data-estilo="botanico"] *{box-shadow:none!important;text-shadow:none!important}
+html:root[data-estilo="botanico"] h1,html:root[data-estilo="botanico"] h2{font-family:var(--hf);font-weight:300;letter-spacing:-.01em;font-style:normal;color:var(--ink)}
+html:root[data-estilo="botanico"] h2{font-size:32px;line-height:1.1}
+html:root[data-estilo="botanico"] h3{font-family:var(--hf);font-weight:400;font-size:20px;letter-spacing:0;font-style:normal;color:var(--ink)}
+html:root[data-estilo="botanico"] .panel,html:root[data-estilo="botanico"] .case,html:root[data-estilo="botanico"] .detail,html:root[data-estilo="botanico"] .totals,html:root[data-estilo="botanico"] .alert{background:#fff;border:1px solid rgba(39,26,0,.08);border-radius:12px;padding:22px 24px}
+html:root[data-estilo="botanico"] .case{padding:14px 18px;margin-bottom:10px}
+html:root[data-estilo="botanico"] .panel .case,html:root[data-estilo="botanico"] .panel .panel{background:#faf8f5}
+html:root[data-estilo="botanico"] .kpi{border:0;border-radius:12px;padding:18px 20px}
+html:root[data-estilo="botanico"] .kpi:nth-child(4n+1){background:var(--tint1)}
+html:root[data-estilo="botanico"] .kpi:nth-child(4n+2){background:var(--tint2)}
+html:root[data-estilo="botanico"] .kpi:nth-child(4n+3){background:var(--tint3)}
+html:root[data-estilo="botanico"] .kpi:nth-child(4n+4){background:var(--tint4)}
+html:root[data-estilo="botanico"] .kpi b,html:root[data-estilo="botanico"] .age b{font-family:var(--hf);font-weight:300}
+html:root[data-estilo="botanico"] button{border-radius:40px;font-weight:500;border:1px solid rgba(39,26,0,.2);background:rgba(255,255,255,.6);color:var(--ink)}
+html:root[data-estilo="botanico"] button.primary{background:#0f3639;border-color:#0f3639;color:#faf8f5;font-weight:500;padding:11px 24px}
+html:root[data-estilo="botanico"] button.link{background:none;border:0;color:#0f3639;font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(15,54,57,.3)}
+html:root[data-estilo="botanico"] button.danger,html:root[data-estilo="botanico"] button.link.danger{color:var(--bad)}
+html:root[data-estilo="botanico"] input,html:root[data-estilo="botanico"] select,html:root[data-estilo="botanico"] textarea{border-radius:4px;border:1px solid rgba(39,26,0,.2);background:#fff;padding:10px 12px;font-size:15px;color:var(--ink)}
+html:root[data-estilo="botanico"] input:focus,html:root[data-estilo="botanico"] select:focus,html:root[data-estilo="botanico"] textarea:focus{outline:2px solid rgba(15,54,57,.35);outline-offset:1px;border-color:#0f3639}
+html:root[data-estilo="botanico"] dialog{border:1px solid rgba(39,26,0,.1);border-radius:12px;background:#faf8f5;padding:28px}
+html:root[data-estilo="botanico"] dialog::backdrop{background:rgba(35,41,27,.5);backdrop-filter:blur(8px)}
+html:root[data-estilo="botanico"] .tag{border-radius:4px;background:transparent;border:1px solid rgba(39,26,0,.2);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;font-weight:500;letter-spacing:0}
+html:root[data-estilo="botanico"] .bar,html:root[data-estilo="botanico"] .bar i{border-radius:4px;height:8px}
+html:root[data-estilo="botanico"] .bar{background:#e8e4da}
+html:root[data-estilo="botanico"] .bar i{background:#0f3639}
+html:root[data-estilo="botanico"] header.top{background:transparent;border:0}
+html:root[data-estilo="botanico"] .logo{filter:none}
+html:root[data-estilo="botanico"] .tabs{background:rgba(250,248,245,.88);backdrop-filter:blur(20px);border-top:1px solid rgba(39,26,0,.1)}
+html:root[data-estilo="botanico"] .tabs button{border:0;background:none;border-radius:40px}
+html:root[data-estilo="botanico"] .tabs button.on{color:#0f3639;background:rgba(15,54,57,.1);font-weight:600}
+html:root[data-estilo="botanico"] .tabs button.on::before{display:none}
+html:root[data-estilo="botanico"] .hello{color:var(--muted);font-family:var(--hf);font-size:17px}
+html:root[data-estilo="botanico"] .fsub button{border-radius:40px;background:transparent;border:1px solid rgba(39,26,0,.2)}
+html:root[data-estilo="botanico"] .fsub button.on{background:#0f3639;color:#faf8f5;border-color:#0f3639}
+html:root[data-estilo="botanico"] .mas button.go{background:#fff;border:1px solid rgba(39,26,0,.08);border-radius:12px;padding:16px 20px}
+html:root[data-estilo="botanico"] .estilos button{border-radius:12px}
+html:root[data-estilo="botanico"] #newCase{background:#0f3639;color:#faf8f5;border-color:#0f3639}
+</style>
 </head>
 <body>
 <div id="lock"><div class="box"><img class="logo logoc" src="logo-s.png" alt=""><h2>Sinfín</h2><p style="color:var(--muted);margin:4px 0">Escribe tu PIN para entrar</p><input id="lockPin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" aria-label="PIN"><div class="err" id="lockErr" role="alert"></div><button class="primary" id="lockOk" style="width:100%">Entrar</button><p><button class="link" id="lockForgot">Olvidé mi PIN</button></p></div></div>
@@ -440,6 +537,7 @@ header.top .brand h1{font-size:24px}
   </section>
 
   <section id="detailView" class="hide"></section>
+  <section id="leyView" class="hide"></section>
   <section id="calView" class="hide"></section>
 </div>
 
@@ -825,15 +923,15 @@ function reportePdf(mes){
  saveFile({filename:'reporte-'+mes+'.pdf',data:d.output('blob')});
 }
 function estiloForm(){
- const cur=document.documentElement.dataset.estilo||'jardin';
- const E=[['jardin','Jardín','#620209','Suave, con colores pastel, caritas y plantitas'],['clasico','Clásico','#620209','Vino tinto, elegante y femenino'],['ejecutivo','Ejecutivo','#17263c','Azul noche y bronce, sobrio y firme']];
+ const cur=document.documentElement.dataset.estilo||'botanico';
+ const E=[['botanico','Botánico','#0f3639','Pergamino y verde bosque, letra elegante y liviana'],['mercado','Mercado','#ff5406','Blanco limpio, naranja y verde, formas redondeadas'],['jardin','Jardín','#620209','Suave, con colores pastel, caritas y plantitas'],['clasico','Clásico','#620209','Vino tinto, elegante y femenino'],['ejecutivo','Ejecutivo','#17263c','Azul noche y bronce, sobrio y firme']];
  form('Elige tu estilo','<div class="estilos">'+E.map(e=>`<button type="button" data-es="${e[0]}" class="${e[0]===cur?'on':''}"><i style="background:${e[2]}"></i><span><b>${e[1]}</b><br><small style="color:var(--muted)">${e[3]}</small></span></button>`).join('')+'</div>',()=>{});
  $('ok').classList.add('hide');$('cancel').textContent='Cerrar';
  $('frm').querySelectorAll('[data-es]').forEach(b=>b.onclick=()=>{aplicarEstilo(b.dataset.es);$('dlg').close()});
 }
 function aplicarEstilo(n){
  document.documentElement.dataset.estilo=n;try{localStorage.setItem('sinfin-estilo',n)}catch(e){}
- const m=document.querySelector('meta[name="theme-color"]');if(m)m.content={rosa:'#b02a5b',lila:'#6b3fa0',ejecutivo:'#17263c',clasico:'#620209',jardin:'#620209'}[n]||'#620209';
+ const m=document.querySelector('meta[name="theme-color"]');if(m)m.content={botanico:'#faf8f5',mercado:'#ffffff',rosa:'#b02a5b',lila:'#6b3fa0',ejecutivo:'#17263c',clasico:'#620209',jardin:'#620209'}[n]||'#620209';
 }
 
 /* Iconos del menú */
@@ -2128,6 +2226,258 @@ function renderDesp(){
  $('despView').innerHTML='<button class="link" data-tab="mas">‹ Más</button><h2 style="margin-bottom:10px">Despachos</h2>'+(ks.length?ks.map(k=>`<div class="panel"><h3>${esc(k)}</h3><p>${g[k].length} ${g[k].length===1?'caso':'casos'}</p>${g[k].map(c=>`<button class="case" data-id="${c.id}" style="--c:${color(c.status)}"><div class="row"><span class="t">${esc(c.client)}</span><span class="num">${esc(c.radicado||c.number||'')}</span></div><div class="row m"><span>${esc(c.title)}</span><span class="tag">${c.status}</span></div></button>`).join('')}</div>`).join(''):'<div class="empty">Aún no hay casos.</div>');
 }
 if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js').then(g=>g.update()).catch(()=>{});let rec=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(rec)return;rec=true;if(!document.querySelector('dialog[open]'))location.reload()})}
+render();
+</script>
+<style>
+:root[data-estilo] .tabs button[data-tab=ley] span::before{content:"📜"}
+body.pub #totals,body.pub .case .num,body.pub .detail .kv,body.pub .case .bar,body.pub [data-tab="fin"],body.pub [data-cs="hon"],body.pub [data-cs="cli"]{display:none!important}
+</style>
+<script>
+/* ===== Modo funcionario público ===== */
+const pub=()=>db.modo==='publico';
+const KINDS_ABO=KINDS.slice(),KINDS_PUB=['Proceso judicial','Petición / PQRS','Tutela','Proceso disciplinario','Investigación penal','Trámite administrativo','Otro'];
+const LEY=[
+ ['Derecho de petición (general)',15,'Ley 1755 de 2015, art. 14',1],
+ ['Petición de documentos o información',10,'Ley 1755 de 2015, art. 14',1],
+ ['Consulta a las autoridades',30,'Ley 1755 de 2015, art. 14',1],
+ ['Tutela: fallo de primera instancia',10,'Decreto 2591 de 1991, art. 29',0],
+ ['Tutela: impugnación del fallo',3,'Decreto 2591 de 1991, art. 31',0],
+ ['Tutela: decisión de la impugnación',20,'Decreto 2591 de 1991, art. 32',0],
+ ['Otro término (propio)',10,'',0]];
+const leyes=()=>(db.leyes=db.leyes||[]);
+function habRest(v){let n=0,d=TERM.add(TERM.parse(today()),1);const f=TERM.parse(v);while(d<=f){if(!TERM.noHabil(d,false))n++;d=TERM.add(d,1)}return n}
+function leyCalc(ini,n,u){return TERM.calcular(ini,n,u==='cal'?'cal':'habiles',false)}
+function leyLimpiar(L){db.events=db.events.filter(x=>x.id!==L.evId);db.tareas=tareas().filter(x=>!(L.tk||[]).includes(x.id));L.evId='';L.tk=[]}
+function leyAvisos(L){
+ leyLimpiar(L);if(L.done)return;
+ L.evId=uid('v');db.events.push({id:L.evId,caseId:L.caseId||'',date:L.vence,time:'',title:'Vence término: '+L.asunto,type:'Plazo'});
+ L.tk=[];[[3,'Faltan 3 días'],[1,'Mañana vence']].forEach(([dd,txt])=>{const f=addDias(L.vence,-dd);if(f>=today()){const id=uid('t');tareas().push({id,title:txt+' — '+L.asunto,fecha:f,prio:'Alta',ambito:'Trabajo',tipo:'Tarea',done:false,caseId:L.caseId||''});L.tk.push(id)}});
+}
+function leyEstado(L){const d=difDias(L.vence,today());return L.done?{k:'ok',c:'var(--ok)',t:'Respondido'}:d<0?{k:'bad',c:'var(--bad)',t:'Vencido hace '+(-d)+(d===-1?' día':' días')}:d===0?{k:'bad',c:'var(--bad)',t:'Vence hoy'}:d<=3?{k:'warn',c:'var(--warn)',t:'Vence en '+d+(d===1?' día':' días')}:{k:'ok',c:'var(--ok)',t:'Faltan '+habRest(L.vence)+' días hábiles'}}
+function leyForm(L){
+ const e=!!L,idx=e?Math.max(0,LEY.findIndex(x=>x[0]===L.tipo)):0;
+ form(e?'Editar término':'Nuevo término de ley',
+  S('¿Qué término es?','tipo',LEY.map(x=>x[0]),LEY[idx][0])+
+  `<p id="lyBase" style="margin:6px 0 0;font-size:13px;color:var(--muted)"></p>`+
+  F('Asunto (ej. petición de Juan Pérez sobre certificado)','asunto',e?L.asunto:'')+
+  F('Peticionario o interesado (opcional)','pet',e?L.pet:'')+
+  F('Radicado o número de expediente (opcional)','ref',e?L.ref:'')+
+  F('Fecha en que se recibió o notificó','recibido',e?L.recibido:today(),'date')+
+  F('Número de días','n',e?L.n:LEY[idx][1],'number','min="1" step="1" inputmode="numeric"')+
+  S('Tipo de días','u',['Días hábiles','Días calendario'],e&&L.u==='cal'?'Días calendario':'Días hábiles')+
+  `<label for="f_caseId">Expediente relacionado (opcional)</label><select id="f_caseId" name="caseId"><option value="">Ninguno</option>${db.cases.map(c=>`<option value="${c.id}" ${e&&L.caseId===c.id?'selected':''}>${esc(c.client)} · ${esc(c.number||c.title||'')}</option>`).join('')}</select>`+
+  `<p id="lyPrev" style="margin:10px 0 0"></p><p style="margin:8px 0 0;font-size:12.5px;color:var(--muted)">El conteo empieza el día hábil siguiente al de recepción. Es una ayuda de cálculo: verifica siempre la norma vigente y las reglas de tu entidad.</p>`,
+  f=>{const n=parseInt(val('n'),10),ini=val('recibido'),u=val('u')==='Días calendario'?'cal':'hab';
+   if(!val('asunto'))return 'Escribe el asunto.';if(!ini)return 'Indica la fecha de recepción.';if(!(n>0))return 'Indica el número de días.';
+   const t=LEY.find(x=>x[0]===val('tipo'))||LEY[LEY.length-1],r=leyCalc(ini,n,u);
+   const d={tipo:t[0],base:t[2],asunto:val('asunto'),pet:val('pet'),ref:val('ref'),recibido:ini,n,u,vence:r.fin,caseId:val('caseId'),peticion:!!t[3]};
+   let X=L;if(e)Object.assign(L,d);else{X={id:uid('l'),done:false,...d};leyes().push(X)}
+   leyAvisos(X)});
+ const sync=()=>{const t=LEY.find(x=>x[0]===val('tipo'));$('lyBase').textContent=t&&t[2]?t[2]:'';
+  const n=parseInt(val('n'),10),ini=val('recibido');
+  if(n>0&&ini){const r=leyCalc(ini,n,val('u')==='Días calendario'?'cal':'hab');$('lyPrev').innerHTML='Vence el <b>'+fechaLarga(r.fin)+'</b>'}else $('lyPrev').textContent=''};
+ $('f_tipo').onchange=()=>{const t=LEY.find(x=>x[0]===val('tipo'));if(t)$('f_n').value=t[1];sync()};
+ ['f_recibido','f_n'].forEach(i=>$(i).oninput=sync);$('f_u').onchange=sync;sync();
+}
+function leyProrroga(L){
+ const max=L.n*2;
+ form('Prorrogar el término',`<p style="font-size:.9rem;margin:0 0 8px">Ley 1755 de 2015, art. 14: si no es posible responder en el plazo, debes <b>informar al interesado antes de que venza</b>, con los motivos y un plazo razonable que <b>no exceda el doble</b> del inicial (aquí, máximo ${max} días).</p>`+F('Nuevo plazo total (en días)','n',max,'number','min="'+(L.n+1)+'" max="'+max+'" step="1" inputmode="numeric"')+`<p id="lyPrev" style="margin:10px 0 0"></p>`,
+  f=>{const n=parseInt(val('n'),10);if(!(n>L.n&&n<=max))return 'El plazo debe ser mayor a '+L.n+' y de máximo '+max+' días.';
+   const r=leyCalc(L.recibido,n,L.u);L.n=n;L.vence=r.fin;L.pror=true;leyAvisos(L)});
+ const sync=()=>{const n=parseInt(val('n'),10);if(n>L.n&&n<=max)$('lyPrev').innerHTML='Nuevo vencimiento: <b>'+fechaLarga(leyCalc(L.recibido,n,L.u).fin)+'</b>';else $('lyPrev').textContent=''};
+ $('f_n').oninput=sync;sync();
+}
+let leyFiltro='pend';
+function leyItem(L){
+ const s=leyEstado(L);
+ return `<div class="panel" style="margin:0 0 8px;border-left:4px solid ${s.c}"><p style="margin:0"><b>${esc(L.asunto)}</b></p>
+ <p style="margin:4px 0 0;color:var(--muted);font-size:13px">${esc(L.tipo)}${L.pet?' · '+esc(L.pet):''}${L.ref?' · '+esc(L.ref):''}</p>
+ <p style="margin:6px 0 0">${L.done?`Respondido${L.doneDate?' el '+fdate(L.doneDate):''}`:`Vence: <b>${fechaLarga(L.vence)}</b>`} · <b style="color:${s.c}">${s.t}</b></p>
+ <p style="margin:4px 0 0;color:var(--muted);font-size:13px">Recibido ${fdate(L.recibido)} · ${L.n} ${L.u==='cal'?'días calendario':'días hábiles'}${L.pror?' (prorrogado)':''}</p>
+ <p style="margin:8px 0 0;display:flex;gap:12px;flex-wrap:wrap">${L.done?`<button class="link" data-ly="reab" data-id="${L.id}">Reabrir</button>`:`<button class="link" data-ly="ok" data-id="${L.id}">Marcar respondido</button>${L.peticion&&!L.pror?`<button class="link" data-ly="pror" data-id="${L.id}">Prorrogar</button>`:''}`}<button class="link" data-ly="ed" data-id="${L.id}">Editar</button><button class="link danger" data-ly="del" data-id="${L.id}">Eliminar</button></p></div>`}
+function renderLey(){
+ const L=leyes().slice().sort((a,b)=>a.vence.localeCompare(b.vence)),pend=L.filter(x=>!x.done),hecho=L.filter(x=>x.done).reverse();
+ const lista=leyFiltro==='pend'?pend:hecho;
+ $('leyView').innerHTML=`<div class="sec"><h2>Términos de ley</h2><button class="primary" data-ly="new">Nuevo término</button></div>
+ <p style="color:var(--muted);font-size:.9rem;margin:2px 0 10px">Peticiones, consultas y tutelas con su fecha límite, avisos en el calendario y semáforo.</p>
+ <div class="fsub"><button data-lyf="pend" class="${leyFiltro==='pend'?'on':''}">Pendientes (${pend.length})</button><button data-lyf="hecho" class="${leyFiltro==='hecho'?'on':''}">Respondidos (${hecho.length})</button></div>
+ ${lista.length?lista.map(leyItem).join(''):`<div class="empty">${leyFiltro==='pend'?'No tienes términos pendientes. Pulsa “Nuevo término” cuando recibas una petición o una tutela.':'Aún no hay términos respondidos.'}</div>`}
+ <p style="margin-top:14px;font-size:12.5px;color:var(--muted)">⚠️ Ayuda de cálculo, no reemplaza el sistema oficial de tu entidad. Verifica la norma vigente (Ley 1755 de 2015; Decreto 2591 de 1991), suspensiones y reglas internas. Los datos de los ciudadanos son personales (Ley 1581 de 2012): guarda aquí solo lo necesario y no uses esta app para información reservada.</p>`;
+}
+function leyPanel(){
+ const P=leyes().filter(x=>!x.done).sort((a,b)=>a.vence.localeCompare(b.vence));
+ const ven=P.filter(x=>difDias(x.vence,today())<0).length;
+ return `<div class="panel"><div class="sec"><h3>Términos de ley${ven?` <span class="venc">· ${ven} vencido${ven>1?'s':''}</span>`:''}</h3><button class="link" data-tab="ley">Ver todos</button></div>
+ ${P.length?P.slice(0,5).map(x=>{const s=leyEstado(x);return `<button class="case" data-tab="ley" style="--c:${s.c}"><div class="row"><span class="t">${esc(x.asunto)}</span><span style="color:${s.c}">${s.t}</span></div><div class="row m"><span>${esc(x.tipo)}</span><span>${fdate(x.vence)}</span></div></button>`}).join(''):'<div class="empty" style="padding:6px 0">Sin términos pendientes.</div>'}
+ <p style="margin:8px 0 0"><button class="link" data-ly="new">+ Nuevo término</button></p></div>`}
+function modoForm(){
+ form('Tipo de cuenta',`<p style="font-size:.9rem;margin:0 0 8px">Elige cómo vas a usar Sinfín. Tus datos no se borran al cambiar: solo cambian las opciones que ves.</p>`+S('Soy','modo',['Abogado litigante o de práctica privada','Funcionario público (juez, fiscal, comisaría, personería, entidad)'],pub()?'Funcionario público (juez, fiscal, comisaría, personería, entidad)':'Abogado litigante o de práctica privada'),
+  f=>{db.modo=/^Funcionario/.test(val('modo'))?'publico':'abogado';view='dash';current=null});
+}
+/* integración */
+const _render=render,_caseForm=caseForm;
+const VIEWS=['dashView','listView','detailView','calView','despView','contView','finView','semView','masView','prosView','calcView'];
+render=function(){
+ aplicarKinds();
+ const lv=$('leyView');
+ if(view==='ley'&&pub()){
+  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab==='ley'&&!b.classList.contains('link')));
+  try{renderAlerts()}catch(e){}
+  VIEWS.forEach(i=>$(i).classList.add('hide'));lv.classList.remove('hide');renderLey();aplicarModo();return}
+ if(view==='ley')view='dash';
+ lv.classList.add('hide');_render();aplicarModo();
+};
+caseForm=function(c,pre){
+ aplicarKinds();
+ if(!pub())return _caseForm(c,pre);
+ _caseForm(c,{amount:0,feeType:'fijo',...(pre||{})});
+ ['f_feeType','f_amount'].forEach(i=>{const x=$(i);if(!x)return;x.classList.add('hide');const l=document.querySelector('label[for="'+i+'"]');if(l)l.classList.add('hide')});
+ const r=$('recw');if(r)r.classList.add('hide');
+ const cl=document.querySelector('label[for="f_client"]');if(cl)cl.textContent='Peticionario, interesado o parte';
+ const tl=document.querySelector('label[for="f_title"]');if(tl)tl.textContent='Asunto o referencia';
+};
+$('newCase').onclick=()=>caseForm();
+function aplicarKinds(){const k=pub()?KINDS_PUB:KINDS_ABO;if(KINDS.join()!==k.join()){KINDS.length=0;k.forEach(x=>KINDS.push(x));
+ const s=$('flk');if(s)s.innerHTML='<option value="">Todos los asuntos</option>'+k.map(x=>`<option value="${x}">${x}</option>`).join('')}}
+function aplicarModo(){
+ const p=pub();document.body.classList.toggle('pub',p);
+ const T=document.querySelector('nav.tabs');
+ let lt=T.querySelector('[data-tab="ley"]');
+ if(!lt){lt=document.createElement('button');lt.dataset.tab='ley';lt.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z M14 3v5h5"/></svg><span>Términos</span>';T.insertBefore(lt,T.querySelector('[data-tab="fin"]'))}
+ lt.classList.toggle('hide',!p);
+ {const cb=T.querySelector('[data-tab="casos"]'),sp=cb.querySelector('span');(sp||cb).textContent=p?'Expedientes':'Casos'}
+ $('newCase').textContent=p?'Nuevo expediente':'Nuevo caso';
+ $('q').placeholder=p?'Buscar por peticionario, asunto o número':'Buscar por cliente, caso o número';
+ if(p){
+  const b=$('back');if(b)b.textContent='‹ Todos los expedientes';
+  const em=document.querySelector('#cases .empty');if(em&&!db.cases.length)em.textContent='Aún no hay expedientes. Pulsa “Nuevo expediente” para registrar el primero.';
+  const d=$('dashView');
+  if(!d.classList.contains('hide')&&!d.querySelector('[data-pubdash]')){
+   d.querySelectorAll('.panel').forEach(x=>{const h=x.querySelector('h3');if(h&&/^Honorarios/.test(h.textContent))x.remove()});
+   d.querySelectorAll('.kpi').forEach(x=>{if(/cobrar/i.test(x.textContent))x.remove()});
+   const a=d.querySelector('.panel');const w=document.createElement('div');w.dataset.pubdash='1';w.innerHTML=leyPanel();
+   const ref=[...d.children].find(x=>x.classList&&x.classList.contains('fhead'));(ref||d.firstChild).before(w);
+  }
+  const m=$('masView');
+  if(!m.classList.contains('hide')&&m.querySelector('.mas')){
+   ['pros','cont','mail'].forEach(k=>{const x=m.querySelector('[data-go="'+k+'"]');if(x)x.remove()});
+   if(!m.querySelector('[data-go="ley"]'))m.querySelector('.mas').insertAdjacentHTML('afterbegin','<button class="go" data-go="ley"><span><b>Términos de ley</b><small>Peticiones, consultas y tutelas con su fecha límite</small></span></button>');
+  }
+ }
+ const m=$('masView');
+ if(!m.classList.contains('hide')&&m.querySelector('.mas')&&!m.querySelector('[data-go="modo"]'))m.querySelector('.mas').insertAdjacentHTML('beforeend','<button class="go" data-go="modo"><span><b>Tipo de cuenta</b><small>'+(p?'Ahora: funcionario público':'Ahora: abogado litigante')+'. Cambia aquí el modo de uso</small></span></button>');
+}
+$('masView').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!b.dataset.go)return;
+ if(b.dataset.go==='modo'){e.stopImmediatePropagation();modoForm()}
+ else if(b.dataset.go==='ley'){e.stopImmediatePropagation();view='ley';render();window.scrollTo(0,0)}
+},true);
+document.addEventListener('click',e=>{
+ const f=e.target.closest('[data-lyf]');if(f){leyFiltro=f.dataset.lyf;render();return}
+ const b=e.target.closest('[data-ly]');if(!b)return;
+ const k=b.dataset.ly,L=leyes().find(x=>x.id===b.dataset.id);
+ if(k==='new')leyForm();
+ else if(!L)return;
+ else if(k==='ed')leyForm(L);
+ else if(k==='pror')leyProrroga(L);
+ else if(k==='ok'){L.done=true;L.doneDate=today();leyAvisos(L);save();render()}
+ else if(k==='reab'){L.done=false;L.doneDate='';leyAvisos(L);save();render()}
+ else if(k==='del'){if(confirm('¿Eliminar este término? También se quitan sus avisos del calendario.')){leyLimpiar(L);db.leyes=leyes().filter(x=>x.id!==L.id);save();render()}}
+});
+render();
+</script>
+<script>
+/* ===== Modelos de documentos ===== */
+const MCAMPOS=[
+ ['cliente','Cliente / peticionario',(c)=>c.client],
+ ['cedula_cliente','Cédula del cliente',(c)=>c.nif],
+ ['asunto','Asunto',(c)=>c.title],
+ ['numero','Número del caso',(c)=>c.number],
+ ['radicado','Radicado',(c)=>c.radicado],
+ ['despacho','Despacho / juzgado',(c)=>c.despacho],
+ ['clase','Clase de proceso',(c)=>c.clase||c.type],
+ ['demandante','Demandante',(c)=>c.demandante],
+ ['demandado','Demandado',(c)=>c.demandado],
+ ['contraparte','Contraparte',(c)=>c.contra],
+ ['abogado_contraparte','Abogado de la contraparte',(c)=>c.contraAb],
+ ['telefono_cliente','Teléfono del cliente',(c)=>c.cTel],
+ ['correo_cliente','Correo del cliente',(c)=>c.cMail],
+ ['ultima_actuacion','Última actuación',(c)=>{const u=(db.updates||[]).filter(x=>x.caseId===c.id).sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];return u?u.stage+' ('+fdate(u.date)+')':''}],
+ ['fecha_hoy','Fecha de hoy',()=>fechaLarga(today())],
+ ['mi_nombre','Mi nombre',()=>firmInfo().name],
+ ['mi_titulo','Mi título',()=>firmInfo().title],
+ ['mi_cedula','Mi cédula',()=>firmInfo().nif],
+ ['mi_telefono','Mi teléfono',()=>firmInfo().tel],
+ ['mi_correo','Mi correo',()=>firmInfo().mail]];
+const modelos=()=>(db.modelos=db.modelos||[]);
+function mFill(t,c){const V={};MCAMPOS.forEach(([k,,fn])=>{let v='';try{v=fn(c||{})||''}catch(e){}V[k]=v});
+ return t.replace(/\{([a-z_]+)\}/gi,(m,k)=>{k=k.toLowerCase();return k in V?(V[k]||'[________]'):m})}
+const mXml=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+async function mDocx(text){
+ if(!window.JSZip)return null;
+ const P=text.split('\n').map(l=>l.trim()?`<w:p><w:pPr><w:spacing w:after="200" w:line="360" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">${mXml(l)}</w:t></w:r></w:p>`:'<w:p/>').join('');
+ const z=new JSZip();
+ z.file('[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+ z.file('_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+ z.file('word/document.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+P+'<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1701" w:right="1701" w:bottom="1701" w:left="1701" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>');
+ return z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+function mDoc(text){const h='<html><head><meta charset="utf-8"><style>body{font-family:"Times New Roman";font-size:12pt;line-height:1.5}p{text-align:justify;margin:0 0 10pt}</style></head><body>'+text.split('\n').map(l=>'<p>'+(l.trim()?esc(l):'&nbsp;')+'</p>').join('')+'</body></html>';return new Blob(['﻿'+h],{type:'application/msword'})}
+async function mLeerDocx(file){
+ if(!window.JSZip)throw new Error('No se pudo cargar el lector de Word. Revisa tu conexión y recarga.');
+ const z=await JSZip.loadAsync(await file.arrayBuffer()),f=z.file('word/document.xml');if(!f)throw new Error('Ese archivo no parece un Word (.docx).');
+ const x=new DOMParser().parseFromString(await f.async('string'),'application/xml'),W='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+ return [...x.getElementsByTagNameNS(W,'p')].map(p=>{let s='';p.querySelectorAll?0:0;(function w(n){for(const ch of n.childNodes){if(ch.localName==='t')s+=ch.textContent;else if(ch.localName==='tab')s+='    ';else if(ch.localName==='br')s+='\n';else w(ch)}})(p);return s}).join('\n');
+}
+function modeloForm(m){
+ const e=!!m;
+ form(e?'Editar modelo':'Nuevo modelo de documento',
+  F('Nombre del modelo (ej. Poder especial)','name',e?m.name:'')+
+  `<div style="margin:10px 0 4px"><button type="button" id="mImp">Cargar desde un Word (.docx)</button><input type="file" id="mFile" accept=".docx" class="hide"></div>`+
+  `<label for="f_text">Texto del modelo</label><textarea id="f_text" name="text" rows="11" style="width:100%;font-family:inherit" placeholder="Escribe o pega aquí tu modelo. Donde quieras un dato del expediente, toca un botón de abajo.">${esc(e?m.text:'')}</textarea>`+
+  `<p style="margin:8px 0 4px;font-size:.85rem;color:var(--muted)">Toca para insertar un dato donde está el cursor:</p><div id="mChips" style="display:flex;flex-wrap:wrap;gap:6px">${MCAMPOS.map(([k,l])=>`<button type="button" class="link" data-mk="${k}" style="border:1px solid var(--line);border-radius:99px;padding:3px 10px;font-size:.8rem">${l}</button>`).join('')}</div>`+
+  `<p style="margin:10px 0 0;font-size:.8rem;color:var(--muted)">También puedes escribirlos a mano, por ejemplo {cliente} o {radicado}. Si un dato falta en el expediente, saldrá como [________] para que lo completes.</p>`,
+  f=>{if(!val('name'))return 'Ponle un nombre al modelo.';if(!val('text'))return 'Escribe o carga el texto del modelo.';
+   if(e){m.name=val('name');m.text=val('text')}else modelos().push({id:uid('m'),name:val('name'),text:val('text')})},
+  e?'<button type="button" class="danger" id="mDel" style="margin-right:auto">Eliminar</button>':'');
+ const ta=$('f_text');
+ $('mChips').onclick=ev=>{const b=ev.target.closest('[data-mk]');if(!b)return;const t='{'+b.dataset.mk+'}',s=ta.selectionStart,en=ta.selectionEnd;ta.setRangeText(t,s,en,'end');ta.focus()};
+ $('mImp').onclick=()=>$('mFile').click();
+ $('mFile').onchange=async ev=>{const fl=ev.target.files[0];if(!fl)return;try{const t=await mLeerDocx(fl);ta.value=t;if(!$('f_name').value)$('f_name').value=fl.name.replace(/\.docx$/i,'');$('err').textContent=''}catch(x){$('err').textContent=x.message||'No se pudo leer el archivo.'}};
+ if(e)$('mDel').onclick=()=>{if(confirm('¿Eliminar este modelo?')){db.modelos=modelos().filter(x=>x.id!==m.id);save();$('dlg').close();render()}};
+}
+function modelosForm(){
+ const L=modelos();
+ form('Mis modelos de documentos',
+  `<p style="font-size:.9rem;margin:0 0 8px">Guarda aquí tus modelos (poder, derecho de petición, contrato de honorarios…). Luego, desde cualquier expediente, eliges uno y Sinfín lo llena con los datos del expediente.</p>`+
+  (L.length?L.map(m=>`<div class="panel" style="padding:10px 14px;margin:0 0 6px"><div class="row"><b>${esc(m.name)}</b><span><button type="button" class="link" data-me="${m.id}">Editar</button></span></div></div>`).join(''):'<div class="empty">Aún no tienes modelos.</div>'),
+  ()=>{},'<button type="button" class="primary" id="mNew" style="margin-right:auto">+ Nuevo modelo</button>');
+ $('ok').textContent='Cerrar';
+ $('mNew').onclick=()=>modeloForm();
+ $('frm').onclick=ev=>{const b=ev.target.closest('[data-me]');if(b)modeloForm(modelos().find(x=>x.id===b.dataset.me))};
+}
+function generarForm(c){
+ const L=modelos();
+ if(!L.length){form('Generar documento','<p>Primero guarda tus modelos en <b>Más → Mis modelos de documentos</b>.</p>',()=>{});$('ok').textContent='Cerrar';return}
+ form('Generar documento — '+esc(c.client),
+  `<label for="f_mod">Modelo</label><select id="f_mod" name="mod">${L.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('')}</select>`+
+  `<label for="f_prev">Vista previa (puedes corregirla antes de descargar)</label><textarea id="f_prev" name="prev" rows="14" style="width:100%;font-family:inherit"></textarea>`+
+  `<p style="font-size:.8rem;color:var(--muted);margin:6px 0 0">Lo que salga como [________] es un dato que no está en el expediente: complétalo aquí.</p>`,
+  ()=>{const t=$('f_prev').value,m=L.find(x=>x.id===val('mod')),nom=((m?m.name:'Documento')+' - '+c.client).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w .-]+/g,'').trim();
+   mDocx(t).then(b=>{if(b)saveFile({filename:nom+'.docx',data:b});else saveFile({filename:nom+'.doc',data:mDoc(t)})}).catch(()=>saveFile({filename:nom+'.doc',data:mDoc(t)}))},
+  '<button type="button" id="mCp" style="margin-right:auto">Copiar texto</button>');
+ $('ok').textContent='Descargar Word';
+ const sync=()=>{const m=L.find(x=>x.id===val('mod'));$('f_prev').value=m?mFill(m.text,c):''};
+ $('f_mod').onchange=sync;sync();
+ $('mCp').onclick=async()=>{try{await navigator.clipboard.writeText($('f_prev').value);$('mCp').textContent='¡Copiado!'}catch(e){$('f_prev').select();document.execCommand('copy');$('mCp').textContent='¡Copiado!'}};
+}
+const _docsHtml=docsHtml;
+docsHtml=function(c){return `<div class="sec"><h3>Documentos con tus modelos</h3><button class="link" data-gen="${c.id}">Generar documento</button></div><p style="margin:0 0 10px;color:var(--muted);font-size:.85rem">Elige uno de tus modelos y se llena con los datos de este expediente.</p>`+_docsHtml(c)};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-gen]');if(b){const c=db.cases.find(x=>x.id===b.dataset.gen);if(c)generarForm(c)}});
+function dosTonos(){if(document.documentElement.dataset.estilo!=='mercado')return;document.querySelectorAll('.wrap h2').forEach(h=>{if(h.closest('dialog')||h.querySelector('.t1')||h.children.length)return;const t=h.textContent.trim().split(' ');if(t.length<2)return;h.innerHTML='<span class="t1">'+esc(t[0])+'</span> '+esc(t.slice(1).join(' '))})}
+const _render2=render;
+render=function(){_render2();dosTonos();const m=$('masView');
+ if(!m.classList.contains('hide')&&m.querySelector('.mas')&&!m.querySelector('[data-go="mod"]'))m.querySelector('.mas').insertAdjacentHTML('afterbegin','<button class="go" data-go="mod"><span><b>Mis modelos de documentos</b><small>Tus formatos (poder, petición, contrato…) que se llenan solos con el expediente</small></span></button>')};
+$('masView').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.go==='mod'){e.stopImmediatePropagation();modelosForm()}},true);
 render();
 </script>
 </body>
