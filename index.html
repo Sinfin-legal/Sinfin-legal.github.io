@@ -2235,18 +2235,35 @@ body.pub #totals,body.pub .case .num,body.pub .detail .kv,body.pub .case .bar,bo
 <script>
 /* ===== Modo funcionario público ===== */
 const pub=()=>db.modo==='publico';
-const KINDS_ABO=KINDS.slice(),KINDS_PUB=['Proceso judicial','Petición / PQRS','Tutela','Proceso disciplinario','Investigación penal','Trámite administrativo','Otro'];
+const KINDS_ABO=KINDS.slice(),STAGES_ABO=STAGES.slice();
+const KP={juzgado:['Proceso judicial','Tutela','Petición / PQRS','Otro'],fiscalia:['Noticia criminal','Indagación','Investigación','Juicio','Petición / PQRS','Otro'],otro:['Proceso judicial','Petición / PQRS','Tutela','Proceso disciplinario','Trámite administrativo','Otro']};
+const SP={juzgado:['Radicado / reparto','Admisión','Notificación','Traslado','Pruebas','Audiencia','Al despacho','Sentencia','Recurso','Archivo','Otro'],fiscalia:['Noticia criminal','Indagación','Imputación','Medida de aseguramiento','Investigación','Escrito de acusación','Audiencia preparatoria','Juicio oral','Preclusión','Archivo','Otro'],otro:['Recibido','En trámite','Traslado','Decisión','Notificación','Archivo','Otro']};
 const LEY=[
- ['Derecho de petición (general)',15,'Ley 1755 de 2015, art. 14',1],
- ['Petición de documentos o información',10,'Ley 1755 de 2015, art. 14',1],
- ['Consulta a las autoridades',30,'Ley 1755 de 2015, art. 14',1],
- ['Tutela: fallo de primera instancia',10,'Decreto 2591 de 1991, art. 29',0],
- ['Tutela: impugnación del fallo',3,'Decreto 2591 de 1991, art. 31',0],
- ['Tutela: decisión de la impugnación',20,'Decreto 2591 de 1991, art. 32',0],
- ['Otro término (propio)',10,'',0]];
+ ['Derecho de petición (general)',15,'Ley 1755 de 2015, art. 14',1,'hab',''],
+ ['Petición de documentos o información',10,'Ley 1755 de 2015, art. 14',1,'hab',''],
+ ['Consulta a las autoridades',30,'Ley 1755 de 2015, art. 14',1,'hab',''],
+ ['Tutela: fallo de primera instancia',10,'Decreto 2591 de 1991, art. 29',0,'hab','Confirma si tu despacho cuenta días hábiles o calendario.'],
+ ['Tutela: impugnación del fallo',3,'Decreto 2591 de 1991, art. 31',0,'hab',''],
+ ['Tutela: decisión de la impugnación',20,'Decreto 2591 de 1991, art. 32',0,'hab','']];
+const LEY_J=[
+ ['Sentencia de primera o única instancia (pérdida de competencia)',12,'CGP, art. 121',0,'mes','Cuenta desde la notificación del auto admisorio al demandado. Prorrogable una sola vez hasta por 6 meses. Verifica suspensiones e interrupciones y la sentencia C-443 de 2019.'],
+ ['Sentencia de segunda instancia (pérdida de competencia)',6,'CGP, art. 121',0,'mes','Cuenta desde la recepción del expediente en el despacho. Prorrogable una sola vez. Verifica la norma vigente.']];
+const LEY_F=[
+ ['Querella: caducidad',6,'Ley 906 de 2004, art. 73',0,'mes','Valor de referencia: verifica el texto vigente y el delito.'],
+ ['Libertad por vencimiento: acusación o preclusión',90,'Ley 906 de 2004, art. 317 (mod. Ley 1760/2015 y 1786/2016)',0,'cal','VALOR DE REFERENCIA, NO VERIFICADO. Confirma el número de días, desde qué fecha cuenta y si se amplía por número de procesados o delitos.'],
+ ['Libertad por vencimiento: inicio del juicio',120,'Ley 906 de 2004, art. 317 (mod. Ley 1760/2015 y 1786/2016)',0,'cal','VALOR DE REFERENCIA, NO VERIFICADO. Confirma el número de días y desde qué fecha cuenta.'],
+ ['Libertad por vencimiento: sentido del fallo',150,'Ley 906 de 2004, art. 317 (mod. Ley 1760/2015 y 1786/2016)',0,'cal','VALOR DE REFERENCIA, NO VERIFICADO. Confirma el número de días y desde qué fecha cuenta.']];
+const LEY_O=['Otro término (propio)',10,'',0,'hab','Escribe tú el número de días y el tipo.'];
+const leyTipos=()=>LEY.concat(pub()&&db.perfil==='juzgado'?LEY_J:pub()&&db.perfil==='fiscalia'?LEY_F:[],[LEY_O]);
+const uVal=v=>v==='Días calendario'?'cal':v==='Meses'?'mes':'hab';
+const uLab=u=>u==='cal'?'Días calendario':u==='mes'?'Meses':'Días hábiles';
+const uTxt=(u,n)=>u==='cal'?'días calendario':u==='mes'?(n===1?'mes':'meses'):'días hábiles';
 const leyes=()=>(db.leyes=db.leyes||[]);
 function habRest(v){let n=0,d=TERM.add(TERM.parse(today()),1);const f=TERM.parse(v);while(d<=f){if(!TERM.noHabil(d,false))n++;d=TERM.add(d,1)}return n}
-function leyCalc(ini,n,u){return TERM.calcular(ini,n,u==='cal'?'cal':'habiles',false)}
+function leyCalc(ini,n,u){
+ if(u==='mes'){const b=TERM.parse(ini),d=new Date(b.getFullYear(),b.getMonth()+n,1);d.setDate(Math.min(b.getDate(),new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));
+  let x=d;while(TERM.noHabil(x,false))x=TERM.add(x,1);return {fin:TERM.iso(x)}}
+ return TERM.calcular(ini,n,u==='cal'?'cal':'habiles',false)}
 function leyLimpiar(L){db.events=db.events.filter(x=>x.id!==L.evId);db.tareas=tareas().filter(x=>!(L.tk||[]).includes(x.id));L.evId='';L.tk=[]}
 function leyAvisos(L){
  leyLimpiar(L);if(L.done)return;
@@ -2255,28 +2272,28 @@ function leyAvisos(L){
 }
 function leyEstado(L){const d=difDias(L.vence,today());return L.done?{k:'ok',c:'var(--ok)',t:'Respondido'}:d<0?{k:'bad',c:'var(--bad)',t:'Vencido hace '+(-d)+(d===-1?' día':' días')}:d===0?{k:'bad',c:'var(--bad)',t:'Vence hoy'}:d<=3?{k:'warn',c:'var(--warn)',t:'Vence en '+d+(d===1?' día':' días')}:{k:'ok',c:'var(--ok)',t:'Faltan '+habRest(L.vence)+' días hábiles'}}
 function leyForm(L){
- const e=!!L,idx=e?Math.max(0,LEY.findIndex(x=>x[0]===L.tipo)):0;
+ const T=leyTipos(),e=!!L,idx=e?Math.max(0,T.findIndex(x=>x[0]===L.tipo)):0;
  form(e?'Editar término':'Nuevo término de ley',
-  S('¿Qué término es?','tipo',LEY.map(x=>x[0]),LEY[idx][0])+
+  S('¿Qué término es?','tipo',T.map(x=>x[0]),T[idx][0])+
   `<p id="lyBase" style="margin:6px 0 0;font-size:13px;color:var(--muted)"></p>`+
   F('Asunto (ej. petición de Juan Pérez sobre certificado)','asunto',e?L.asunto:'')+
   F('Peticionario o interesado (opcional)','pet',e?L.pet:'')+
   F('Radicado o número de expediente (opcional)','ref',e?L.ref:'')+
   F('Fecha en que se recibió o notificó','recibido',e?L.recibido:today(),'date')+
-  F('Número de días','n',e?L.n:LEY[idx][1],'number','min="1" step="1" inputmode="numeric"')+
-  S('Tipo de días','u',['Días hábiles','Días calendario'],e&&L.u==='cal'?'Días calendario':'Días hábiles')+
+  F('Cantidad (días o meses)','n',e?L.n:T[idx][1],'number','min="1" step="1" inputmode="numeric"')+
+  S('Se cuenta en','u',['Días hábiles','Días calendario','Meses'],uLab(e?L.u:T[idx][4]))+
   `<label for="f_caseId">Expediente relacionado (opcional)</label><select id="f_caseId" name="caseId"><option value="">Ninguno</option>${db.cases.map(c=>`<option value="${c.id}" ${e&&L.caseId===c.id?'selected':''}>${esc(c.client)} · ${esc(c.number||c.title||'')}</option>`).join('')}</select>`+
   `<p id="lyPrev" style="margin:10px 0 0"></p><p style="margin:8px 0 0;font-size:12.5px;color:var(--muted)">El conteo empieza el día hábil siguiente al de recepción. Es una ayuda de cálculo: verifica siempre la norma vigente y las reglas de tu entidad.</p>`,
-  f=>{const n=parseInt(val('n'),10),ini=val('recibido'),u=val('u')==='Días calendario'?'cal':'hab';
+  f=>{const n=parseInt(val('n'),10),ini=val('recibido'),u=uVal(val('u'));
    if(!val('asunto'))return 'Escribe el asunto.';if(!ini)return 'Indica la fecha de recepción.';if(!(n>0))return 'Indica el número de días.';
-   const t=LEY.find(x=>x[0]===val('tipo'))||LEY[LEY.length-1],r=leyCalc(ini,n,u);
+   const t=T.find(x=>x[0]===val('tipo'))||LEY_O,r=leyCalc(ini,n,u);
    const d={tipo:t[0],base:t[2],asunto:val('asunto'),pet:val('pet'),ref:val('ref'),recibido:ini,n,u,vence:r.fin,caseId:val('caseId'),peticion:!!t[3]};
    let X=L;if(e)Object.assign(L,d);else{X={id:uid('l'),done:false,...d};leyes().push(X)}
    leyAvisos(X)});
- const sync=()=>{const t=LEY.find(x=>x[0]===val('tipo'));$('lyBase').textContent=t&&t[2]?t[2]:'';
+ const sync=()=>{const t=T.find(x=>x[0]===val('tipo'));$('lyBase').textContent=t?[t[2],t[5]].filter(Boolean).join(' · '):'';
   const n=parseInt(val('n'),10),ini=val('recibido');
-  if(n>0&&ini){const r=leyCalc(ini,n,val('u')==='Días calendario'?'cal':'hab');$('lyPrev').innerHTML='Vence el <b>'+fechaLarga(r.fin)+'</b>'}else $('lyPrev').textContent=''};
- $('f_tipo').onchange=()=>{const t=LEY.find(x=>x[0]===val('tipo'));if(t)$('f_n').value=t[1];sync()};
+  if(n>0&&ini){const r=leyCalc(ini,n,uVal(val('u')));$('lyPrev').innerHTML='Vence el <b>'+fechaLarga(r.fin)+'</b>'}else $('lyPrev').textContent=''};
+ $('f_tipo').onchange=()=>{const t=T.find(x=>x[0]===val('tipo'));if(t){$('f_n').value=t[1];$('f_u').value=uLab(t[4])}sync()};
  ['f_recibido','f_n'].forEach(i=>$(i).oninput=sync);$('f_u').onchange=sync;sync();
 }
 function leyProrroga(L){
@@ -2293,7 +2310,7 @@ function leyItem(L){
  return `<div class="panel" style="margin:0 0 8px;border-left:4px solid ${s.c}"><p style="margin:0"><b>${esc(L.asunto)}</b></p>
  <p style="margin:4px 0 0;color:var(--muted);font-size:13px">${esc(L.tipo)}${L.pet?' · '+esc(L.pet):''}${L.ref?' · '+esc(L.ref):''}</p>
  <p style="margin:6px 0 0">${L.done?`Respondido${L.doneDate?' el '+fdate(L.doneDate):''}`:`Vence: <b>${fechaLarga(L.vence)}</b>`} · <b style="color:${s.c}">${s.t}</b></p>
- <p style="margin:4px 0 0;color:var(--muted);font-size:13px">Recibido ${fdate(L.recibido)} · ${L.n} ${L.u==='cal'?'días calendario':'días hábiles'}${L.pror?' (prorrogado)':''}</p>
+ <p style="margin:4px 0 0;color:var(--muted);font-size:13px">Recibido ${fdate(L.recibido)} · ${L.n} ${uTxt(L.u,L.n)}${L.pror?' (prorrogado)':''}</p>
  <p style="margin:8px 0 0;display:flex;gap:12px;flex-wrap:wrap">${L.done?`<button class="link" data-ly="reab" data-id="${L.id}">Reabrir</button>`:`<button class="link" data-ly="ok" data-id="${L.id}">Marcar respondido</button>${L.peticion&&!L.pror?`<button class="link" data-ly="pror" data-id="${L.id}">Prorrogar</button>`:''}`}<button class="link" data-ly="ed" data-id="${L.id}">Editar</button><button class="link danger" data-ly="del" data-id="${L.id}">Eliminar</button></p></div>`}
 function renderLey(){
  const L=leyes().slice().sort((a,b)=>a.vence.localeCompare(b.vence)),pend=L.filter(x=>!x.done),hecho=L.filter(x=>x.done).reverse();
@@ -2310,9 +2327,22 @@ function leyPanel(){
  return `<div class="panel"><div class="sec"><h3>Términos de ley${ven?` <span class="venc">· ${ven} vencido${ven>1?'s':''}</span>`:''}</h3><button class="link" data-tab="ley">Ver todos</button></div>
  ${P.length?P.slice(0,5).map(x=>{const s=leyEstado(x);return `<button class="case" data-tab="ley" style="--c:${s.c}"><div class="row"><span class="t">${esc(x.asunto)}</span><span style="color:${s.c}">${s.t}</span></div><div class="row m"><span>${esc(x.tipo)}</span><span>${fdate(x.vence)}</span></div></button>`}).join(''):'<div class="empty" style="padding:6px 0">Sin términos pendientes.</div>'}
  <p style="margin:8px 0 0"><button class="link" data-ly="new">+ Nuevo término</button></p></div>`}
+
+function mesaHtml(){
+ const t=today(),P=leyes().filter(x=>!x.done),dd=x=>difDias(x.vence,t);
+ const venc=P.filter(x=>dd(x)<0).length,hoy=P.filter(x=>dd(x)===0).length,sem=P.filter(x=>dd(x)>0&&dd(x)<=7).length;
+ const ev=(db.events||[]).filter(e=>e.date===t&&['Audiencia','Diligencia'].includes(e.type)).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+ const carga=db.cases.filter(c=>c.status!=='Cerrado').length;
+ const fis=db.perfil==='fiscalia';
+ const K=(n,l,bg,c)=>`<div class="kpi" style="background:${bg}"><small>${l}</small><b style="${c?'color:'+c:''}">${n}</b></div>`;
+ return `<div class="panel"><h3>Mesa de trabajo</h3><p style="margin:2px 0 10px;color:var(--muted);font-size:.9rem">Lo urgente primero: términos y ${fis?'audiencias y diligencias':'audiencias'} de hoy.</p>
+ <div class="kpis">${K(venc,'Términos vencidos','var(--tint4)',venc?'var(--bad)':'')}${K(hoy+sem,'Vencen esta semana','var(--tint2)',hoy+sem?'var(--warn)':'')}${K(ev.length,fis?'Audiencias y diligencias hoy':'Audiencias hoy','var(--tint3)')}${K(carga,fis?'Noticias y procesos en trámite':'Expedientes en trámite','var(--tint1)')}</div>
+ ${ev.length?'<div style="margin-top:10px">'+ev.map(e=>`<p style="margin:6px 0"><b>${e.time||'Hoy'}</b> · ${esc(e.title)} </p>`).join('')+'</div>':''}
+ <p style="margin:12px 0 0;display:flex;gap:14px;flex-wrap:wrap"><button class="link" data-ly="new">+ Nuevo término</button><button class="link" data-ev-new>+ ${fis?'Audiencia o diligencia':'Audiencia'}</button></p></div>`}
 function modoForm(){
- form('Tipo de cuenta',`<p style="font-size:.9rem;margin:0 0 8px">Elige cómo vas a usar Sinfín. Tus datos no se borran al cambiar: solo cambian las opciones que ves.</p>`+S('Soy','modo',['Abogado litigante o de práctica privada','Funcionario público (juez, fiscal, comisaría, personería, entidad)'],pub()?'Funcionario público (juez, fiscal, comisaría, personería, entidad)':'Abogado litigante o de práctica privada'),
-  f=>{db.modo=/^Funcionario/.test(val('modo'))?'publico':'abogado';view='dash';current=null});
+ const PF=['Rama Judicial (juzgado o despacho)','Fiscalía','Otra entidad pública'];
+ form('Tipo de cuenta',`<p style="font-size:.9rem;margin:0 0 8px">Elige cómo vas a usar Sinfín. Tus datos no se borran al cambiar: solo cambian las opciones que ves.</p>`+S('Soy','modo',['Abogado litigante o de práctica privada','Funcionario público'],pub()?'Funcionario público':'Abogado litigante o de práctica privada')+S('Si eres funcionario, trabajas en','perfil',PF,db.perfil==='fiscalia'?PF[1]:db.perfil==='otro'?PF[2]:PF[0]),
+  f=>{db.modo=/^Funcionario/.test(val('modo'))?'publico':'abogado';db.perfil=val('perfil')===PF[1]?'fiscalia':val('perfil')===PF[2]?'otro':'juzgado';view='dash';current=null});
 }
 /* integración */
 const _render=render,_caseForm=caseForm;
@@ -2333,11 +2363,18 @@ caseForm=function(c,pre){
  _caseForm(c,{amount:0,feeType:'fijo',...(pre||{})});
  ['f_feeType','f_amount'].forEach(i=>{const x=$(i);if(!x)return;x.classList.add('hide');const l=document.querySelector('label[for="'+i+'"]');if(l)l.classList.add('hide')});
  const r=$('recw');if(r)r.classList.add('hide');
- const cl=document.querySelector('label[for="f_client"]');if(cl)cl.textContent='Peticionario, interesado o parte';
- const tl=document.querySelector('label[for="f_title"]');if(tl)tl.textContent='Asunto o referencia';
+ const fis=db.perfil==='fiscalia';
+ const cl=document.querySelector('label[for="f_client"]');if(cl)cl.textContent=fis?'Denunciante o víctima':'Peticionario, interesado o parte';
+ const nl=document.querySelector('label[for="f_number"]');if(nl)nl.textContent=fis?'Número de noticia criminal (NUNC) o radicado':'Número de expediente o radicado';
+ const dl=document.querySelector('label[for="f_demandante"]');if(dl&&fis)dl.textContent='Víctima o denunciante';
+ const dd=document.querySelector('label[for="f_demandado"]');if(dd&&fis)dd.textContent='Indiciado o imputado';
+ const tl=document.querySelector('label[for="f_title"]');if(tl)tl.textContent=fis?'Delito o asunto':'Asunto o referencia';
 };
 $('newCase').onclick=()=>caseForm();
-function aplicarKinds(){const k=pub()?KINDS_PUB:KINDS_ABO;if(KINDS.join()!==k.join()){KINDS.length=0;k.forEach(x=>KINDS.push(x));
+function aplicarKinds(){const pf=db.perfil||'juzgado',k=pub()?KP[pf]:KINDS_ABO,st=pub()?SP[pf]:STAGES_ABO;
+ if(STAGES.join()!==st.join()){STAGES.length=0;st.forEach(x=>STAGES.push(x))}
+ if(pub()&&!EVT.includes('Diligencia'))EVT.splice(1,0,'Diligencia');if(!pub()&&EVT.includes('Diligencia'))EVT.splice(EVT.indexOf('Diligencia'),1);
+ if(KINDS.join()!==k.join()){KINDS.length=0;k.forEach(x=>KINDS.push(x));
  const s=$('flk');if(s)s.innerHTML='<option value="">Todos los asuntos</option>'+k.map(x=>`<option value="${x}">${x}</option>`).join('')}}
 function aplicarModo(){
  const p=pub();document.body.classList.toggle('pub',p);
@@ -2353,9 +2390,9 @@ function aplicarModo(){
   const em=document.querySelector('#cases .empty');if(em&&!db.cases.length)em.textContent='Aún no hay expedientes. Pulsa “Nuevo expediente” para registrar el primero.';
   const d=$('dashView');
   if(!d.classList.contains('hide')&&!d.querySelector('[data-pubdash]')){
-   d.querySelectorAll('.panel').forEach(x=>{const h=x.querySelector('h3');if(h&&/^Honorarios/.test(h.textContent))x.remove()});
-   d.querySelectorAll('.kpi').forEach(x=>{if(/cobrar/i.test(x.textContent))x.remove()});
-   const a=d.querySelector('.panel');const w=document.createElement('div');w.dataset.pubdash='1';w.innerHTML=leyPanel();
+   d.querySelectorAll('.kpis,.charts').forEach(x=>x.remove());
+   d.querySelectorAll('.panel').forEach(x=>{const h=x.querySelector('h3');if(h&&/^(Honorarios|Primeros pasos)/.test(h.textContent))x.remove()});
+   const w=document.createElement('div');w.dataset.pubdash='1';w.innerHTML=mesaHtml()+leyPanel();
    const ref=[...d.children].find(x=>x.classList&&x.classList.contains('fhead'));(ref||d.firstChild).before(w);
   }
   const m=$('masView');
