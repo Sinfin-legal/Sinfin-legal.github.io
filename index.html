@@ -11,7 +11,7 @@
 <script>window.supabase||document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>')</script>
 <meta name="theme-color" content="#620209">
 <script>try{if(localStorage.getItem('sinfin-pin'))document.documentElement.dataset.lock='1'}catch(e){}</script>
-<script>try{var e=localStorage.getItem('sinfin-estilo');if(e==='rosa'||e==='lila')e='jardin';if(!localStorage.getItem('sinfin-botanico')){localStorage.setItem('sinfin-botanico','1');e='botanico';localStorage.setItem('sinfin-estilo',e)}document.documentElement.dataset.estilo=e||'botanico'}catch(e){document.documentElement.dataset.estilo='botanico'}</script>
+<script>try{var e=localStorage.getItem('sinfin-estilo');if(!localStorage.getItem('sinfin-serio')){localStorage.setItem('sinfin-serio','1');if(e!=='clasico'&&e!=='ejecutivo')e='serio';else e='serio';localStorage.setItem('sinfin-estilo',e)}if(e!=='serio'&&e!=='clasico'&&e!=='ejecutivo')e='serio';document.documentElement.dataset.estilo=e}catch(e){document.documentElement.dataset.estilo='serio'}</script>
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -456,50 +456,133 @@ html:root[data-estilo="mercado"] .estilos button{border-radius:26px}
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,500&display=swap" rel="stylesheet">
 <style>
 /* ===== Estilo Botánico (pergamino, verde bosque, serifa liviana) ===== */
-html:root[data-estilo="botanico"]{color-scheme:light;--em:" 🌿";--em2:"🌿";--em3:"";--k1:"🌿 ";--k2:"🌼 ";--k3:"🪻 ";--k4:"🍃 ";
+html:root[data-estilo="serio"]{color-scheme:light;--em:" 🌿";--em2:"🌿";--em3:"";--k1:"🌿 ";--k2:"🌼 ";--k3:"🪻 ";--k4:"🍃 ";
  --hf:"Source Serif 4",Georgia,"Times New Roman",serif;--ui:Inter,-apple-system,"Segoe UI",system-ui,sans-serif;--r:12px;--rb:40px;
  --bg:#faf8f5;--surface:#fff;--ink:#271a00;--muted:#7c7464;--line:rgba(39,26,0,.12);--accent:#0f3639;--accent-ink:#faf8f5;--mark:#0f3639;
  --ok:#3f6b4e;--warn:#9a6a1c;--bad:#a63d2f;--tint1:#eef1ea;--tint2:#f4eee2;--tint3:#e8eeee;--tint4:#f0e9e4}
-html:root[data-estilo="botanico"] body{background:#faf8f5;font-family:var(--ui);font-size:15px;line-height:1.5;letter-spacing:-.02em;color:var(--ink);
- background-image:radial-gradient(60% 220px at 12% 0,rgba(86,120,84,.16),transparent 70%),radial-gradient(50% 200px at 92% 0,rgba(15,54,57,.12),transparent 70%);background-repeat:no-repeat}
-html:root[data-estilo="botanico"] button,html:root[data-estilo="botanico"] input,html:root[data-estilo="botanico"] select,html:root[data-estilo="botanico"] textarea{font-family:var(--ui);letter-spacing:-.02em}
-html:root[data-estilo="botanico"] *{box-shadow:none!important;text-shadow:none!important}
-html:root[data-estilo="botanico"] h1,html:root[data-estilo="botanico"] h2{font-family:var(--hf);font-weight:300;letter-spacing:-.01em;font-style:normal;color:var(--ink)}
-html:root[data-estilo="botanico"] h2{font-size:32px;line-height:1.1}
-html:root[data-estilo="botanico"] h3{font-family:var(--hf);font-weight:400;font-size:20px;letter-spacing:0;font-style:normal;color:var(--ink)}
-html:root[data-estilo="botanico"] .panel,html:root[data-estilo="botanico"] .case,html:root[data-estilo="botanico"] .detail,html:root[data-estilo="botanico"] .totals,html:root[data-estilo="botanico"] .alert{background:#fff;border:1px solid rgba(39,26,0,.08);border-radius:12px;padding:22px 24px}
-html:root[data-estilo="botanico"] .case{padding:14px 18px;margin-bottom:10px}
-html:root[data-estilo="botanico"] .panel .case,html:root[data-estilo="botanico"] .panel .panel{background:#faf8f5}
-html:root[data-estilo="botanico"] .kpi{border:0;border-radius:12px;padding:18px 20px}
-html:root[data-estilo="botanico"] .kpi:nth-child(4n+1){background:var(--tint1)}
-html:root[data-estilo="botanico"] .kpi:nth-child(4n+2){background:var(--tint2)}
-html:root[data-estilo="botanico"] .kpi:nth-child(4n+3){background:var(--tint3)}
-html:root[data-estilo="botanico"] .kpi:nth-child(4n+4){background:var(--tint4)}
-html:root[data-estilo="botanico"] .kpi b,html:root[data-estilo="botanico"] .age b{font-family:var(--hf);font-weight:300}
-html:root[data-estilo="botanico"] button{border-radius:40px;font-weight:500;border:1px solid rgba(39,26,0,.2);background:rgba(255,255,255,.6);color:var(--ink)}
-html:root[data-estilo="botanico"] button.primary{background:#0f3639;border-color:#0f3639;color:#faf8f5;font-weight:500;padding:11px 24px}
-html:root[data-estilo="botanico"] button.link{background:none;border:0;color:#0f3639;font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(15,54,57,.3)}
-html:root[data-estilo="botanico"] button.danger,html:root[data-estilo="botanico"] button.link.danger{color:var(--bad)}
-html:root[data-estilo="botanico"] input,html:root[data-estilo="botanico"] select,html:root[data-estilo="botanico"] textarea{border-radius:4px;border:1px solid rgba(39,26,0,.2);background:#fff;padding:10px 12px;font-size:15px;color:var(--ink)}
-html:root[data-estilo="botanico"] input:focus,html:root[data-estilo="botanico"] select:focus,html:root[data-estilo="botanico"] textarea:focus{outline:2px solid rgba(15,54,57,.35);outline-offset:1px;border-color:#0f3639}
-html:root[data-estilo="botanico"] dialog{border:1px solid rgba(39,26,0,.1);border-radius:12px;background:#faf8f5;padding:28px}
-html:root[data-estilo="botanico"] dialog::backdrop{background:rgba(35,41,27,.5);backdrop-filter:blur(8px)}
-html:root[data-estilo="botanico"] .tag{border-radius:4px;background:transparent;border:1px solid rgba(39,26,0,.2);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;font-weight:500;letter-spacing:0}
-html:root[data-estilo="botanico"] .bar,html:root[data-estilo="botanico"] .bar i{border-radius:4px;height:8px}
-html:root[data-estilo="botanico"] .bar{background:#e8e4da}
-html:root[data-estilo="botanico"] .bar i{background:#0f3639}
-html:root[data-estilo="botanico"] header.top{background:transparent;border:0}
-html:root[data-estilo="botanico"] .logo{filter:none}
-html:root[data-estilo="botanico"] .tabs{background:rgba(250,248,245,.88);backdrop-filter:blur(20px);border-top:1px solid rgba(39,26,0,.1)}
-html:root[data-estilo="botanico"] .tabs button{border:0;background:none;border-radius:40px}
-html:root[data-estilo="botanico"] .tabs button.on{color:#0f3639;background:rgba(15,54,57,.1);font-weight:600}
-html:root[data-estilo="botanico"] .tabs button.on::before{display:none}
-html:root[data-estilo="botanico"] .hello{color:var(--muted);font-family:var(--hf);font-size:17px}
-html:root[data-estilo="botanico"] .fsub button{border-radius:40px;background:transparent;border:1px solid rgba(39,26,0,.2)}
-html:root[data-estilo="botanico"] .fsub button.on{background:#0f3639;color:#faf8f5;border-color:#0f3639}
-html:root[data-estilo="botanico"] .mas button.go{background:#fff;border:1px solid rgba(39,26,0,.08);border-radius:12px;padding:16px 20px}
-html:root[data-estilo="botanico"] .estilos button{border-radius:12px}
-html:root[data-estilo="botanico"] #newCase{background:#0f3639;color:#faf8f5;border-color:#0f3639}
+html:root[data-estilo="serio"] body{background:#faf8f5;font-family:var(--ui);font-size:15px;line-height:1.5;letter-spacing:-.02em;color:var(--ink);
+}
+html:root[data-estilo="serio"] button,html:root[data-estilo="serio"] input,html:root[data-estilo="serio"] select,html:root[data-estilo="serio"] textarea{font-family:var(--ui);letter-spacing:-.02em}
+html:root[data-estilo="serio"] *{box-shadow:none!important;text-shadow:none!important}
+html:root[data-estilo="serio"] h1,html:root[data-estilo="serio"] h2{font-family:var(--hf);font-weight:300;letter-spacing:-.01em;font-style:normal;color:var(--ink)}
+html:root[data-estilo="serio"] h2{font-size:32px;line-height:1.1}
+html:root[data-estilo="serio"] h3{font-family:var(--hf);font-weight:400;font-size:20px;letter-spacing:0;font-style:normal;color:var(--ink)}
+html:root[data-estilo="serio"] .panel,html:root[data-estilo="serio"] .case,html:root[data-estilo="serio"] .detail,html:root[data-estilo="serio"] .totals,html:root[data-estilo="serio"] .alert{background:#fff;border:1px solid rgba(39,26,0,.08);border-radius:12px;padding:22px 24px}
+html:root[data-estilo="serio"] .case{padding:14px 18px;margin-bottom:10px}
+html:root[data-estilo="serio"] .panel .case,html:root[data-estilo="serio"] .panel .panel{background:#faf8f5}
+html:root[data-estilo="serio"] .kpi{border:0;border-radius:12px;padding:18px 20px}
+html:root[data-estilo="serio"] .kpi:nth-child(4n+1){background:var(--tint1)}
+html:root[data-estilo="serio"] .kpi:nth-child(4n+2){background:var(--tint2)}
+html:root[data-estilo="serio"] .kpi:nth-child(4n+3){background:var(--tint3)}
+html:root[data-estilo="serio"] .kpi:nth-child(4n+4){background:var(--tint4)}
+html:root[data-estilo="serio"] .kpi b,html:root[data-estilo="serio"] .age b{font-family:var(--hf);font-weight:300}
+html:root[data-estilo="serio"] button{border-radius:40px;font-weight:500;border:1px solid rgba(39,26,0,.2);background:rgba(255,255,255,.6);color:var(--ink)}
+html:root[data-estilo="serio"] button.primary{background:#0f3639;border-color:#0f3639;color:#faf8f5;font-weight:500;padding:11px 24px}
+html:root[data-estilo="serio"] button.link{background:none;border:0;color:#0f3639;font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(15,54,57,.3)}
+html:root[data-estilo="serio"] button.danger,html:root[data-estilo="serio"] button.link.danger{color:var(--bad)}
+html:root[data-estilo="serio"] input,html:root[data-estilo="serio"] select,html:root[data-estilo="serio"] textarea{border-radius:4px;border:1px solid rgba(39,26,0,.2);background:#fff;padding:10px 12px;font-size:15px;color:var(--ink)}
+html:root[data-estilo="serio"] input:focus,html:root[data-estilo="serio"] select:focus,html:root[data-estilo="serio"] textarea:focus{outline:2px solid rgba(15,54,57,.35);outline-offset:1px;border-color:#0f3639}
+html:root[data-estilo="serio"] dialog{border:1px solid rgba(39,26,0,.1);border-radius:12px;background:#faf8f5;padding:28px}
+html:root[data-estilo="serio"] dialog::backdrop{background:rgba(35,41,27,.5);backdrop-filter:blur(8px)}
+html:root[data-estilo="serio"] .tag{border-radius:4px;background:transparent;border:1px solid rgba(39,26,0,.2);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;font-weight:500;letter-spacing:0}
+html:root[data-estilo="serio"] .bar,html:root[data-estilo="serio"] .bar i{border-radius:4px;height:8px}
+html:root[data-estilo="serio"] .bar{background:#e8e4da}
+html:root[data-estilo="serio"] .bar i{background:#0f3639}
+html:root[data-estilo="serio"] header.top{background:transparent;border:0}
+html:root[data-estilo="serio"] .logo{filter:none}
+html:root[data-estilo="serio"] .tabs{background:rgba(250,248,245,.88);backdrop-filter:blur(20px);border-top:1px solid rgba(39,26,0,.1)}
+html:root[data-estilo="serio"] .tabs button{border:0;background:none;border-radius:40px}
+html:root[data-estilo="serio"] .tabs button.on{color:#0f3639;background:rgba(15,54,57,.1);font-weight:600}
+html:root[data-estilo="serio"] .tabs button.on::before{display:none}
+html:root[data-estilo="serio"] .hello{color:var(--muted);font-family:var(--hf);font-size:17px}
+html:root[data-estilo="serio"] .fsub button{border-radius:40px;background:transparent;border:1px solid rgba(39,26,0,.2)}
+html:root[data-estilo="serio"] .fsub button.on{background:#0f3639;color:#faf8f5;border-color:#0f3639}
+html:root[data-estilo="serio"] .mas button.go{background:#fff;border:1px solid rgba(39,26,0,.08);border-radius:12px;padding:16px 20px}
+html:root[data-estilo="serio"] .estilos button{border-radius:12px}
+html:root[data-estilo="serio"] #newCase{background:#0f3639;color:#faf8f5;border-color:#0f3639}
+</style>
+<style>
+/* ===== Diseño serio (aplica a los 3 estilos) ===== */
+html:root[data-estilo]{--em:"";--em2:"";--em3:"";--k1:"";--k2:"";--k3:"";--k4:"";--r:8px;--rb:8px}
+html:root[data-estilo] body{background-image:none!important}
+html:root[data-estilo] .tabs button svg{display:block}
+html:root[data-estilo] .tabs button span::before{content:none!important;display:none!important}
+html:root[data-estilo] .kpi small::before,html:root[data-estilo] .panel h3::before,html:root[data-estilo] .sec h3::before,html:root[data-estilo] .alert>b::before,html:root[data-estilo] .empty::before{content:none!important;display:none!important}
+html:root[data-estilo] .empty{text-align:left}
+html:root[data-estilo] .case::before{display:none}
+html:root[data-estilo] .case{border-left:3px solid var(--c,var(--line));padding:12px 16px}
+html:root[data-estilo] .kpi:nth-child(n){background:var(--surface);border:1px solid var(--line)}
+html:root[data-estilo] .alert{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--warn,#9a6a1c)}
+html:root[data-estilo] button,html:root[data-estilo] .fsub button,html:root[data-estilo] .tabs button{border-radius:8px}
+html:root[data-estilo] button.primary,html:root[data-estilo] #newCase{box-shadow:none;border-radius:8px;padding:10px 20px}
+html:root[data-estilo] input,html:root[data-estilo] select,html:root[data-estilo] textarea{border-radius:6px}
+html:root[data-estilo] dialog{border-radius:10px}
+html:root[data-estilo] .tag{border-radius:4px;background:transparent;border:1px solid var(--line)}
+html:root[data-estilo] .bar,html:root[data-estilo] .bar i{border-radius:3px}
+html:root[data-estilo] .panel,html:root[data-estilo] .detail,html:root[data-estilo] .totals,html:root[data-estilo] .kpi,html:root[data-estilo] .case{border-radius:8px;box-shadow:none}
+html:root[data-estilo] .mas button.go{border-radius:8px}
+html:root[data-estilo] .estilos button{border-radius:8px}
+html:root[data-estilo] .tabs button.on{background:none;border-radius:0}
+@media (max-width:899px){
+ html:root[data-estilo] .tabs{left:0;right:0;bottom:0;border-radius:0;border:0;border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));box-shadow:none;background:var(--surface)}
+ html:root[data-estilo] .tabs button.on{background:none;border-radius:0;box-shadow:inset 0 2px 0 var(--accent)}
+ html:root[data-estilo] .tabs button.on::before{display:none}
+}
+@media (min-width:900px){html:root[data-estilo] .tabs button.on{background:none;border-radius:0;border-left:3px solid var(--accent)}html:root[data-estilo] .tabs button{border-radius:0}}
+html:root[data-estilo="serio"] h1,html:root[data-estilo="serio"] h2{font-weight:500}
+html:root[data-estilo="serio"] .kpi b,html:root[data-estilo="serio"] .age b{font-weight:500}
+html:root[data-estilo="serio"] .tabs{background:var(--surface);backdrop-filter:none}
+html:root[data-estilo="clasico"] h1,html:root[data-estilo="clasico"] h2{font-style:normal;font-weight:600}
+html:root[data-estilo="clasico"] .panel,html:root[data-estilo="clasico"] .case,html:root[data-estilo="clasico"] .detail{background:var(--surface)}
+html:root[data-estilo="clasico"] .tabs{background:var(--surface)}
+html:root[data-estilo="ejecutivo"] .tabs{background:var(--surface)}
+</style>
+<style>
+/* ===== Atenea (asistente búho) ===== */
+:root{--ow1:var(--accent,#620209);--ow2:#f7efe3;--owb:#e0a13a}
+#atnB{position:fixed;right:12px;bottom:calc(92px + env(safe-area-inset-bottom));z-index:31;width:64px;height:64px;border-radius:50%;padding:0;border:2px solid var(--ow1);background:var(--surface,#fff);cursor:pointer;display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.18)!important;transition:transform .2s}
+#atnB{animation:atnFloat 3.8s ease-in-out infinite}#atnB:hover{animation-play-state:paused;transform:scale(1.07)}
+@keyframes atnFloat{0%,100%{transform:translateY(0);box-shadow:0 6px 16px rgba(0,0,0,.18)}50%{transform:translateY(-7px);box-shadow:0 16px 22px rgba(0,0,0,.12)}}#atnB.up{bottom:calc(150px + env(safe-area-inset-bottom))}
+#atnB.hide,#atnP.hide,#atnTip.hide{display:none!important}
+#atnB .owl{width:50px;height:50px;overflow:visible}
+#atnTip{position:fixed;right:84px;bottom:calc(108px + env(safe-area-inset-bottom));z-index:31;background:var(--surface,#fff);color:var(--ink,#222);border:1px solid var(--line,#ddd);border-radius:16px 16px 4px 16px;padding:8px 12px;font-size:13.5px;box-shadow:0 4px 14px rgba(0,0,0,.12)!important;animation:atnTip .4s ease both}
+@keyframes atnTip{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.owl .ow-head{transform-box:view-box;transform-origin:32px 36px;animation:owTilt 7s ease-in-out infinite}
+.owl .ow-lid{transform-box:fill-box;transform-origin:center top;transform:scaleY(0);animation:owBlink 5s infinite}
+.owl .ow-wl,.owl .ow-wr{transform-box:view-box}
+.owl .ow-wl{transform-origin:20px 34px}.owl .ow-wr{transform-origin:44px 34px}
+.owl .ow-all{animation:owBob 4s ease-in-out infinite;transform-box:view-box;transform-origin:32px 60px}
+.owl.think .ow-wl{animation:owFlapL .32s ease-in-out infinite}.owl.think .ow-wr{animation:owFlapR .32s ease-in-out infinite}
+.owl.think .ow-p{animation:owLook 1.1s ease-in-out infinite}
+@keyframes owBlink{0%,90%,100%{transform:scaleY(0)}93%,96%{transform:scaleY(1)}}
+@keyframes owTilt{0%,62%,100%{transform:rotate(0)}68%,80%{transform:rotate(-7deg)}86%,94%{transform:rotate(5deg)}}
+@keyframes owBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.6px)}}
+@keyframes owFlapL{0%,100%{transform:rotate(0)}50%{transform:rotate(-22deg)}}
+@keyframes owFlapR{0%,100%{transform:rotate(0)}50%{transform:rotate(22deg)}}
+@keyframes owLook{0%,100%{transform:translateX(0)}30%{transform:translateX(-1.6px)}70%{transform:translateX(1.6px)}}
+@media (prefers-reduced-motion:reduce){#atnB{animation:none}.owl *{animation:none!important}#atnTip{animation:none}}
+#atnP{position:fixed;right:12px;bottom:calc(92px + env(safe-area-inset-bottom));z-index:40;width:min(400px,calc(100vw - 24px));height:min(580px,calc(100vh - 150px));display:flex;flex-direction:column;background:var(--bg,#fff);border:1px solid var(--line,#ddd);border-radius:var(--r,16px);overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.25)!important}
+#atnP header{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line,#ddd);background:var(--surface,#fff)}
+#atnP header .owl{width:38px;height:38px;flex:none}
+#atnP header b{display:block;font-size:16px;line-height:1.1}#atnP header small{color:var(--muted,#777);font-size:12px}
+#atnP header .sp{flex:1}
+#atnP header button{background:none;border:0;padding:6px 8px;border-radius:10px;font-size:17px;cursor:pointer;color:var(--muted,#777)}
+#atnM{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.am{max-width:92%;padding:9px 12px;border-radius:16px;font-size:14.5px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
+.am.u{align-self:flex-end;background:var(--ow1);color:#fff;border-bottom-right-radius:4px}
+.am.a{align-self:flex-start;background:var(--surface,#f3f3f3);color:var(--ink,#222);border-bottom-left-radius:4px}
+.am .ac{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;white-space:normal}
+.am .ac button{font-size:13px;padding:5px 12px;border-radius:99px;border:1px solid var(--line,#ccc);background:var(--bg,#fff);color:var(--ink,#222);cursor:pointer}
+.achips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;white-space:normal}
+.achips button{font-size:13px;padding:6px 12px;border-radius:99px;border:1px solid var(--ow1);background:transparent;color:var(--ow1);cursor:pointer}
+#atnP footer{border-top:1px solid var(--line,#ddd);padding:8px 10px 10px;background:var(--surface,#fff)}
+#atnP footer select{width:100%;margin-bottom:6px;font-size:13px;padding:6px 8px}
+#atnP footer .r{display:flex;gap:8px;align-items:flex-end}
+#atnP footer textarea{flex:1;min-height:42px;max-height:110px;resize:none;font-size:14.5px;padding:9px 12px}
+#atnP footer .s{width:42px;height:42px;border-radius:50%;border:0;background:var(--ow1);color:#fff;font-size:18px;cursor:pointer;flex:none}
+#atnP footer .bq{display:flex;gap:6px;align-items:center;font-size:12.5px;margin:0 0 6px;color:var(--ink,#222)}#atnP footer .bq input{width:auto;margin:0}
+.am .fu{margin-top:8px;font-size:12.5px;white-space:normal}.am .fu a{display:block;color:var(--ow1);text-decoration:underline;margin-top:3px;word-break:break-word}
+#atnP footer .n{margin:6px 2px 0;font-size:11.5px;color:var(--muted,#777);line-height:1.35}
 </style>
 </head>
 <body>
@@ -923,20 +1006,20 @@ function reportePdf(mes){
  saveFile({filename:'reporte-'+mes+'.pdf',data:d.output('blob')});
 }
 function estiloForm(){
- const cur=document.documentElement.dataset.estilo||'botanico';
- const E=[['botanico','Botánico','#0f3639','Pergamino y verde bosque, letra elegante y liviana'],['mercado','Mercado','#ff5406','Blanco limpio, naranja y verde, formas redondeadas'],['jardin','Jardín','#620209','Suave, con colores pastel, caritas y plantitas'],['clasico','Clásico','#620209','Vino tinto, elegante y femenino'],['ejecutivo','Ejecutivo','#17263c','Azul noche y bronce, sobrio y firme']];
+ const cur=document.documentElement.dataset.estilo||'serio';
+ const E=[['serio','Serio','#0f3639','Verde profundo y pergamino, sobrio y profesional'],['clasico','Clásico','#620209','El original: vino tinto de Sinfín'],['ejecutivo','Ejecutivo','#17263c','Azul noche y bronce, firme y masculino']];
  form('Elige tu estilo','<div class="estilos">'+E.map(e=>`<button type="button" data-es="${e[0]}" class="${e[0]===cur?'on':''}"><i style="background:${e[2]}"></i><span><b>${e[1]}</b><br><small style="color:var(--muted)">${e[3]}</small></span></button>`).join('')+'</div>',()=>{});
  $('ok').classList.add('hide');$('cancel').textContent='Cerrar';
  $('frm').querySelectorAll('[data-es]').forEach(b=>b.onclick=()=>{aplicarEstilo(b.dataset.es);$('dlg').close()});
 }
 function aplicarEstilo(n){
  document.documentElement.dataset.estilo=n;try{localStorage.setItem('sinfin-estilo',n)}catch(e){}
- const m=document.querySelector('meta[name="theme-color"]');if(m)m.content={botanico:'#faf8f5',mercado:'#ffffff',rosa:'#b02a5b',lila:'#6b3fa0',ejecutivo:'#17263c',clasico:'#620209',jardin:'#620209'}[n]||'#620209';
+ const m=document.querySelector('meta[name="theme-color"]');if(m)m.content={serio:'#faf8f5',ejecutivo:'#17263c',clasico:'#620209'}[n]||'#faf8f5';
 }
 
 /* Iconos del menú */
 (function(){const IC={"dash": "<rect x=\"3\" y=\"3\" width=\"7\" height=\"9\" rx=\"1.5\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"5\" rx=\"1.5\"/><rect x=\"14\" y=\"12\" width=\"7\" height=\"9\" rx=\"1.5\"/><rect x=\"3\" y=\"16\" width=\"7\" height=\"5\" rx=\"1.5\"/>", "casos": "<path d=\"M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2.5h7.5A2.5 2.5 0 0 1 21 10v7.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z\"/>", "sem": "<path d=\"M9 6h11M9 12h11M9 18h11\"/><path d=\"m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17\"/>", "cal": "<rect x=\"3.5\" y=\"5\" width=\"17\" height=\"15.5\" rx=\"2.5\"/><path d=\"M8 3v4M16 3v4M3.5 10h17\"/>", "fin": "<path d=\"M4 7.5A2.5 2.5 0 0 1 6.5 5H19v3\"/><path d=\"M4 7.5v10A2.5 2.5 0 0 0 6.5 20H20a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H6.5A2.5 2.5 0 0 1 4 7.5z\"/><circle cx=\"16.5\" cy=\"14.5\" r=\"1.1\"/>", "mas": "<circle cx=\"5\" cy=\"12\" r=\"1.3\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/><circle cx=\"19\" cy=\"12\" r=\"1.3\"/>"};document.querySelectorAll('.tabs button[data-tab]').forEach(b=>{const t=b.textContent;b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+(IC[b.dataset.tab]||'')+'</svg><span>'+t+'</span>'})})();
-aplicarEstilo(document.documentElement.dataset.estilo||'jardin');
+aplicarEstilo(['serio','clasico','ejecutivo'].includes(document.documentElement.dataset.estilo)?document.documentElement.dataset.estilo:'serio');
 document.addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
  if(b.id==='estiloBtn')estiloForm();
@@ -2537,6 +2620,152 @@ const _render2=render;
 render=function(){_render2();dosTonos();const m=$('masView');
  if(!m.classList.contains('hide')&&m.querySelector('.mas')&&!m.querySelector('[data-go="mod"]'))m.querySelector('.mas').insertAdjacentHTML('afterbegin','<button class="go" data-go="mod"><span><b>Mis modelos de documentos</b><small>Tus formatos (poder, petición, contrato…) que se llenan solos con el expediente</small></span></button>')};
 $('masView').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.go==='mod'){e.stopImmediatePropagation();modelosForm()}},true);
+render();
+</script>
+<script>
+/* ===== Atenea ===== */
+const OWL=cls=>`<svg class="owl ${cls||''}" viewBox="0 0 64 64" aria-hidden="true"><g class="ow-all">
+<ellipse cx="32" cy="40" rx="18" ry="19" fill="var(--ow1)"/>
+<ellipse cx="32" cy="44" rx="11" ry="12.5" fill="var(--ow2)"/>
+<path d="M24.8 38.6l2.6 2.8 2.6-2.8M34 38.6l2.6 2.8 2.6-2.8M24.8 45.2l2.6 2.8 2.6-2.8M34 45.2l2.6 2.8 2.6-2.8M29.4 51.4l2.6 2.8 2.6-2.8" fill="none" stroke="var(--ow1)" stroke-opacity=".35" stroke-width="1.3" stroke-linecap="round"/>
+<g class="ow-wl"><path d="M17 33q-8 11-2 24q10-3 11-17z" fill="var(--ow1)" stroke="#000" stroke-opacity=".28" stroke-width="1"/></g>
+<g class="ow-wr"><path d="M47 33q8 11 2 24q-10-3-11-17z" fill="var(--ow1)" stroke="#000" stroke-opacity=".28" stroke-width="1"/></g>
+<path d="M25 58l-2 4h5zM39 58l2 4h-5z" fill="var(--owb)"/>
+<g class="ow-head"><path d="M14 22L12 7l13 8zM50 22l2-15-13 8z" fill="var(--ow1)"/>
+<ellipse cx="32" cy="25" rx="19" ry="15.5" fill="var(--ow1)"/>
+<circle cx="23.5" cy="25" r="8.2" fill="#fff"/><circle cx="40.5" cy="25" r="8.2" fill="#fff"/>
+<g class="ow-p"><circle cx="24.5" cy="26" r="3.8" fill="#2b1a1a"/><circle cx="39.5" cy="26" r="3.8" fill="#2b1a1a"/><circle cx="25.8" cy="24.6" r="1.2" fill="#fff"/><circle cx="40.8" cy="24.6" r="1.2" fill="#fff"/></g>
+<ellipse class="ow-lid" cx="23.5" cy="17" rx="8.6" ry="9" fill="var(--ow1)"/><ellipse class="ow-lid" cx="40.5" cy="17" rx="8.6" ry="9" fill="var(--ow1)"/>
+<path d="M29.3 29.5h5.4L32 35.5z" fill="var(--owb)"/></g></g></svg>`;
+const atn={msgs:[],busy:false,tip:false};
+function atnCaso(){return (view==='casos'&&typeof current!=='undefined'&&current)?db.cases.find(x=>x.id===current):null}
+function atnCtx(c){if(!c)return '';
+ return ['Tipo de asunto: '+(c.kind||''),'Área: '+(c.type||''),'Asunto: '+(c.title||''),'Estado: '+(c.status||''),'Etapa actual: '+(stageOf(c.id)||''),c.despacho?'Despacho: '+c.despacho:''].filter(x=>!/: $/.test(x)).join('\n')}
+function atnBubble(){
+ let b=$('atnB');
+ if(!b){document.body.insertAdjacentHTML('beforeend',`<button id="atnB" class="hide" aria-label="Abrir Atenea, asistente de redacción">${OWL()}</button><div id="atnTip" class="hide">Hola, soy <b>Atenea</b> 🦉<br>¿Redactamos algo?</div>
+ <section id="atnP" class="hide" role="dialog" aria-label="Atenea"><header>${OWL()}<div><b>Atenea</b><small>Asistente de redacción</small></div><span class="sp"></span><button id="atnNew" title="Nueva conversación" aria-label="Nueva conversación">↺</button><button id="atnOff" title="Ocultar el globito" aria-label="Ocultar el globito">🙈</button><button id="atnX" title="Cerrar" aria-label="Cerrar">✕</button></header>
+ <div id="atnM"></div><footer><select id="atnMod" aria-label="Usar uno de mis modelos"></select><label class="bq"><input type="checkbox" id="atnBib" checked> 📚 Usar mi biblioteca</label><label class="bq"><input type="checkbox" id="atnBus"> 🔎 Buscar en fuentes oficiales (leyes y jurisprudencia vigentes)</label><div class="r"><textarea id="atnIn" rows="1" placeholder="Escribe lo que necesitas…"></textarea><button class="s" id="atnGo" aria-label="Enviar">➤</button></div><p class="n" id="atnN"></p></footer></section>`);
+  b=$('atnB');
+  b.onclick=()=>atnAbrir($('atnP').classList.contains('hide'));
+  $('atnX').onclick=()=>atnAbrir(false);
+  $('atnNew').onclick=()=>{atn.msgs=[];atnPintar()};
+  $('atnOff').onclick=()=>{if(confirm('¿Ocultar el globito de Atenea? Podrás volver a mostrarlo en Más → Atenea.')){db.ateneaOff=true;save();atnAbrir(false);atnVis()}};
+  $('atnGo').onclick=()=>atnEnviar($('atnIn').value);
+  $('atnIn').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();atnEnviar($('atnIn').value)}};
+  $('atnM').onclick=e=>{const k=e.target.closest('[data-aq]');if(k){$('atnIn').value=k.dataset.aq;$('atnIn').focus();return}
+   const a=e.target.closest('[data-aa]');if(a)atnAccion(a.dataset.aa,+a.dataset.i)};
+ }
+ return b}
+function atnVis(){
+ const b=atnBubble(),ok=!!(typeof sb!=='undefined'&&sb&&typeof userId!=='undefined'&&userId)&&!pub()&&!db.ateneaOff||window.ATN_TEST;
+ b.classList.toggle('hide',!ok);if(!ok)$('atnP').classList.add('hide');
+ b.classList.toggle('up',!!$('tmPill')&&$('tmPill').offsetParent!==null);
+ if(ok&&!atn.tip){atn.tip=true;try{if(!sessionStorage.getItem('atnTip')){sessionStorage.setItem('atnTip','1');const t=$('atnTip');t.classList.remove('hide');setTimeout(()=>t.classList.add('hide'),6000)}}catch(e){}}}
+function atnAbrir(v){const p=$('atnP');p.classList.toggle('hide',!v);$('atnTip').classList.add('hide');if(v){atnPintar();$('atnIn').focus()}}
+function atnPintar(){
+ const c=atnCaso(),M=modelos?modelos():[];
+ $('atnMod').innerHTML='<option value="">Sin modelo (formato libre)</option>'+M.map(m=>`<option value="${m.id}">Usar mi modelo: ${esc(m.name)}</option>`).join('');
+ $('atnN').textContent='Atenea es una IA y puede equivocarse: revisa normas y datos antes de usar. Con la búsqueda activa consulta solo páginas oficiales y te muestra los enlaces; confirma siempre la vigencia. Si usas tu biblioteca, se envían los fragmentos de tus documentos relacionados con la pregunta. '+(c?'Del expediente envío solo tipo, asunto y etapa. ':'')+'No se envían nombres, cédulas, teléfonos ni correos: no los escribas en tu mensaje.';
+ const m=$('atnM');
+ const bien=`<div class="am a">Hola, soy <b>Atenea</b> 🦉, tu asistente de redacción.${c?`\nVeo que estás en el expediente «${esc(c.title||c.client)}». Redacto con sus datos.`:'\nAbre un expediente si quieres que use sus datos.'}\n¿Qué documento necesitas?<div class="achips"><button data-aq="Redacta un poder especial para este asunto.">Poder especial</button><button data-aq="Redacta un derecho de petición sobre este asunto.">Derecho de petición</button><button data-aq="Redacta un contrato de prestación de servicios profesionales (honorarios) para este asunto.">Contrato de honorarios</button><button data-aq="Redacta un memorial dirigido al despacho solicitando ">Memorial</button></div></div>`;
+ m.innerHTML=bien+atn.msgs.map((x,i)=>x.role==='user'?`<div class="am u">${esc(x.content)}</div>`:`<div class="am a">${esc(atnLleno(x.content))}${x.bib&&x.bib.length?`<div class="fu"><b>De tu biblioteca</b> ${x.bib.map(esc).join(', ')}</div>`:''}${x.fuentes&&x.fuentes.length?`<div class="fu"><b>Fuentes consultadas</b>${x.fuentes.map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${esc(f.titulo||f.url)}</a>`).join('')}</div>`:''}${x.doc?`<div class="ac"><button data-aa="word" data-i="${i}">Descargar Word</button><button data-aa="copiar" data-i="${i}">Copiar</button></div>`:''}</div>`).join('')+(atn.busy?'<div class="am a">Atenea está escribiendo…</div>':'');
+ m.scrollTop=m.scrollHeight;
+ document.querySelectorAll('#atnB .owl,#atnP header .owl').forEach(o=>o.classList.toggle('think',atn.busy))}
+function atnLleno(t){return mFill(t,atnCaso()||{})}
+async function atnEnviar(txt){
+ txt=String(txt||'').trim();if(!txt||atn.busy)return;
+ $('atnIn').value='';atn.msgs.push({role:'user',content:txt});atn.busy=true;atnPintar();
+ let r='';
+ try{
+  const M=modelos().find(x=>x.id===$('atnMod').value);
+  const BB=($('atnBib')&&$('atnBib').checked&&sb&&userId&&typeof bibBuscar==='function')?await bibBuscar(txt):{txt:'',nombres:[]};
+  if(!sb)throw new Error('sin_sesion');
+  const x=await sb.functions.invoke('atenea',{body:{messages:atn.msgs.map(m=>({role:m.role,content:m.content})),contexto:atnCtx(atnCaso()),modelo:M?M.text:'',buscar:!!$('atnBus').checked,biblioteca:BB.txt}});
+  if(x.error)throw new Error('conexion');
+  if(x.data&&x.data.error==='no_configurada')r='Todavía no estoy conectada: falta un paso de configuración en Supabase. Dile a Claude «activar Atenea» y te guía paso a paso.';
+  else if(x.data&&x.data.error)r=x.data.error;
+  else r=(x.data&&x.data.texto)||'No recibí respuesta. Intenta de nuevo.';
+  atn.msgs.push({role:'assistant',content:r,doc:!!(x.data&&x.data.texto&&r.length>250),fuentes:(x.data&&x.data.fuentes)||[],bib:BB.nombres});
+ }catch(e){atn.msgs.push({role:'assistant',content:'No pude conectarme ahora. Revisa tu internet e intenta de nuevo.'})}
+ atn.busy=false;atnPintar()}
+async function atnAccion(a,i){
+ const t=atnLleno(atn.msgs[i].content);
+ if(a==='copiar'){try{await navigator.clipboard.writeText(t)}catch(e){const z=document.createElement('textarea');z.value=t;document.body.appendChild(z);z.select();document.execCommand('copy');z.remove()}
+  const b=document.querySelector(`[data-aa="copiar"][data-i="${i}"]`);if(b)b.textContent='¡Copiado!';return}
+ const c=atnCaso(),nom=('Borrador'+(c?' - '+c.client:'')).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w .-]+/g,'').trim();
+ try{const bl=await mDocx(t);if(bl)saveFile({filename:nom+'.docx',data:bl});else saveFile({filename:nom+'.doc',data:mDoc(t)})}catch(e){saveFile({filename:nom+'.doc',data:mDoc(t)})}}
+const _render3=render;
+render=function(){_render3();atnVis();
+ const m=$('masView');
+ if(!m.classList.contains('hide')&&m.querySelector('.mas')&&!m.querySelector('[data-go="atn"]')&&!pub())m.querySelector('.mas').insertAdjacentHTML('afterbegin','<button class="go" data-go="atn"><span><b>Atenea · asistente de redacción</b><small>'+(db.ateneaOff?'Mostrar el globito y escribirle':'Pídele borradores de documentos')+'</small></span></button>')};
+$('masView').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.go==='atn'){e.stopImmediatePropagation();db.ateneaOff=false;save();atnVis();atnAbrir(true)}},true);
+render();
+</script>
+<script>
+/* ===== Biblioteca de Atenea ===== */
+const PDFJS_V='3.11.174',PDFJS_URL='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+PDFJS_V+'/pdf.min.js',PDFJS_W='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+PDFJS_V+'/pdf.worker.min.js';
+function bibCargarPdfJs(){return new Promise((ok,no)=>{if(window.pdfjsLib){ok();return}const s=document.createElement('script');s.src=window.PDFJS_SRC||PDFJS_URL;s.onload=()=>{window.pdfjsLib=window.pdfjsLib||window['pdfjs-dist/build/pdf'];try{pdfjsLib.GlobalWorkerOptions.workerSrc=window.PDFJS_WORKER||PDFJS_W}catch(e){}ok()};s.onerror=()=>no(new Error('No se pudo cargar el lector de PDF. Revisa tu conexión.'));document.head.appendChild(s)})}
+async function bibTextoPdf(file){
+ await bibCargarPdfJs();
+ const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise,out=[];
+ for(let n=1;n<=pdf.numPages;n++){const pg=await pdf.getPage(n),tc=await pg.getTextContent();let t='';tc.items.forEach(it=>{t+=it.str+(it.hasEOL?'\n':' ')});out.push(t)}
+ return out.join('\n\n')}
+async function bibTexto(file){
+ const n=file.name.toLowerCase();
+ if(n.endsWith('.pdf'))return bibTextoPdf(file);
+ if(n.endsWith('.docx'))return mLeerDocx(file);
+ if(/\.(txt|md)$/.test(n))return file.text();
+ throw new Error('Formato no admitido: usa PDF, Word (.docx) o texto (.txt).')}
+function bibTrozos(t){
+ t=String(t).replace(/\r/g,'').replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+ const P=t.split(/\n\s*\n/).map(x=>x.replace(/\n/g,' ').trim()).filter(Boolean),out=[];let cur='';
+ const push=()=>{if(cur.trim())out.push(cur.trim());cur=''};
+ for(let p of P){while(p.length>1400){const cut=p.lastIndexOf('. ',1200);const k=cut>400?cut+1:1200;if((cur+' '+p.slice(0,k)).length>1300)push();cur+=(cur?' ':'')+p.slice(0,k);push();p=p.slice(k).trim()}
+  if((cur+' '+p).length>1300)push();cur+=(cur?'\n':'')+p}
+ push();return out}
+const BIB_TIPOS=['Modelo o memorial','Sentencia o jurisprudencia','Doctrina o apuntes','Otro'];
+async function bibListar(){const x=await sb.from('atenea_docs').select('id,nombre,tipo,n_frag,created_at').order('created_at',{ascending:false});if(x.error)throw x.error;return x.data||[]}
+async function bibForm(){
+ if(!sb||!userId){form('Biblioteca de Atenea','<p>Inicia sesión para usar la biblioteca.</p>',()=>{});$('ok').textContent='Cerrar';return}
+ form('Biblioteca de Atenea',`<p style="font-size:.9rem;margin:0 0 8px">Guarda aquí tus sentencias, memoriales y modelos. Atenea los consulta cuando le pides un borrador y te dice de cuál sacó cada cosa. Solo tú los ves.</p>
+ <div id="bibL" style="margin:8px 0"><p style="color:var(--muted)">Cargando…</p></div>
+ <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
+ <label for="bibT">Tipo de documento</label><select id="bibT">${BIB_TIPOS.map(t=>`<option>${t}</option>`).join('')}</select>
+ <label for="bibF">Archivos (PDF, Word o texto)</label><input type="file" id="bibF" accept=".pdf,.docx,.txt,.md" multiple>
+ <label style="display:flex;gap:8px;align-items:flex-start;margin:8px 0;font-size:.85rem"><input type="checkbox" id="bibOk" style="width:auto;margin-top:3px"> Confirmo que estos documentos no contienen datos personales de clientes ni información reservada.</label>
+ <button type="button" class="primary" id="bibUp">Subir a mi biblioteca</button><p id="bibS" style="margin:8px 0 0;font-size:.85rem;color:var(--muted)"></p>
+ <p style="margin:10px 0 0;font-size:.8rem;color:var(--muted)">Se guarda el texto, no el archivo. Si un PDF es una imagen escaneada, no tiene texto y no se puede leer. Cuando uses la biblioteca, los fragmentos relacionados con tu pregunta se envían a la IA.</p>`,()=>{});
+ $('ok').textContent='Cerrar';
+ const pintar=async()=>{try{const L=await bibListar();$('bibL').innerHTML=L.length?L.map(d=>`<div class="panel" style="padding:8px 12px;margin:0 0 6px"><div class="row"><span><b>${esc(d.nombre)}</b><br><small style="color:var(--muted)">${esc(d.tipo)} · ${d.n_frag} fragmentos</small></span><button type="button" class="link danger" data-bd="${d.id}">Eliminar</button></div></div>`).join(''):'<div class="empty" style="padding:6px 0">Tu biblioteca está vacía.</div>'}catch(e){$('bibL').innerHTML='<p style="color:var(--bad)">Falta crear la biblioteca en Supabase (corre el archivo <b>biblioteca-atenea.sql</b>). Claude te guía.</p>'}};
+ pintar();
+ $('frm').addEventListener('click',async ev=>{const b=ev.target.closest('[data-bd]');if(!b)return;if(!confirm('¿Eliminar este documento de tu biblioteca?'))return;await sb.from('atenea_docs').delete().eq('id',b.dataset.bd);pintar()});
+ $('bibUp').onclick=async()=>{
+  const fs=[...$('bibF').files],S=$('bibS');
+  if(!fs.length){S.textContent='Elige al menos un archivo.';return}
+  if(!$('bibOk').checked){S.textContent='Marca la confirmación de que no contienen datos personales de clientes.';return}
+  $('bibUp').disabled=true;
+  for(const f of fs){
+   try{S.textContent='Leyendo '+f.name+'…';const t=await bibTexto(f),tr=bibTrozos(t);
+    if(!tr.length||t.trim().length<80){S.textContent=f.name+': no tiene texto legible (¿es un escaneo?).';continue}
+    if(t.length>900000){S.textContent=f.name+': es muy largo (máx. unas 400 páginas).';continue}
+    S.textContent='Guardando '+f.name+'…';
+    const d=await sb.from('atenea_docs').insert({nombre:f.name.replace(/\.[^.]+$/,''),tipo:$('bibT').value,n_frag:tr.length}).select('id').single();if(d.error)throw d.error;
+    for(let i=0;i<tr.length;i+=100){const r=await sb.from('atenea_frag').insert(tr.slice(i,i+100).map((x,k)=>({doc_id:d.data.id,orden:i+k,texto:x})));if(r.error){await sb.from('atenea_docs').delete().eq('id',d.data.id);throw r.error}}
+    S.textContent='Listo: '+f.name+' ('+tr.length+' fragmentos).'
+   }catch(e){S.textContent=f.name+': '+(e&&e.message?e.message:'no se pudo guardar')}
+  }
+  $('bibUp').disabled=false;$('bibF').value='';pintar()};
+}
+async function bibBuscar(q){
+ try{const x=await sb.rpc('atenea_buscar',{q,k:6});if(x.error||!x.data||!x.data.length)return {txt:'',nombres:[]};
+  let txt='',n=[];for(const r of x.data){const piece='['+r.nombre+']\n'+r.texto+'\n\n';if((txt+piece).length>13000)break;txt+=piece;if(!n.includes(r.nombre))n.push(r.nombre)}
+  return {txt,nombres:n}}catch(e){return {txt:'',nombres:[]}}}
+/* menú Más */
+const _render4=render;
+render=function(){_render4();const m=$('masView');
+ if(!m.classList.contains('hide')&&m.querySelector('.mas')&&!m.querySelector('[data-go="bib"]')&&!pub())m.querySelector('.mas').insertAdjacentHTML('afterbegin','<button class="go" data-go="bib"><span><b>Biblioteca de Atenea</b><small>Tus sentencias, memoriales y modelos para que Atenea los consulte</small></span></button>')};
+$('masView').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.go==='bib'){e.stopImmediatePropagation();bibForm()}},true);
 render();
 </script>
 </body>
