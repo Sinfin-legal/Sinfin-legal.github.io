@@ -11,7 +11,7 @@
 <script>window.supabase||document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>')</script>
 <meta name="theme-color" content="#620209">
 <script>try{if(localStorage.getItem('sinfin-pin'))document.documentElement.dataset.lock='1'}catch(e){}</script>
-<script>try{var e=localStorage.getItem('sinfin-estilo');if(!localStorage.getItem('sinfin-serio')){localStorage.setItem('sinfin-serio','1');if(e!=='clasico'&&e!=='ejecutivo')e='serio';else e='serio';localStorage.setItem('sinfin-estilo',e)}if(e!=='serio'&&e!=='clasico'&&e!=='ejecutivo')e='serio';document.documentElement.dataset.estilo=e}catch(e){document.documentElement.dataset.estilo='serio'}</script>
+<script>try{var e=localStorage.getItem('sinfin-estilo');if(!localStorage.getItem('sinfin-claro')){localStorage.setItem('sinfin-claro','1');e=(e==='ejecutivo')?'ejecutivo':'claro';localStorage.setItem('sinfin-estilo',e)}if(e!=='claro'&&e!=='noche'&&e!=='ejecutivo')e='claro';document.documentElement.dataset.estilo=e}catch(x){document.documentElement.dataset.estilo='claro'}</script>
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -532,10 +532,103 @@ html:root[data-estilo] .tabs button.on{background:none;border-radius:0}
 html:root[data-estilo="serio"] h1,html:root[data-estilo="serio"] h2{font-weight:500}
 html:root[data-estilo="serio"] .kpi b,html:root[data-estilo="serio"] .age b{font-weight:500}
 html:root[data-estilo="serio"] .tabs{background:var(--surface);backdrop-filter:none}
+
+/* Cabecera y menú planos, tipo oficina */
+html:root[data-estilo] header.top{background:transparent;border-radius:0;box-shadow:none;padding:6px 0 14px;border-bottom:1px solid var(--line);margin-bottom:18px}
+html:root[data-estilo] header.top .logo{background:none;border-radius:0;padding:0;height:42px}
+html:root[data-estilo] header.top .brand h1{font-size:20px;font-weight:600;letter-spacing:-.01em}
+html:root[data-estilo] header.top #sync{background:none;padding:0;border-radius:0;color:var(--muted)!important;font-size:12px}
+html:root[data-estilo] header.top #sync::before{width:6px;height:6px}
+html:root[data-estilo] h2{font-size:22px;font-weight:600}
+html:root[data-estilo] h3{font-size:16px;font-weight:600}
+html:root[data-estilo] .panel,html:root[data-estilo] .detail,html:root[data-estilo] .case{border:1px solid var(--line)}
+html:root[data-estilo] .kpi{padding:14px 16px}
+html:root[data-estilo] .kpi b{font-size:24px}
+html:root[data-estilo] .kpi small{font-size:12px}
+@media (min-width:900px){
+ html:root[data-estilo] .tabs{background:transparent;border:0;border-right:1px solid var(--line);padding-right:10px}
+ html:root[data-estilo] .tabs button{padding:9px 12px;font-size:14.5px;color:var(--muted)}
+ html:root[data-estilo] .tabs button.on{color:var(--accent);font-weight:600;background:color-mix(in srgb,var(--accent) 7%,transparent);border-left:3px solid var(--accent)}
+}
+@media (min-width:900px){html:root[data-estilo] .tabs button{border-left:3px solid transparent}}
 html:root[data-estilo="clasico"] h1,html:root[data-estilo="clasico"] h2{font-style:normal;font-weight:600}
 html:root[data-estilo="clasico"] .panel,html:root[data-estilo="clasico"] .case,html:root[data-estilo="clasico"] .detail{background:var(--surface)}
 html:root[data-estilo="clasico"] .tabs{background:var(--surface)}
 html:root[data-estilo="ejecutivo"] .tabs{background:var(--surface)}
+</style>
+<style>
+/* ===== Estilos Claro y Noche ===== */
+html:root[data-estilo="claro"]{color-scheme:light;--bg:#f7f5f6;--surface:#ffffff;--ink:#1b1416;--muted:#7d7378;--line:#ebe5e7;--accent:#620209;--accent-ink:#fff;--mark:#620209;--ok:#1f9d6b;--warn:#c98a12;--bad:#d64545;--r:20px;--rb:99px;--hf:Inter,system-ui,sans-serif;--tint1:#ffffff;--tint2:#ffffff;--tint3:#ffffff;--tint4:#ffffff}
+html:root[data-estilo="claro"] body{background:#f7f5f6!important;color:var(--ink)}
+html:root[data-estilo="claro"] h1,html:root[data-estilo="claro"] h2,html:root[data-estilo="claro"] h3{font-family:Inter,system-ui,sans-serif!important;font-weight:650;color:#1b1416}
+html:root[data-estilo="claro"] header.top{border-bottom:0}
+html:root[data-estilo="claro"] header.top .logo{filter:none}
+html:root[data-estilo="claro"] .panel,html:root[data-estilo="claro"] .case,html:root[data-estilo="claro"] .detail,html:root[data-estilo="claro"] .totals,html:root[data-estilo="claro"] .kpi,html:root[data-estilo="claro"] .alert,html:root[data-estilo="claro"] .mas button.go{background:#ffffff!important;border:1px solid var(--line)!important;border-radius:20px!important;color:var(--ink)}
+html:root[data-estilo="claro"] .kpi:nth-child(n){background:#f3eef0!important}
+html:root[data-estilo="claro"] .kpi b{color:#1b1416}
+html:root[data-estilo="claro"] button{border-radius:99px;background:#fff;color:var(--ink);border:1px solid var(--line)}
+html:root[data-estilo="claro"] button.primary,html:root[data-estilo="claro"] #newCase{background:#620209;border-color:#620209;color:#fff;border-radius:99px}
+html:root[data-estilo="claro"] button.link{background:none;border:0;color:#620209}
+html:root[data-estilo="claro"] input,html:root[data-estilo="claro"] select,html:root[data-estilo="claro"] textarea{background:#ffffff;color:var(--ink);border:1px solid var(--line);border-radius:99px;padding-left:16px}
+html:root[data-estilo="claro"] textarea{border-radius:16px}
+html:root[data-estilo="claro"] dialog{background:#ffffff;color:var(--ink);border-radius:24px;border:1px solid var(--line)}
+html:root[data-estilo="claro"] .tag{background:#f3eef0;border:0;border-radius:99px;color:var(--ink)}
+html:root[data-estilo="claro"] .bar{background:#eadfe2}html:root[data-estilo="claro"] .bar i{background:#620209}
+html:root[data-estilo="claro"] .fsub button.on{background:#620209;color:#fff;border-color:#620209}
+@media (max-width:899px){
+ html:root[data-estilo="claro"] .tabs{left:14px;right:14px;bottom:calc(12px + env(safe-area-inset-bottom,0px));border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.96);box-shadow:0 8px 24px rgba(98,2,9,.16);padding:8px 10px;backdrop-filter:blur(14px)}
+ html:root[data-estilo="claro"] .tabs button{color:#8b8186;border:0;background:none}
+ html:root[data-estilo="claro"] .tabs button.on{color:#620209;box-shadow:none;background:none}
+ 
+ html:root[data-estilo="claro"] .tabs button.on::after{content:"";position:absolute;bottom:-3px;left:calc(50% - 2px);width:4px;height:4px;border-radius:50%;background:#620209}
+}
+@media (min-width:900px){
+ html:root[data-estilo="claro"] .tabs{background:transparent;border:0}
+ html:root[data-estilo="claro"] .tabs button{color:#7d7378;border:0;background:none;border-radius:99px}
+ html:root[data-estilo="claro"] .tabs button.on{background:#620209;color:#fff;border-left:0}
+}
+html:root[data-estilo="noche"]{color-scheme:dark;--bg:#16090d;--surface:#261015;--ink:#f2f0ff;--muted:#a9a4d0;--line:rgba(255,255,255,.10);--accent:#a3202f;--accent-ink:#fff;--mark:#a3202f;--ok:#6fd3a0;--warn:#f0c36a;--bad:#ff8a8a;--r:20px;--rb:99px;--hf:Inter,system-ui,sans-serif;--tint1:#261015;--tint2:#261015;--tint3:#261015;--tint4:#261015}
+html:root[data-estilo="noche"] body{background:#16090d!important;color:var(--ink)}
+html:root[data-estilo="noche"] h1,html:root[data-estilo="noche"] h2,html:root[data-estilo="noche"] h3{font-family:Inter,system-ui,sans-serif!important;font-weight:650;color:#fff}
+html:root[data-estilo="noche"] header.top{border-bottom:0}
+html:root[data-estilo="noche"] header.top .logo{filter:brightness(0) invert(1)}
+html:root[data-estilo="noche"] .panel,html:root[data-estilo="noche"] .case,html:root[data-estilo="noche"] .detail,html:root[data-estilo="noche"] .totals,html:root[data-estilo="noche"] .kpi,html:root[data-estilo="noche"] .alert,html:root[data-estilo="noche"] .mas button.go{background:#261015!important;border:1px solid var(--line)!important;border-radius:20px!important;color:var(--ink)}
+html:root[data-estilo="noche"] .kpi:nth-child(n){background:#301319!important}
+html:root[data-estilo="noche"] .kpi b{color:#fff}
+html:root[data-estilo="noche"] button{border-radius:99px;background:rgba(255,255,255,.08);color:var(--ink);border:1px solid var(--line)}
+html:root[data-estilo="noche"] button.primary,html:root[data-estilo="noche"] #newCase{background:#a3202f;border-color:#a3202f;color:#fff;border-radius:99px}
+html:root[data-estilo="noche"] button.link{background:none;border:0;color:#cfc8ff}
+html:root[data-estilo="noche"] input,html:root[data-estilo="noche"] select,html:root[data-estilo="noche"] textarea{background:#261015;color:var(--ink);border:1px solid var(--line);border-radius:99px;padding-left:16px}
+html:root[data-estilo="noche"] textarea{border-radius:16px}
+html:root[data-estilo="noche"] dialog{background:#261015;color:var(--ink);border-radius:24px;border:1px solid var(--line)}
+html:root[data-estilo="noche"] .tag{background:rgba(255,255,255,.08);border:0;border-radius:99px;color:var(--ink)}
+html:root[data-estilo="noche"] .bar{background:rgba(255,255,255,.12)}html:root[data-estilo="noche"] .bar i{background:#a3202f}
+html:root[data-estilo="noche"] .fsub button.on{background:#a3202f;color:#fff;border-color:#a3202f}
+@media (max-width:899px){
+ html:root[data-estilo="noche"] .tabs{left:14px;right:14px;bottom:calc(12px + env(safe-area-inset-bottom,0px));border-radius:99px;border:1px solid var(--line);background:rgba(12,10,36,.92);padding:8px 10px;backdrop-filter:blur(14px)}
+ html:root[data-estilo="noche"] .tabs button{color:#a9a4d0;border:0;background:none}
+ html:root[data-estilo="noche"] .tabs button.on{color:#fff;box-shadow:none;background:none}
+ html:root[data-estilo="noche"] .tabs button.on svg{filter:drop-shadow(0 0 6px #a3202f)}
+ html:root[data-estilo="noche"] .tabs button.on::after{content:"";position:absolute;bottom:-3px;left:calc(50% - 2px);width:4px;height:4px;border-radius:50%;background:#fff}
+}
+@media (min-width:900px){
+ html:root[data-estilo="noche"] .tabs{background:transparent;border:0}
+ html:root[data-estilo="noche"] .tabs button{color:#a9a4d0;border:0;background:none;border-radius:99px}
+ html:root[data-estilo="noche"] .tabs button.on{background:#a3202f;color:#fff;border-left:0}
+}
+
+html:root[data-estilo="noche"] header.top .logo{filter:brightness(0) invert(1)!important}
+/* Botón + redondo (celular) */
+#fabNew{display:none}
+@media (max-width:899px){
+ html:root[data-estilo="claro"] #fabNew,html:root[data-estilo="noche"] #fabNew{display:grid;place-items:center;position:fixed;left:calc(50% - 29px);bottom:calc(30px + env(safe-area-inset-bottom,0px));z-index:32;width:58px;height:58px;padding:0;border-radius:50%;border:4px solid var(--bg);background:var(--accent);color:#fff;font-size:30px;font-weight:300;line-height:1;box-shadow:0 8px 20px color-mix(in srgb,var(--accent) 45%,transparent)}
+ body:has(#auth:not(.hide)) #fabNew{display:none!important}
+ html:root[data-estilo="claro"] .tabs button:nth-child(3),html:root[data-estilo="noche"] .tabs button:nth-child(3){margin-right:30px}
+ html:root[data-estilo="claro"] .tabs button:nth-child(4),html:root[data-estilo="noche"] .tabs button:nth-child(4){margin-left:30px}
+ html:root[data-estilo="claro"] .tabs button span,html:root[data-estilo="noche"] .tabs button span{font-size:9.5px!important}
+ html:root[data-estilo="claro"] .tabs,html:root[data-estilo="noche"] .tabs{padding:8px 4px!important;left:10px!important;right:10px!important}
+ html:root[data-estilo="claro"] header.top #newCase,html:root[data-estilo="noche"] header.top #newCase{display:none}
+}
 </style>
 <style>
 /* ===== Atenea (asistente búho) ===== */
@@ -624,6 +717,7 @@ html:root[data-estilo="ejecutivo"] .tabs{background:var(--surface)}
   <section id="calView" class="hide"></section>
 </div>
 
+<button id="fabNew" type="button" aria-label="Nuevo caso">+</button>
 <div id="auth" class="hide"><form class="authbox" id="authForm"><img class="logo logoc" src="logo-s.png" alt="Logo"><h2>Sinfín</h2><p style="color:var(--muted);margin:0 0 6px">Cada caso, sin perder el hilo. Entra para ver tus casos desde cualquier dispositivo.</p><label for="aEmail">Correo</label><input id="aEmail" type="email" autocomplete="email" required><label for="aPass">Contraseña</label><input id="aPass" type="password" autocomplete="current-password" minlength="6" required><div class="err" id="authMsg" role="alert"></div><div class="row2"><button class="primary" value="in">Entrar</button><button value="up">Crear cuenta</button></div></form></div>
 <dialog id="dlg"><form method="dialog" id="frm" novalidate></form></dialog>
 
@@ -1005,21 +1099,22 @@ function reportePdf(mes){
   R.horas.sort((a,b)=>a.fecha.localeCompare(b.fecha)).forEach(h=>{salto(6);d.text(d.splitTextToSize(fdate(h.fecha)+'  ·  '+h.cliente+'  ·  '+h.desc,150),24,y);d.text(h.horas+' h',190,y,{align:'right'});y+=6})}
  saveFile({filename:'reporte-'+mes+'.pdf',data:d.output('blob')});
 }
+document.addEventListener('click',function(ev){if(ev.target.closest&&ev.target.closest('#fabNew')){const n=document.getElementById('newCase');if(n)n.click()}});
 function estiloForm(){
- const cur=document.documentElement.dataset.estilo||'serio';
- const E=[['serio','Serio','#0f3639','Verde profundo y pergamino, sobrio y profesional'],['clasico','Clásico','#620209','El original: vino tinto de Sinfín'],['ejecutivo','Ejecutivo','#17263c','Azul noche y bronce, firme y masculino']];
+ const cur=document.documentElement.dataset.estilo||'claro';
+ const E=[['claro','Claro','#620209','Blanco y vino tinto, esquinas redondeadas y menú flotante'],['noche','Noche','#a3202f','Fondo oscuro con vino tinto, ideal de noche'],['ejecutivo','Ejecutivo','#17263c','Azul noche y bronce, firme y masculino']];
  form('Elige tu estilo','<div class="estilos">'+E.map(e=>`<button type="button" data-es="${e[0]}" class="${e[0]===cur?'on':''}"><i style="background:${e[2]}"></i><span><b>${e[1]}</b><br><small style="color:var(--muted)">${e[3]}</small></span></button>`).join('')+'</div>',()=>{});
  $('ok').classList.add('hide');$('cancel').textContent='Cerrar';
  $('frm').querySelectorAll('[data-es]').forEach(b=>b.onclick=()=>{aplicarEstilo(b.dataset.es);$('dlg').close()});
 }
 function aplicarEstilo(n){
  document.documentElement.dataset.estilo=n;try{localStorage.setItem('sinfin-estilo',n)}catch(e){}
- const m=document.querySelector('meta[name="theme-color"]');if(m)m.content={serio:'#faf8f5',ejecutivo:'#17263c',clasico:'#620209'}[n]||'#faf8f5';
+ const m=document.querySelector('meta[name="theme-color"]');if(m)m.content={claro:'#f7f5f6',noche:'#16090d',ejecutivo:'#17263c'}[n]||'#f7f5f6';
 }
 
 /* Iconos del menú */
 (function(){const IC={"dash": "<rect x=\"3\" y=\"3\" width=\"7\" height=\"9\" rx=\"1.5\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"5\" rx=\"1.5\"/><rect x=\"14\" y=\"12\" width=\"7\" height=\"9\" rx=\"1.5\"/><rect x=\"3\" y=\"16\" width=\"7\" height=\"5\" rx=\"1.5\"/>", "casos": "<path d=\"M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2.5h7.5A2.5 2.5 0 0 1 21 10v7.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z\"/>", "sem": "<path d=\"M9 6h11M9 12h11M9 18h11\"/><path d=\"m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17\"/>", "cal": "<rect x=\"3.5\" y=\"5\" width=\"17\" height=\"15.5\" rx=\"2.5\"/><path d=\"M8 3v4M16 3v4M3.5 10h17\"/>", "fin": "<path d=\"M4 7.5A2.5 2.5 0 0 1 6.5 5H19v3\"/><path d=\"M4 7.5v10A2.5 2.5 0 0 0 6.5 20H20a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H6.5A2.5 2.5 0 0 1 4 7.5z\"/><circle cx=\"16.5\" cy=\"14.5\" r=\"1.1\"/>", "mas": "<circle cx=\"5\" cy=\"12\" r=\"1.3\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/><circle cx=\"19\" cy=\"12\" r=\"1.3\"/>"};document.querySelectorAll('.tabs button[data-tab]').forEach(b=>{const t=b.textContent;b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+(IC[b.dataset.tab]||'')+'</svg><span>'+t+'</span>'})})();
-aplicarEstilo(['serio','clasico','ejecutivo'].includes(document.documentElement.dataset.estilo)?document.documentElement.dataset.estilo:'serio');
+aplicarEstilo(['claro','noche','ejecutivo'].includes(document.documentElement.dataset.estilo)?document.documentElement.dataset.estilo:'claro');
 document.addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
  if(b.id==='estiloBtn')estiloForm();
@@ -1732,7 +1827,7 @@ function pomoDashHtml(){const s=pomoGet(),t=today();
  <div class="pmDashClock" style="font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2;margin:2px 0 6px">${pomoReloj(s)}</div>
  <div style="display:flex;gap:6px"><button class="primary" data-pmd="${s.run?'pausa':'inicio'}">${s.run?'Pausar':(s.resta?'Seguir':'Iniciar')}</button><button data-pmd="abrir" aria-label="Ajustes del Pomodoro">⚙</button></div></div>
  <div class="panel" id="pendMini"><h3>Pendientes${P.length?' ('+P.length+')':''}</h3>
- ${P.length?P.slice(0,4).map(x=>`<div class="tk mini"><button class="ck" data-pm-ck="${x.id}" aria-label="Marcar como hecho"></button><span>${x.tipo==='Mensaje por responder'?'✉ ':''}${esc(x.title)}</span></div>`).join(''):'<div style="color:var(--muted);font-size:13px">Todo al día ✨</div>'}
+ ${P.length?P.slice(0,4).map(x=>`<div class="tk mini"><button class="ck" data-pm-ck="${x.id}" aria-label="Marcar como hecho"></button><span>${x.tipo==='Mensaje por responder'?'✉ ':''}${esc(x.title)}</span></div>`).join(''):'<div style="color:var(--muted);font-size:13px">Todo al día</div>'}
  <p style="margin:6px 0 0;font-size:13px">${P.length>4?'<button class="link" data-pend-go style="padding:2px 0">Ver todos</button> · ':''}<button class="link" data-pend-new style="padding:2px 0">+ Agregar</button></p></div></div>`}
 document.addEventListener('click',ev=>{const g=ev.target.closest('[data-pend-go]');if(g){pendForm();return}
  const pn=ev.target.closest('[data-pend-new]');if(pn){tareaForm();return}
