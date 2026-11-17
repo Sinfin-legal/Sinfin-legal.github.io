@@ -2682,12 +2682,12 @@ async function atnEnviar(txt){
   const BB=($('atnBib')&&$('atnBib').checked&&sb&&userId&&typeof bibBuscar==='function')?await bibBuscar(txt):{txt:'',nombres:[]};
   if(!sb)throw new Error('sin_sesion');
   const x=await sb.functions.invoke('atenea',{body:{messages:atn.msgs.map(m=>({role:m.role,content:m.content})),contexto:atnCtx(atnCaso()),modelo:M?M.text:'',buscar:!!$('atnBus').checked,biblioteca:BB.txt}});
-  if(x.error)throw new Error('conexion');
+  if(x.error){let d='';try{const c=x.error.context;if(c&&c.status){d=' (código '+c.status;try{const t=await c.text();d+=': '+t.slice(0,200)}catch(_){}d+=')'}else d=' ('+(x.error.message||x.error.name||'sin detalle')+')'}catch(_){}throw new Error('conexion'+d)}
   if(x.data&&x.data.error==='no_configurada')r='Todavía no estoy conectada: falta un paso de configuración en Supabase. Dile a Claude «activar Atenea» y te guía paso a paso.';
   else if(x.data&&x.data.error)r=x.data.error;
   else r=(x.data&&x.data.texto)||'No recibí respuesta. Intenta de nuevo.';
   atn.msgs.push({role:'assistant',content:r,doc:!!(x.data&&x.data.texto&&r.length>250),fuentes:(x.data&&x.data.fuentes)||[],bib:BB.nombres});
- }catch(e){atn.msgs.push({role:'assistant',content:'No pude conectarme ahora. Revisa tu internet e intenta de nuevo.'})}
+ }catch(e){const m=String(e&&e.message||'');atn.msgs.push({role:'assistant',content:'No pude conectarme ahora. Revisa tu internet e intenta de nuevo.'+(m.startsWith('conexion')?'\n\nDetalle técnico'+m.slice(8):(m?'\n\nDetalle técnico: '+m:''))})}
  atn.busy=false;atnPintar()}
 async function atnAccion(a,i){
  const t=atnLleno(atn.msgs[i].content);
