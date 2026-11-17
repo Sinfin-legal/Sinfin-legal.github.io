@@ -607,8 +607,8 @@ function render(){
   const B=all.reduce((s,x)=>s+x.billed,0),P=all.reduce((s,x)=>s+x.paid,0);
   $('totals').innerHTML=`<div><small>Facturable</small><b class="num">${eur(B)}</b></div><div class="paid"><small>Cobrado</small><b class="num">${eur(P)}</b></div><div class="pending"><small>Pendiente</small><b class="num">${eur(B-P)}</b></div>`;
   const q=$('q').value.toLowerCase(),f=$('flt').value,fk=$('flk').value,kd=c=>c.kind||'Proceso judicial';
-  const list=db.cases.filter(c=>(!f||c.status===f)&&(!fk||kd(c)===fk)&&(c.client+c.title+c.number).toLowerCase().includes(q));
-  $('cases').innerHTML=list.length?list.map(c=>{const s=stats(c),pct=s.billed?Math.min(100,s.paid/s.billed*100):0;
+  const list=db.cases.filter(c=>(!f||c.status===f)&&(!fk||kd(c)===fk)&&(c.client+c.title+c.number).toLowerCase().includes(q)).sort(pub()?pubSort:()=>0);
+  $('cases').innerHTML=list.length?list.map(c=>{if(pub())return pubRow(c);const s=stats(c),pct=s.billed?Math.min(100,s.paid/s.billed*100):0;
     return `<button class="case" style="--c:${color(c.status)}" data-id="${c.id}"><div class="row"><span class="t">${esc(c.client)}</span><span class="num">${eur(s.due)} pendiente</span></div>
     <div class="row m"><span>${esc(c.title)}${c.number?' · '+esc(c.number):''}</span><span>${!c.kind||c.kind==='Proceso judicial'?'':`<span class="tag">${esc(c.kind==='Otro'?(c.kindOtro||'Otro'):c.kind)}</span> `}<span class="tag">${c.status}</span></span></div>
     ${stageOf(c.id)?`<div class="m">Fase: ${esc(stageOf(c.id))}</div>`:''}
@@ -2005,77 +2005,79 @@ function invForm(c){
  const fila=(k,ph)=>F('Concepto '+k+(k>1?' (opcional)':''),'c'+k,k===1?'Honorarios profesionales: '+c.title:'','text',ph?'placeholder="'+ph+'"':'')+F('Valor del concepto '+k+' ($)','v'+k,k===1?Math.max(0,Math.round(s.due)):'','number','step="1" min="0"');
  form('Nueva factura',F('Número','num','F-'+y+'-'+String(n).padStart(3,'0'))+F('Fecha','date',today(),'date')+fila(1)+fila(2,'Ej.: Copias y desplazamientos')+fila(3)+F('Retención en la fuente (%) — déjala en 0 si no aplica','irpf',0,'number','step="0.01"')+
   '<hr style="border:0;border-top:1px solid var(--line);margin:14px 0 0"><p style="margin:8px 0 0;color:var(--muted);font-size:13px">Cobro</p>'+F('Fecha límite de pago','venc',today(),'date')+F('Forma de pago','forma',ff.forma||'Transferencia')+F('Cuenta de pago (banco y número, Nequi…)','cuenta',ff.cuenta||'')+
-  '<hr style="border:0;border-top:1px solid var(--line);margin:14px 0 0"><p style="margin:8px 0 0;color:var(--muted);font-size:13px">Tus datos</p>'+F('Tu nombre','firm',f.name)+F('Profesión y especialidades (separa con · para otra línea)','ftitle',f.title)+F('Tu cédula o NIT','fnif',f.nif)+F('Teléfono','ftel',f.tel,'tel')+F('Correo','fmail',f.mail,'email')+F('Dirección (opcional)','faddr',f.addr)+F('Cédula o NIT del cliente','cnif',c.nif),
+  '<hr style="border:0;border-top:1px solid var(--line);margin:14px 0 0"><p style="margin:8px 0 0;color:var(--muted);font-size:13px">Tus datos</p>'+F('Tu nombre','firm',f.name)+F('Profesión y especialidades (separa con · para otra línea)','ftitle',f.title)+F('Tu cédula o NIT','fnif',f.nif)+F('Teléfono','ftel',f.tel,'tel')+F('Correo','fmail',f.mail,'email')+F('Dirección (opcional)','faddr',f.addr)+F('Cédula o NIT del cliente','cnif',c.nif)+`<label for="flogo">Tu logo (opcional, imagen)</label><input type="file" id="flogo" accept="image/*">${ff.logo?'<label style="display:flex;gap:8px;align-items:center;margin-top:6px"><input type="checkbox" id="flogoX"> Quitar mi logo actual</label>':''}`,
   g=>{const items=[1,2,3].map(k=>({desc:val('c'+k),val:parseFloat(val('v'+k))||0})).filter(x=>x.desc&&x.val>0);
    if(!val('num')||!items.length)return 'Indica el número y al menos un concepto con valor mayor que cero.';
    if(!val('firm'))return 'Indica tu nombre.';
    const base=items.reduce((t,x)=>t+x.val,0);
-   db.firm=Object.assign({},db.firm,{name:val('firm'),title:val('ftitle'),nif:val('fnif'),tel:val('ftel'),mail:val('fmail'),addr:val('faddr'),forma:val('forma'),cuenta:val('cuenta')});c.nif=val('cnif');
+   db.firm=Object.assign({},db.firm,{name:val('firm'),title:val('ftitle'),nif:val('fnif'),tel:val('ftel'),mail:val('fmail'),addr:val('faddr'),forma:val('forma'),cuenta:val('cuenta')});c.nif=val('cnif');if($('flogoX')&&$('flogoX').checked){delete db.firm.logo;delete db.firm.logoR}if(window._logoTmp){db.firm.logo=window._logoTmp.data;db.firm.logoR=window._logoTmp.r;window._logoTmp=null}
    db.invoices.push({id:uid('i'),caseId:c.id,num:val('num'),date:val('date')||today(),concept:items[0].desc,items,base,irpf:parseFloat(val('irpf'))||0,venc:val('venc')||val('date')||today(),forma:val('forma'),cuenta:val('cuenta')})});
+ $('flogo').onchange=async ev=>{window._logoTmp=ev.target.files[0]?await logoReducir(ev.target.files[0]):null};
 }
-async function logoDataUrl(){try{const r=await fetch('logo-s.png'),b=await r.blob();return await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>res(null);fr.readAsDataURL(b)})}catch(e){return null}}
+const esMia=()=>/lorenasu\.isabel/i.test(String(typeof userEmail!=='undefined'?userEmail:''));
+async function logoDataUrl(){
+ const f=db.firm||{};if(f.logo)return {data:f.logo,r:f.logoR||1};
+ if(!esMia())return null;
+ try{const r=await fetch('logo-s.png'),b=await r.blob();const data=await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>res(null);fr.readAsDataURL(b)});return data?{data,r:19.4/13}:null}catch(e){return null}}
+function logoReducir(file){return new Promise(res=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,400/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);res({data:c.toDataURL('image/png'),r:c.height/c.width})};im.onerror=()=>res(null);im.src=fr.result};fr.onerror=()=>res(null);fr.readAsDataURL(file)})}
 async function invPdf(i){
  const c=db.cases.find(x=>x.id===i.caseId)||{},f=firmInfo();
- const dl={save:saveFile};
  if(!window.jspdf){alert('No se pudo cargar el generador de PDF. Recarga la página.');return}
  const d=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),irA=i.base*(i.irpf||0)/100;
- const WINE=[98,2,9],GOLD=[176,141,87],INK=[42,29,32],MUT=[110,98,101],ROSE=[243,236,235];
+ const WINE=[98,2,9],INK=[38,28,30],MUT=[100,92,94],ROSE=[244,238,237],LINE=[214,204,203];
  const m=n=>'$ '+Math.round(n||0).toLocaleString('es-CO');
  const items=(i.items&&i.items.length)?i.items:[{desc:i.concept||'Honorarios profesionales',val:i.base}];
- let y=18;
- // título entre barras
- d.setFillColor(...WINE);d.rect(20,y-3.2,62,3.6,'F');d.rect(128,y-3.2,62,3.6,'F');
- d.setFont('helvetica','bold');d.setFontSize(15);d.setTextColor(...INK);d.text('FACTURA',105,y+.4,{align:'center'});
- y+=9;d.setFont('helvetica','normal');d.setFontSize(9.5);d.setTextColor(...MUT);
- d.text('FECHA: '+fdate(i.date)+'     |     NÚMERO: '+i.num,105,y,{align:'center'});
- y+=5;d.setDrawColor(...GOLD);d.setLineWidth(.3);d.line(20,y,190,y);
- // emisor (izquierda) y cliente (derecha)
- y+=9;const top=y,logo=await logoDataUrl();
- if(logo){try{d.addImage(logo,'PNG',20,top,13,19.4)}catch(e){}}
- const x0=logo?37:20;
- d.setTextColor(...WINE);d.setFont('times','bold');d.setFontSize(17);d.text(f.name||'',x0,top+7);
- d.setFont('helvetica','normal');d.setFontSize(8);d.setTextColor(...GOLD);let ty=top+12;
- String(f.title||'').split(/\s*[·|]\s*/).filter(Boolean).forEach(t=>d.splitTextToSize(t,66).forEach(z=>{d.text(z,x0,ty);ty+=3.7}));
- let ey=Math.max(ty,top+22)+3;d.setFontSize(9);d.setTextColor(...MUT);
- [f.nif&&'C.C. / NIT: '+f.nif,f.tel&&'Tel.: '+f.tel,f.mail,f.addr].filter(Boolean).forEach(t=>{d.text(d.splitTextToSize(t,80),20,ey);ey+=4.4});
- d.setDrawColor(210,200,200);d.setLineWidth(.3);d.line(112,top-2,112,Math.max(ey,top+30));
- d.setFont('helvetica','normal');d.setFontSize(8);d.setTextColor(...GOLD);d.text('CLIENTE',118,top+1);
- d.setFont('helvetica','bold');d.setFontSize(11);d.setTextColor(...INK);
- let cy=top+8;d.splitTextToSize(c.client||'',70).forEach(z=>{d.text(z,118,cy);cy+=5});
- d.setFont('helvetica','normal');d.setFontSize(9);d.setTextColor(...MUT);
- [c.nif&&'C.C. / NIT: '+c.nif,c.cTel&&'Tel.: '+c.cTel,c.cMail].filter(Boolean).forEach(t=>{d.text(d.splitTextToSize(t,70),118,cy);cy+=4.4});
- // tabla de conceptos
- y=Math.max(ey,cy,top+30)+10;
- d.setFillColor(...WINE);d.rect(20,y-5,170,8,'F');d.setTextColor(255,255,255);d.setFont('helvetica','bold');d.setFontSize(9);
- d.text('CANTIDAD',22,y);d.text('CONCEPTO',44,y);d.text('PRECIO',150,y,{align:'right'});d.text('NETO',187,y,{align:'right'});
- y+=4;items.forEach((it,k)=>{const cl=d.splitTextToSize(it.desc,95),hh=Math.max(9,cl.length*4.6+4.5);
-  d.setFillColor(...(k%2?[250,247,246]:ROSE));d.rect(20,y,170,hh,'F');
-  d.setFont('helvetica','normal');d.setFontSize(9.5);d.setTextColor(...INK);const ty0=y+5.8;
-  d.text('1,00',22,ty0);d.text(cl,44,ty0);d.text(m(it.val),150,ty0,{align:'right'});d.text(m(it.val),187,ty0,{align:'right'});y+=hh});
- // totales
- y+=9;const lineH=(yy)=>{d.setDrawColor(...INK);d.setLineWidth(.4);d.line(112,yy,190,yy)};
- if(i.irpf){
-  d.setDrawColor(...INK);d.setLineWidth(.4);d.line(20,y,100,y);
-  d.setFont('helvetica','bold');d.setFontSize(8);d.setTextColor(...INK);
-  d.text('BASE DE RETENCIÓN:',20,y+5);d.text(m(i.base),100,y+5,{align:'right'});
-  d.text('RETENCIÓN EN LA FUENTE ('+i.irpf+'%):',20,y+10);d.text(m(irA),100,y+10,{align:'right'});d.line(20,y+13,100,y+13)}
- lineH(y);d.setFont('helvetica','bold');d.setFontSize(9.5);d.setTextColor(...INK);
- if(i.irpf){d.text('TOTAL RETENCIÓN:',115,y+6);d.text('-'+m(irA),187,y+6,{align:'right'});y+=9}
- d.setFillColor(...WINE);d.rect(112,y+3,78,11,'F');d.setTextColor(255,255,255);d.setFontSize(11.5);d.text('TOTAL FACTURA',116,y+10.2);d.text(m(invTotal(i)),187,y+10.2,{align:'right'});
- y+=26;
- // cobros
- d.setFont('times','bold');d.setFontSize(13);d.setTextColor(...WINE);d.text('COBROS / VENCIMIENTOS',105,y,{align:'center'});y+=6;
- d.setFillColor(...WINE);d.rect(20,y,170,7.5,'F');d.setTextColor(255,255,255);d.setFont('helvetica','bold');d.setFontSize(9);
- d.text('FECHA',22,y+5);d.text('IMPORTE',55,y+5);d.text('FORMA DE PAGO',92,y+5);d.text('CUENTA DE PAGO',135,y+5);y+=7.5;
- const ctl=d.splitTextToSize(i.cuenta||(db.firm&&db.firm.cuenta)||'—',52),ftl=d.splitTextToSize(i.forma||'Transferencia',38),rh=Math.max(12,Math.max(ctl.length,ftl.length)*4.5+5);
- d.setFillColor(...ROSE);d.rect(20,y,170,rh,'F');d.setFont('helvetica','normal');d.setFontSize(9.5);d.setTextColor(...INK);
- d.text(fdate(i.venc||i.date),22,y+5.5);d.text(m(invTotal(i)),55,y+5.5);d.text(ftl,92,y+5.5);d.text(ctl,135,y+5.5);
+ const L=20,R=190,W=R-L;
+ // barra superior y título
+ d.setFillColor(...WINE);d.rect(0,0,210,7,'F');
+ let y=24;d.setFont('helvetica','bold');d.setFontSize(24);d.setTextColor(...INK);d.text('FACTURA',L,y);
+ d.setFontSize(11);d.setTextColor(...WINE);d.text('N.º '+i.num,R,y-8,{align:'right'});
+ d.setFont('helvetica','normal');d.setFontSize(10);d.setTextColor(...MUT);d.text('Fecha: '+fdate(i.date),R,y-2,{align:'right'});
+ y+=6;d.setDrawColor(...WINE);d.setLineWidth(.6);d.line(L,y,R,y);
+ // emisor (izquierda, máx. 100 mm) y cliente (derecha, caja)
+ y+=10;const top=y,lg=await logoDataUrl();let x0=L;
+ if(lg){const h=Math.min(20,26*lg.r>20?20:26*lg.r),w=h/lg.r;try{d.addImage(lg.data,'PNG',L,top-2,w,h)}catch(e){}x0=L+w+5}
+ const aw=118-x0;
+ d.setFont('times','bold');let fs=17;d.setFontSize(fs);while(fs>11&&d.getTextWidth(f.name||'')>aw){fs-=.5;d.setFontSize(fs)}
+ d.setTextColor(...WINE);d.text(f.name||'',x0,top+5);
+ let ty=top+11;d.setFont('helvetica','normal');d.setFontSize(9);d.setTextColor(...INK);
+ String(f.title||'').split(/\s*[·|]\s*/).filter(Boolean).forEach(t=>d.splitTextToSize(t,aw).forEach(z=>{d.text(z,x0,ty);ty+=4.2}));
+ ty=Math.max(ty,top+(lg?22:8))+2;d.setTextColor(...MUT);
+ [f.nif&&'C.C. / NIT: '+f.nif,f.tel&&'Tel.: '+f.tel,f.mail,f.addr].filter(Boolean).forEach(t=>d.splitTextToSize(t,aw+ (x0-L)).forEach(z=>{d.text(z,L,ty);ty+=4.6}));
+ // caja cliente
+ const cl=[];d.setFont('helvetica','bold');d.setFontSize(11);d.splitTextToSize(c.client||'',58).forEach(z=>cl.push([z,1]));
+ d.setFont('helvetica','normal');d.setFontSize(9);[c.nif&&'C.C. / NIT: '+c.nif,c.cTel&&'Tel.: '+c.cTel,c.cMail].filter(Boolean).forEach(t=>d.splitTextToSize(t,58).forEach(z=>cl.push([z,0])));
+ const bh=10+cl.length*5+3;d.setFillColor(...ROSE);d.roundedRect(126,top-3,R-126,Math.max(bh,28),2,2,'F');
+ d.setFont('helvetica','bold');d.setFontSize(8);d.setTextColor(...WINE);d.text('FACTURADO A',130,top+2);
+ let cy=top+8;cl.forEach(([z,b])=>{d.setFont('helvetica',b?'bold':'normal');d.setFontSize(b?11:9);d.setTextColor(...(b?INK:MUT));d.text(z,130,cy);cy+=5});
+ // tabla
+ y=Math.max(ty,top-3+Math.max(bh,28))+12;
+ d.setFillColor(...WINE);d.rect(L,y-5.5,W,9,'F');d.setTextColor(255,255,255);d.setFont('helvetica','bold');d.setFontSize(9.5);
+ d.text('CANT.',L+3,y);d.text('CONCEPTO',L+22,y);d.text('PRECIO',150,y,{align:'right'});d.text('NETO',R-3,y,{align:'right'});
+ y+=3.5;items.forEach((it,k)=>{const cl2=d.splitTextToSize(it.desc,100),hh=Math.max(11,cl2.length*5+6);
+  d.setFillColor(...(k%2?[250,247,246]:ROSE));d.rect(L,y,W,hh,'F');
+  d.setFont('helvetica','normal');d.setFontSize(10.5);d.setTextColor(...INK);const t0=y+6.5;
+  d.text('1,00',L+3,t0);d.text(cl2,L+22,t0);d.text(m(it.val),150,t0,{align:'right'});d.text(m(it.val),R-3,t0,{align:'right'});y+=hh});
+ // totales a la derecha
+ y+=8;d.setFont('helvetica','normal');d.setFontSize(10.5);d.setTextColor(...INK);
+ if(i.irpf){d.text('Subtotal',126,y);d.text(m(i.base),R-3,y,{align:'right'});y+=6.5;
+  d.text('Retención en la fuente ('+i.irpf+'%)',126,y);d.text('-'+m(irA),R-3,y,{align:'right'});y+=5}
+ d.setFillColor(...WINE);d.rect(126,y,R-126,13,'F');d.setTextColor(255,255,255);d.setFont('helvetica','bold');d.setFontSize(12);
+ d.text('TOTAL',130,y+8.6);d.text(m(invTotal(i)),R-3,y+8.6,{align:'right'});y+=13;
+ // datos de pago
+ y+=14;d.setFont('helvetica','bold');d.setFontSize(12);d.setTextColor(...WINE);d.text('Datos de pago',L,y);
+ d.setDrawColor(...LINE);d.setLineWidth(.3);d.line(L,y+2.5,R,y+2.5);y+=10;
+ const ctl=d.splitTextToSize(i.cuenta||(db.firm&&db.firm.cuenta)||'—',80),fila=(k,v,yy)=>{d.setFont('helvetica','bold');d.setFontSize(9);d.setTextColor(...MUT);d.text(k,L,yy);d.setFont('helvetica','normal');d.setFontSize(10.5);d.setTextColor(...INK);d.text(v,L+46,yy)};
+ fila('Fecha límite de pago',fdate(i.venc||i.date),y);y+=7;
+ fila('Forma de pago',i.forma||'Transferencia',y);y+=7;
+ fila('Cuenta',ctl,y);y+=Math.max(1,ctl.length)*5+4;
+ fila('Valor a pagar',m(invTotal(i)),y);
  // pie
- d.setDrawColor(...GOLD);d.setLineWidth(.3);d.line(20,276,190,276);
- d.setFont('helvetica','normal');d.setFontSize(9);d.setTextColor(...MUT);
- d.text('Gracias por su confianza.',105,282,{align:'center'});
- d.text([f.name,[f.tel&&'Tel. '+f.tel,f.mail].filter(Boolean).join(' · ')].filter(Boolean).join('   |   '),105,287,{align:'center'});
- try{await dl.save({filename:i.num+'.pdf',data:d.output('blob')})}catch(e){}
+ d.setDrawColor(...WINE);d.setLineWidth(.6);d.line(L,278,R,278);
+ d.setFont('helvetica','normal');d.setFontSize(9.5);d.setTextColor(...MUT);
+ d.text('Gracias por su confianza.',105,284,{align:'center'});
+ const pie=[f.name,[f.tel&&'Tel. '+f.tel,f.mail].filter(Boolean).join(' · ')].filter(Boolean).join('   |   ');d.setFontSize(8.5);d.text(pie,105,289,{align:'center'});
+ try{await saveFile({filename:i.num+'.pdf',data:d.output('blob')})}catch(e){}
 }
 (async()=>{try{
  if(!window.claude||!claude.use)return;
@@ -2339,6 +2341,26 @@ function mesaHtml(){
  <div class="kpis">${K(venc,'Términos vencidos','var(--tint4)',venc?'var(--bad)':'')}${K(hoy+sem,'Vencen esta semana','var(--tint2)',hoy+sem?'var(--warn)':'')}${K(ev.length,fis?'Audiencias y diligencias hoy':'Audiencias hoy','var(--tint3)')}${K(carga,fis?'Noticias y procesos en trámite':'Expedientes en trámite','var(--tint1)')}</div>
  ${ev.length?'<div style="margin-top:10px">'+ev.map(e=>`<p style="margin:6px 0"><b>${e.time||'Hoy'}</b> · ${esc(e.title)} </p>`).join('')+'</div>':''}
  <p style="margin:12px 0 0;display:flex;gap:14px;flex-wrap:wrap"><button class="link" data-ly="new">+ Nuevo término</button><button class="link" data-ev-new>+ ${fis?'Audiencia o diligencia':'Audiencia'}</button></p></div>`}
+
+function pubInfo(c){
+ const t=today(),U=db.updates.filter(x=>x.caseId===c.id).sort((a,b)=>b.date.localeCompare(a.date))[0];
+ const age=U?difDias(t,U.date):null;
+ const cand=[];(db.events||[]).forEach(e=>{if(e.caseId===c.id&&e.date>=t&&!e.done)cand.push({d:e.date,l:e.title,k:e.type})});
+ leyes().forEach(x=>{if(x.caseId===c.id&&!x.done)cand.push({d:x.vence,l:'Vence: '+x.asunto,k:'Término'})});
+ cand.sort((a,b)=>a.d.localeCompare(b.d));
+ return {U,age,next:cand[0]||null};
+}
+function pubSort(a,b){const A=pubInfo(a),B=pubInfo(b);
+ if(A.next&&B.next)return A.next.d.localeCompare(B.next.d);if(A.next)return -1;if(B.next)return 1;
+ return (B.age==null?9999:B.age)-(A.age==null?9999:A.age)}
+function pubRow(c){
+ const I=pubInfo(c),t=today(),st=stageOf(c.id),ref=c.number||c.radicado||'';
+ const ac=I.age==null?'var(--muted)':I.age>180?'var(--bad)':I.age>90?'var(--warn)':'var(--ok)';
+ const nx=I.next?(()=>{const d=difDias(I.next.d,t);return `<span style="color:${d<=3?'var(--bad)':d<=7?'var(--warn)':'var(--ink)'}"><b>${d===0?'Hoy':d===1?'Mañana':fdate(I.next.d)}</b> · ${esc(I.next.l)}</span>`})():'<span style="color:var(--muted)">Sin fechas próximas</span>';
+ return `<button class="case" style="--c:${color(c.status)}" data-id="${c.id}">
+ <div class="row"><span class="t" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.95em">${esc(ref||c.title||'Sin número')}</span><span>${st?`<span class="tag">${esc(st)}</span> `:''}<span class="tag">${c.status}</span></span></div>
+ <div class="row m"><span>${esc(c.client)}${c.title&&ref?' · '+esc(c.title):''}</span></div>
+ <div class="row m" style="margin-top:6px"><span>Próxima fecha: ${nx}</span><span style="color:${ac}">${I.age==null?'Sin actuaciones':'Última actuación hace '+(I.age===0?'hoy':I.age+(I.age===1?' día':' días'))}</span></div></button>`}
 function modoForm(){
  const PF=['Rama Judicial (juzgado o despacho)','Fiscalía','Otra entidad pública'];
  form('Tipo de cuenta',`<p style="font-size:.9rem;margin:0 0 8px">Elige cómo vas a usar Sinfín. Tus datos no se borran al cambiar: solo cambian las opciones que ves.</p>`+S('Soy','modo',['Abogado litigante o de práctica privada','Funcionario público'],pub()?'Funcionario público':'Abogado litigante o de práctica privada')+S('Si eres funcionario, trabajas en','perfil',PF,db.perfil==='fiscalia'?PF[1]:db.perfil==='otro'?PF[2]:PF[0]),
