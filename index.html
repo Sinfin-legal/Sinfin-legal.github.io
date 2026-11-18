@@ -296,12 +296,28 @@ header.top .brand h1{font-size:24px}
 :root[data-theme="dark"][data-estilo="ejecutivo"] .logo{filter:brightness(0) invert(.93)}
 :root[data-estilo="ejecutivo"] button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 
-/* Pulido */
-.fsub{gap:0;border-bottom:1px solid var(--line);margin-bottom:14px}
-.fsub button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:8px 12px;font-size:14px;color:var(--muted)}
-.fsub button.on{background:none;color:var(--ink);border-bottom-color:var(--mark);font-weight:600}
-:root[data-estilo] .fsub button{border-radius:0}
-[data-ftx],[data-fbud],[data-fcsv],[data-fcat]{white-space:nowrap}
+/* Pulido y controles organizados */
+.fsub{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:color-mix(in srgb,var(--ink) 6%,transparent);padding:4px;border-radius:12px;border:0;margin-bottom:16px}
+.fsub button{border:0!important;border-radius:9px!important;background:transparent!important;padding:8px 4px;font-size:13px;font-weight:500;color:var(--muted);text-align:center;box-shadow:none!important;white-space:nowrap}
+.fsub button.on{background:var(--surface)!important;color:var(--ink)!important;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.08)!important}
+html:root[data-estilo="noche"] .fsub{background:rgba(255,255,255,.07)}
+html:root[data-estilo="noche"] .fsub button.on{background:var(--accent)!important;color:#fff!important}
+
+/* Acciones de Finanzas en cuadrícula simétrica */
+.fin-act-main{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.fin-act-main button{width:100%;justify-content:center;padding:10px 12px;font-weight:600}
+.fin-act-sub{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px}
+.fin-act-sub button{width:100%;padding:7px 6px;font-size:12.5px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Resumen limpio de estado y jurisdicción */
+.dist-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+@media (max-width:480px){.dist-grid{grid-template-columns:1fr}}
+.dist-box{background:color-mix(in srgb,var(--ink) 3.5%,transparent);border-radius:10px;padding:10px 12px}
+.dist-box small{display:block;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px}
+.dist-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13.5px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.dist-row:last-child{border-bottom:0}
+.dist-row b{font-weight:600;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:1px 9px;font-size:12.5px}
+
 @media (max-width:520px){button{font-size:14px}.fhead button{padding:7px 11px}.fhead h2{font-size:17px}}
 
 /* Guía de inicio */
@@ -1351,7 +1367,8 @@ function finMesHtml(){
  const ahorro=T.ing>0?Math.round(bal/T.ing*100):null;
  const bud=F.budgets,conBud=Object.keys(bud).filter(k=>bud[k]>0);
  return `<div class="fhead"><button data-fm="-1" aria-label="Mes anterior">‹</button><h2>${esc(mesTxt(finMes))}</h2><button data-fm="1" aria-label="Mes siguiente">›</button></div>
- <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="primary" data-ftx="Ingreso">+ Ingreso</button><button data-ftx="Gasto">+ Gasto</button><button data-fbud>Presupuesto</button><button data-fcat>Mis categorías</button><button data-fcsv>Descargar Excel</button></div>
+ <div class="fin-act-main"><button class="primary" data-ftx="Ingreso">+ Ingreso</button><button data-ftx="Gasto">+ Gasto</button></div>
+ <div class="fin-act-sub"><button data-fbud>Presupuesto</button><button data-fcat>Categorías</button><button data-fcsv>Excel</button></div>
  <div class="kpis"><div class="kpi"><small>Ingresos</small><b class="ing" style="font-size:20px">${eur(T.ing)}</b></div><div class="kpi"><small>Gastos</small><b class="gas" style="font-size:20px">${eur(T.gas)}</b></div><div class="kpi"><small>Balance del mes</small><b style="font-size:20px;color:${bal>=0?'var(--ok)':'var(--bad)'}">${eur(bal)}</b></div><div class="kpi"><small>Ahorro del mes</small><b style="font-size:20px">${ahorro===null?'—':ahorro+'%'}</b></div></div>
  ${var_===null?'':`<p style="color:var(--muted);margin:0 0 10px">Tus gastos ${var_>0?'subieron':var_<0?'bajaron':'se mantuvieron'} ${var_===0?'':Math.abs(var_)+'%'} frente al mes anterior.</p>`}
  ${T.gas?`<div class="panel"><h3>En qué se va tu dinero</h3><p>Personal ${eur(T.personal)} · Del despacho ${eur(T.despacho)}</p>${cats.map(([k,v])=>`<div style="margin:8px 0"><div class="row" style="display:flex;justify-content:space-between;gap:8px"><span>${esc(k)}</span><span class="num">${eur(v)} · ${Math.round(v/T.gas*100)}%</span></div><div class="fbar${bud[k]&&v>bud[k]?' over':''}"><i style="width:${Math.min(100,v/T.gas*100)}%"></i></div></div>`).join('')}</div>`:''}
@@ -2464,7 +2481,23 @@ function renderDash(){
  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button id="repBtn">Reporte mensual</button><button id="termBtn">Calculadora de términos</button></div>
  <div class="kpis"><div class="kpi"><small>Casos activos</small><b>${act.length}</b></div><div class="kpi"><small>Actuaciones este mes</small><b>${acts}</b></div><div class="kpi"><small>Casos nuevos este mes</small><b>${nuevos}</b></div><div class="kpi"><small>Por cobrar</small><b style="color:var(--warn);font-size:21px">${eur(due)}</b></div></div>
  <div class="panel"><h3>Antigüedad de la última actuación</h3><p>Casos no cerrados, según el tiempo desde su última actuación</p><div class="age"><div class="g"><b>${ag.g}</b><small>0–6 meses</small></div><div class="a"><b>${ag.a}</b><small>6–12 meses</small></div><div class="r"><b>${ag.r}</b><small>Más de 12 meses</small></div><div class="n"><b>${ag.n}</b><small>Sin actuación</small></div></div></div>
- <div class="charts"><div class="panel"><h3>Casos por área</h3>${donut(cnt('type'),db.cases.length)}</div><div class="panel"><h3>Casos por estado</h3>${donut(cnt('status'),db.cases.length)}</div><div class="panel"><h3>Casos por jurisdicción</h3>${donut(cnt('jurisdiccion'),db.cases.length)}</div></div>
+ <div class="charts">
+   <div class="panel"><h3>Casos por área</h3>${donut(cnt('type'),db.cases.length)}</div>
+   <div class="panel">
+     <h3>Panorama de casos</h3>
+     <p>Desglose por estado y jurisdicción</p>
+     <div class="dist-grid">
+       <div class="dist-box">
+         <small>Estado</small>
+         ${cnt('status').map(([k,v])=>`<div class="dist-row"><span>${esc(k)}</span><b>${v}</b></div>`).join('')||'<span class="m">—</span>'}
+       </div>
+       <div class="dist-box">
+         <small>Jurisdicción</small>
+         ${cnt('jurisdiccion').map(([k,v])=>`<div class="dist-row"><span>${esc(k)}</span><b>${v}</b></div>`).join('')||'<span class="m">—</span>'}
+       </div>
+     </div>
+   </div>
+ </div>
  ${porCobrarHtml(S)}
  <div class="panel"><h3>Honorarios</h3><p>Cobrado ${eur(P)} de ${eur(B)}</p><div class="bar"><i style="width:${B?Math.min(100,P/B*100):0}%"></i></div></div>
 `;
