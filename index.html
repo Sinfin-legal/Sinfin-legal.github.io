@@ -114,8 +114,8 @@ label{display:block;margin:10px 0 3px;font-weight:500}
 .age .n{color:var(--muted)}
 .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}
 .donut{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:8px}
-.legend{flex:1;min-width:140px;list-style:none;margin:0;padding:0}
-.legend li{display:flex;justify-content:space-between;gap:8px;padding:3px 0}
+.legend{flex:1;min-width:0;width:100%;list-style:none;margin:0;padding:0}
+.legend li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.legend li:last-child{border-bottom:0}.legend li b{font-size:17px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
 @media (min-width:900px){
 .wrap{max-width:1180px;display:grid;grid-template-columns:200px minmax(0,1fr);column-gap:28px;align-items:start}
@@ -136,6 +136,7 @@ header.top{grid-column:1/-1}
 :root[data-estilo="rosa"] body,:root[data-estilo="lila"] body{background-image:radial-gradient(circle at 100% 0,color-mix(in srgb,var(--accent) 12%,transparent),transparent 45%)}
 :root[data-estilo="rosa"] .panel,:root[data-estilo="rosa"] .case,:root[data-estilo="rosa"] .detail,:root[data-estilo="rosa"] .totals,:root[data-estilo="lila"] .panel,:root[data-estilo="lila"] .case,:root[data-estilo="lila"] .detail,:root[data-estilo="lila"] .totals{border-radius:20px;box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 10%,transparent)}
 :root[data-estilo="rosa"] button,:root[data-estilo="lila"] button{border-radius:99px}
+:root[data-estilo] .tk .tt{border:0;border-radius:0;background:none;padding:0}
 :root[data-estilo="rosa"] input,:root[data-estilo="rosa"] select,:root[data-estilo="rosa"] textarea,:root[data-estilo="lila"] input,:root[data-estilo="lila"] select,:root[data-estilo="lila"] textarea{border-radius:14px}
 :root[data-estilo="rosa"] .tabs,:root[data-estilo="lila"] .tabs{border-bottom:0;gap:6px}
 :root[data-estilo="rosa"] .tabs button,:root[data-estilo="lila"] .tabs button{border:1px solid var(--line);border-radius:99px;background:var(--surface)}
@@ -2416,7 +2417,7 @@ function donut(items,total){
  if(!total)return '<div class="empty">Sin datos todavía.</div>';
  let off=0;const R=15.9155;
  const segs=items.map((it,i)=>{const p=it[1]/total*100,x=`<circle r="${R}" cx="21" cy="21" fill="none" stroke-width="6" style="stroke:${PAL[i%PAL.length]}" stroke-dasharray="${p} ${100-p}" stroke-dashoffset="${25-off}"/>`;off+=p;return x}).join('');
- return `<div class="donut"><svg viewBox="0 0 42 42" width="130" height="130" role="img" aria-label="Gráfico de ${total} casos"><circle r="${R}" cx="21" cy="21" fill="none" stroke-width="6" style="stroke:var(--line)"/>${segs}<text x="21" y="23" text-anchor="middle" font-size="7" font-weight="700" style="fill:var(--ink)">${total}</text></svg><ul class="legend">${items.map((it,i)=>`<li><span><i style="background:${PAL[i%PAL.length]}"></i>${esc(it[0])}</span><b>${it[1]}</b></li>`).join('')}</ul></div>`}
+ return `<div class="donut"><ul class="legend">${items.map((it,i)=>`<li><span><i style="background:${PAL[i%PAL.length]}"></i>${esc(it[0])}</span><b>${it[1]}</b></li>`).join('')}</ul></div>`}
 function lastAct(c){const d=db.updates.filter(u=>u.caseId===c.id).map(u=>u.date).concat(autoActs.filter(a=>a.case_id===c.id).map(a=>String(a.fecha||'').slice(0,10))).filter(Boolean).sort();return d.length?d[d.length-1]:''}
 var resMes='';
 function resumenTop(){
