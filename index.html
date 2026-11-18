@@ -1406,11 +1406,19 @@ let finSub='mes',finAnio=new Date().getFullYear();
 function renderFin(){
  $('finView').classList.remove('hide');
  const F=finDB();['metas','pagos','deudas'].forEach(k=>{if(!F[k])F[k]=[]});
- const T=[['mes','Mes'],['metas','Metas'],['pagos','Pagos'],['deudas','Deudas'],['anio','Año']];
+ const T=[['mes','Mes'],['clientes','Clientes'],['metas','Metas'],['pagos','Pagos'],['deudas','Deudas'],['anio','Año']];
  const nav=`<div class="fsub">${T.map(([k,n])=>`<button data-fs="${k}" class="${k===finSub?'on':''}">${n}</button>`).join('')}</div>`;
- const body=finSub==='metas'?finMetasHtml():finSub==='pagos'?finPagosHtml():finSub==='deudas'?finDeudasHtml():finSub==='anio'?finAnioHtml():finMesHtml();
+ const body=finSub==='clientes'?finClientesHtml():finSub==='metas'?finMetasHtml():finSub==='pagos'?finPagosHtml():finSub==='deudas'?finDeudasHtml():finSub==='anio'?finAnioHtml():finMesHtml();
  $('finView').innerHTML=nav+body;
 }
+function finClientesHtml(){
+ const m={};
+ db.cases.forEach(c=>{const k=(c.client||'Sin cliente').trim()||'Sin cliente',x=stats(c),r=m[k]||(m[k]={k,n:0,b:0,p:0});r.n++;r.b+=x.billed;r.p+=x.paid});
+ const L=Object.values(m).map(r=>({...r,d:Math.max(0,r.b-r.p)})).sort((a,b)=>b.d-a.d||b.b-a.b);
+ if(!L.length)return '<div class="empty">Aún no hay casos con honorarios.</div>';
+ const B=L.reduce((s,r)=>s+r.b,0),P=L.reduce((s,r)=>s+r.p,0),D=L.reduce((s,r)=>s+r.d,0);
+ return `<div class="panel"><h3>Honorarios por cliente</h3><p>Lo que has cobrado y lo que te deben, cliente por cliente</p><div class="kpis"><div class="kpi"><small>Facturado</small><b style="font-size:19px">${eur(B)}</b></div><div class="kpi"><small>Cobrado</small><b style="font-size:19px">${eur(P)}</b></div><div class="kpi"><small>Por cobrar</small><b style="font-size:19px;color:var(--warn)">${eur(D)}</b></div></div></div>
+ ${L.map(r=>`<div class="panel"><div class="row" style="display:flex;justify-content:space-between;gap:10px"><b>${esc(r.k)}</b><span style="color:var(--muted)">${r.n} ${r.n===1?'caso':'casos'}</span></div><p style="margin:6px 0">Cobrado ${eur(r.p)} de ${eur(r.b)}</p><div class="bar"><i style="width:${r.b?Math.min(100,r.p/r.b*100):0}%"></i></div><p style="margin:8px 0 0;color:${r.d?'var(--warn)':'var(--ok)'};font-weight:600">${r.d?'Por cobrar '+eur(r.d):'Al día'}</p></div>`).join('')}`}
 const diasHasta=d=>Math.round((new Date(d+'T00:00')-new Date(today()+'T00:00'))/864e5);
 
 /* ---------- Metas de ahorro ---------- */
