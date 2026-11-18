@@ -1442,10 +1442,10 @@ const pad2=n=>String(n).padStart(2,'0');
 let finSub='mes',finAnio=new Date().getFullYear();
 function renderFin(){
  $('finView').classList.remove('hide');
- const F=finDB();['metas','pagos','deudas'].forEach(k=>{if(!F[k])F[k]=[]});
- const T=[['mes','Mes'],['metas','Metas'],['pagos','Pagos'],['deudas','Deudas'],['anio','Año']];
+ const F=finDB();['metas','pagos','deudas','honorarios'].forEach(k=>{if(!F[k])F[k]=[]});
+ const T=[['mes','Mes'],['clientes','Clientes'],['metas','Metas'],['pagos','Pagos'],['deudas','Deudas'],['anio','Año']];
  const nav=`<div class="fsub">${T.map(([k,n])=>`<button data-fs="${k}" class="${k===finSub?'on':''}">${n}</button>`).join('')}</div>`;
- const body=finSub==='metas'?finMetasHtml():finSub==='pagos'?finPagosHtml():finSub==='deudas'?finDeudasHtml():finSub==='anio'?finAnioHtml():finMesHtml();
+ const body=finSub==='clientes'?finClientesHtml():finSub==='metas'?finMetasHtml():finSub==='pagos'?finPagosHtml():finSub==='deudas'?finDeudasHtml():finSub==='anio'?finAnioHtml():finMesHtml();
  $('finView').innerHTML=nav+body;
 }
 const diasHasta=d=>Math.round((new Date(d+'T00:00')-new Date(today()+'T00:00'))/864e5);
@@ -1595,9 +1595,222 @@ function finAnioHtml(){
  <div class="chart">${M.map(x=>`<div class="col"><div class="pair"><i class="i" style="height:${x.ing/mx*100}%"></i><i class="g" style="height:${x.gas/mx*100}%"></i></div><small>${nm(x.i).slice(0,3)}</small></div>`).join('')}</div></div>
  ${mejor?`<div class="panel"><p style="margin:0">Tu mejor mes fue <b>${nm(+mejor.m.slice(5))}</b> (balance ${eur(mejor.ing-mejor.gas)}). El mes de mayor gasto fue <b>${nm(+mas.m.slice(5))}</b> (${eur(mas.gas)}).</p></div>`:'<div class="empty">Aún no hay movimientos este año.</div>'}`;
 }
+
+/* ---------- Clientes y control de honorarios ---------- */
+let cliFiltro='todos',cliBusq='',cliOpen={};
+const honPagado=h=>(h.abonos||[]).reduce((s,a)=>s+(Number(a.monto)||0),0);
+const honSaldo=h=>Math.max(0,(Number(h.total)||0)-honPagado(h));
+const honEstado=h=>{
+ const sal=honSaldo(h);
+ if(sal<=0)return {txt:'Pagado',cls:'ing'};
+ if(h.proxFecha&&h.proxFecha<today())return {txt:'Cuota vencida',cls:'venc'};
+ return {txt:'Al día',cls:''};
+};
+const MOD_HON={cuotas:'Pago único / Cuotas',etapas:'Por etapas procesales',litis:'Cuota litis / Porcentaje'};
+
+function finClientesHtml(){
+ const L=finDB().honorarios||[];
+ const totPactado=L.reduce((s,h)=>s+(Number(h.total)||0),0);
+ const totRecaudado=L.reduce((s,h)=>s+honPagado(h),0);
+ const totSaldo=L.reduce((s,h)=>s+honSaldo(h),0);
+
+ const filtrados=L.filter(h=>{
+  const est=honEstado(h),sal=honSaldo(h);
+  if(cliFiltro==='saldo'&&sal<=0)return false;
+  if(cliFiltro==='vencida'&&est.txt!=='Cuota vencida')return false;
+  if(cliFiltro==='pagado'&&sal>0)return false;
+  if(cliBusq){
+   const q=cliBusq.toLowerCase();
+   const txt=[h.cliente,h.doc,h.asunto,h.notas].join(' ').toLowerCase();
+   if(!txt.includes(q))return false;
+  }
+  return true;
+ });
+
+ return `
+ <div class="kpis">
+  <div class="kpi"><small>Total pactado</small><b style="font-size:20px">${eur(totPactado)}</b></div>
+  <div class="kpi"><small>Recaudado</small><b class="ing" style="font-size:20px">${eur(totRecaudado)}</b></div>
+  <div class="kpi"><small>Saldo por cobrar</small><b class="${totSaldo>0?'gas':''}" style="font-size:20px">${eur(totSaldo)}</b></div>
+ </div>
+
+ <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+  <button class="primary" data-hon-new>+ Nuevo acuerdo de honorarios</button>
+ </div>
+
+ <input id="honSearch" type="search" placeholder="Buscar cliente, cédula o radicado…" value="${esc(cliBusq)}" style="margin-bottom:8px">
+ <div class="fsub" style="margin-bottom:12px">
+  <button data-hf="todos" class="${cliFiltro==='todos'?'on':''}">Todos (${L.length})</button>
+  <button data-hf="saldo" class="${cliFiltro==='saldo'?'on':''}">Con saldo</button>
+  <button data-hf="vencida" class="${cliFiltro==='vencida'?'on':''}">Cuota vencida</button>
+  <button data-hf="pagado" class="${cliFiltro==='pagado'?'on':''}">Pagados</button>
+ </div>
+
+ ${filtrados.length?filtrados.map(h=>{
+  const pag=honPagado(h),sal=honSaldo(h),tot=Number(h.total)||0;
+  const pc=tot>0?Math.min(100,Math.round(pag/tot*100)):0;
+  const est=honEstado(h),abonos=h.abonos||[],abierto=!!cliOpen[h.id];
+  return `<div class="panel">
+   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+    <div>
+     <h3 style="margin:0">${esc(h.cliente)}</h3>
+     <div style="font-size:13px;color:var(--muted)">${[h.doc?'CC/NIT: '+h.doc:'',h.tel?'Tel: '+h.tel:''].filter(Boolean).map(esc).join(' · ')}</div>
+    </div>
+    <span class="${est.cls}" style="font-size:13px;font-weight:600">${est.txt}</span>
+   </div>
+
+   ${h.asunto?`<p style="margin:6px 0 2px;font-size:14px"><b>Asunto:</b> ${esc(h.asunto)}</p>`:''}
+   <p style="margin:0 0 8px;font-size:13px;color:var(--muted)">Modalidad: ${esc(MOD_HON[h.modalidad]||h.modalidad||'Cuotas')}</p>
+
+   <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:14px;margin-bottom:4px">
+    <span>Pactado: <b class="num">${eur(tot)}</b></span>
+    <span>Pagado: <b class="num ing">${eur(pag)}</b></span>
+    <span>Saldo: <b class="num ${sal>0?'gas':''}">${eur(sal)}</b></span>
+   </div>
+   <div class="fbar"><i style="width:${pc}%;${pc>=100?'background:var(--ok)':''}"></i></div>
+   <div style="font-size:12px;color:var(--muted);margin-top:3px">${pc}% cubierto</div>
+
+   ${sal>0&&h.proxFecha?`<p style="margin:8px 0 0;font-size:13px">Próximo cobro: <b>${fdate(h.proxFecha)}</b>${h.proxMonto?' ('+eur(h.proxMonto)+')':''}</p>`:''}
+   ${h.notas?`<p style="margin:6px 0 0;font-size:13px;color:var(--muted)">${esc(h.notas)}</p>`:''}
+
+   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+    ${sal>0?`<button class="primary" data-hon-ab="${h.id}">+ Abono</button>`:''}
+    <button data-hon-hist="${h.id}">Historial (${abonos.length})</button>
+    ${h.casoId?`<button data-hon-inv="${h.casoId}">Facturar</button>`:''}
+    <button class="link" data-hon-edit="${h.id}">Editar</button>
+   </div>
+
+   ${abierto?`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+    <b style="font-size:13px">Historial de abonos</b>
+    ${abonos.length?abonos.slice().sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(a=>`
+     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px">
+      <div><b>${eur(a.monto)}</b> · ${fdate(a.fecha)} · ${esc(a.medio||'Efectivo')}${a.concepto?'<br><span style="color:var(--muted)">'+esc(a.concepto)+'</span>':''}</div>
+      <button class="link danger" data-hon-delab="${h.id}|${a.id}">Quitar</button>
+     </div>`).join(''):'<p style="font-size:13px;color:var(--muted);margin:6px 0 0">Aún no se han registrado abonos.</p>'}
+   </div>`:''}
+  </div>`;
+ }).join(''):'<div class="empty">No hay acuerdos de honorarios en esta vista. Toca <b>+ Nuevo acuerdo de honorarios</b> para registrar el primero.</div>'}`;
+}
+
+function honForm(h){
+ const e=!!h;h=h||{modalidad:'cuotas',proxFecha:'',proxMonto:'',notas:''};
+ const casosOpt=`<option value="">— Seleccionar caso existente (opcional) —</option>`+db.cases.map(c=>`<option value="${c.id}" ${c.id===h.casoId?'selected':''}>${esc(c.client)}${c.title?' · '+esc(c.title):''}</option>`).join('');
+ form(e?'Editar acuerdo de honorarios':'Nuevo acuerdo de honorarios',
+  (!e?`<label for="f_casoId">Vincular con un caso de mi lista</label><select id="f_casoId" name="casoId">${casosOpt}</select>`:`<input type="hidden" name="casoId" value="${esc(h.casoId||'')}">`)+
+  F('Nombre completo del cliente *','cliente',h.cliente||'')+
+  F('Cédula / NIT','doc',h.doc||'')+
+  F('Teléfono / WhatsApp','tel',h.tel||'')+
+  F('Asunto o proceso *','asunto',h.asunto||'')+
+  `<label for="f_modalidad">Modalidad de honorarios</label><select id="f_modalidad" name="modalidad">
+   <option value="cuotas" ${h.modalidad==='cuotas'?'selected':''}>Pago único / Cuotas</option>
+   <option value="etapas" ${h.modalidad==='etapas'?'selected':''}>Por etapas procesales</option>
+   <option value="litis" ${h.modalidad==='litis'?'selected':''}>Cuota litis / Porcentaje</option>
+  </select>`+
+  F('Valor total pactado (COP) *','total',h.total??'','number','min="1" inputmode="numeric"')+
+  (e?'':F('Abono inicial hoy (COP, opcional)','abonoIni','','number','min="0" inputmode="numeric"'))+
+  F('Fecha del próximo pago','proxFecha',h.proxFecha||'','date')+
+  F('Valor próxima cuota (COP, opcional)','proxMonto',h.proxMonto??'','number','min="0" inputmode="numeric"')+
+  F('Notas / condiciones del acuerdo','notas',h.notas||''),
+  f=>{
+   const d={
+    casoId:val('casoId'),
+    cliente:val('cliente'),
+    doc:val('doc'),
+    tel:val('tel'),
+    asunto:val('asunto'),
+    modalidad:val('modalidad'),
+    total:parseFloat(val('total'))||0,
+    proxFecha:val('proxFecha'),
+    proxMonto:parseFloat(val('proxMonto'))||0,
+    notas:val('notas')
+   };
+   if(!d.cliente)return 'Escribe el nombre del cliente.';
+   if(!(d.total>0))return 'Escribe el valor total pactado.';
+   if(e){Object.assign(h,d)}
+   else{
+    const ini=parseFloat(val('abonoIni'))||0;
+    const abonos=[];
+    if(ini>0){
+     const txId=uid('f');
+     abonos.push({id:uid('ab'),fecha:today(),monto:ini,medio:'Transferencia',concepto:'Abono inicial',txId});
+     finDB().tx.push({id:txId,tipo:'Ingreso',amount:ini,cat:'Honorarios',desc:'Honorarios: '+d.cliente+' (Abono inicial)',date:today(),medio:'Transferencia',caseId:d.casoId||''});
+    }
+    finDB().honorarios.push({id:uid('hon'),...d,abonos});
+   }
+  },
+  e?'<button type="button" class="danger" id="delHon" style="margin-right:auto">Eliminar</button>':'');
+
+ if(!e&&$('f_casoId')){
+  $('f_casoId').onchange=()=>{
+   const c=db.cases.find(x=>x.id===$('f_casoId').value);
+   if(!c)return;
+   $('f_cliente').value=c.client||'';
+   $('f_asunto').value=[c.title,c.number].filter(Boolean).join(' · ');
+   if(c.amount&&c.feeType==='fijo')$('f_total').value=c.amount;
+  };
+ }
+ if(e)$('delHon').onclick=()=>{
+  if(confirm('¿Eliminar este acuerdo de honorarios?')){
+   finDB().honorarios=finDB().honorarios.filter(x=>x.id!==h.id);
+   $('dlg').close();save();render();
+  }
+ };
+}
+
+function honAbonoForm(h){
+ const sal=honSaldo(h);
+ form('Registrar abono · '+esc(h.cliente),
+  `<p style="margin:0 0 8px;color:var(--muted)">Saldo pendiente actual: <b class="num">${eur(sal)}</b></p>`+
+  F('Valor del abono (COP) *','monto',h.proxMonto&&h.proxMonto<=sal?h.proxMonto:sal,'number','min="1" inputmode="numeric"')+
+  F('Fecha del pago *','fecha',today(),'date')+
+  S('Medio de pago','medio',MEDIOS,'Transferencia')+
+  F('Concepto / Etapa (ej. Cuota 2, Audiencia)','concepto','')+
+  `<label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" name="enMovs" checked style="width:auto"> Registrar también como Ingreso en Movimientos de Finanzas</label>`,
+  f=>{
+   const monto=parseFloat(val('monto'))||0;
+   const fecha=val('fecha')||today();
+   const medio=val('medio');
+   const concepto=val('concepto');
+   if(!(monto>0))return 'Escribe un monto mayor a cero.';
+   let txId='';
+   if(f.elements.enMovs.checked){
+    txId=uid('f');
+    finDB().tx.push({
+     id:txId,
+     tipo:'Ingreso',
+     amount:monto,
+     cat:'Honorarios',
+     desc:'Honorarios: '+h.cliente+(concepto?' · '+concepto:''),
+     date:fecha,
+     medio,
+     caseId:h.casoId||''
+    });
+   }
+   h.abonos=h.abonos||[];
+   h.abonos.push({id:uid('ab'),fecha,monto,medio,concepto,txId});
+   cliOpen[h.id]=true;
+  });
+}
+
 $('finView').addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;const D=b.dataset,F=finDB();
  if(D.fs){finSub=D.fs;renderFin()}
+ else if(D.hf){cliFiltro=D.hf;renderFin()}
+ else if('honNew' in D)honForm();
+ else if(D.honEdit)honForm(F.honorarios.find(x=>x.id===D.honEdit));
+ else if(D.honAb)honAbonoForm(F.honorarios.find(x=>x.id===D.honAb));
+ else if(D.honHist){cliOpen[D.honHist]=!cliOpen[D.honHist];renderFin()}
+ else if(D.honInv){const c=db.cases.find(x=>x.id===D.honInv);if(c)invForm(c)}
+ else if(D.honDelab){
+  const [hid,aid]=D.honDelab.split('|');
+  const h=F.honorarios.find(x=>x.id===hid);
+  if(h&&confirm('¿Eliminar este abono?')){
+   const ab=(h.abonos||[]).find(a=>a.id===aid);
+   if(ab&&ab.txId)F.tx=F.tx.filter(t=>t.id!==ab.txId);
+   h.abonos=(h.abonos||[]).filter(a=>a.id!==aid);
+   save();renderFin();
+  }
+ }
  else if(D.an){finAnio+= +D.an;renderFin()}
  else if('metaNew' in D)metaForm();
  else if(D.metaEdit)metaForm(F.metas.find(x=>x.id===D.metaEdit));
@@ -1609,6 +1822,15 @@ $('finView').addEventListener('click',e=>{
  else if('deNew' in D)deudaForm();
  else if(D.deEdit)deudaForm(F.deudas.find(x=>x.id===D.deEdit));
  else if(D.deAb)abonoForm(F.deudas.find(x=>x.id===D.deAb));
+});
+$('finView').addEventListener('input',e=>{
+ if(e.target&&e.target.id==='honSearch'){
+  cliBusq=e.target.value;
+  const pos=e.target.selectionStart;
+  renderFin();
+  const inp=$('honSearch');
+  if(inp){inp.focus();inp.setSelectionRange(pos,pos)}
+ }
 });
 
 /* ===== Semana, pendientes, prospectos, calculadoras, Más y candado ===== */
