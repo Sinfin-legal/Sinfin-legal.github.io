@@ -114,8 +114,8 @@ label{display:block;margin:10px 0 3px;font-weight:500}
 .age .n{color:var(--muted)}
 .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}
 .donut{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:8px}
-.legend{flex:1;min-width:0;width:100%;list-style:none;margin:0;padding:0}
-.legend li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.legend li:last-child{border-bottom:0}.legend li b{font-size:17px}
+.legend{flex:1;min-width:140px;list-style:none;margin:0;padding:0}
+.legend li{display:flex;justify-content:space-between;gap:8px;padding:3px 0}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
 @media (min-width:900px){
 .wrap{max-width:1180px;display:grid;grid-template-columns:200px minmax(0,1fr);column-gap:28px;align-items:start}
@@ -136,7 +136,6 @@ header.top{grid-column:1/-1}
 :root[data-estilo="rosa"] body,:root[data-estilo="lila"] body{background-image:radial-gradient(circle at 100% 0,color-mix(in srgb,var(--accent) 12%,transparent),transparent 45%)}
 :root[data-estilo="rosa"] .panel,:root[data-estilo="rosa"] .case,:root[data-estilo="rosa"] .detail,:root[data-estilo="rosa"] .totals,:root[data-estilo="lila"] .panel,:root[data-estilo="lila"] .case,:root[data-estilo="lila"] .detail,:root[data-estilo="lila"] .totals{border-radius:20px;box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 10%,transparent)}
 :root[data-estilo="rosa"] button,:root[data-estilo="lila"] button{border-radius:99px}
-:root[data-estilo] .tk .tt{border:0;border-radius:0;background:none;padding:0}
 :root[data-estilo="rosa"] input,:root[data-estilo="rosa"] select,:root[data-estilo="rosa"] textarea,:root[data-estilo="lila"] input,:root[data-estilo="lila"] select,:root[data-estilo="lila"] textarea{border-radius:14px}
 :root[data-estilo="rosa"] .tabs,:root[data-estilo="lila"] .tabs{border-bottom:0;gap:6px}
 :root[data-estilo="rosa"] .tabs button,:root[data-estilo="lila"] .tabs button{border:1px solid var(--line);border-radius:99px;background:var(--surface)}
@@ -302,7 +301,7 @@ header.top .brand h1{font-size:24px}
 .fsub button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:8px 12px;font-size:14px;color:var(--muted)}
 .fsub button.on{background:none;color:var(--ink);border-bottom-color:var(--mark);font-weight:600}
 :root[data-estilo] .fsub button{border-radius:0}
-[data-ftx],[data-fbud],[data-fcsv]{white-space:nowrap}
+[data-ftx],[data-fbud],[data-fcsv],[data-fcat]{white-space:nowrap}
 @media (max-width:520px){button{font-size:14px}.fhead button{padding:7px 11px}.fhead h2{font-size:17px}}
 
 /* Guía de inicio */
@@ -703,8 +702,6 @@ html:root[data-estilo] header.top #newCase{grid-column:4;grid-row:2;margin-top:1
  html:root[data-estilo] .tabs button.xt{display:flex}
  body.pub .tabs button.xt-pros,body.pub .tabs button.xt-bib{display:none}
 }
-/* Celular: la barra de abajo solo lleva 6 botones; el resto vive en Más */
-@media (max-width:899px){html:root[data-estilo] .tabs button.xt{display:none!important}}
 </style>
 <style>
 /* ===== Atenea (asistente búho) ===== */
@@ -1319,12 +1316,14 @@ function gcalForm(){
 
 /* ===== Finanzas personales: ingresos y gastos ===== */
 const CAT_GASTO={
- 'Personales':['Vivienda (arriendo o cuota)','Servicios públicos','Internet y celular','Alimentación y mercado','Restaurantes y domicilios','Transporte personal','Salud (EPS, medicinas, citas)','Educación','Hijos y familia','Ropa y calzado','Belleza y bienestar','Ocio y salidas','Viajes','Suscripciones (streaming, apps)','Mascotas','Regalos y donaciones','Seguros','Deudas y tarjetas','Ahorro e inversión','Imprevistos','Otros gastos personales'],
- 'Del despacho':['Seguridad social y pensión','Impuestos (renta, ICA)','Software y herramientas','Arriendo u oficina','Papelería y copias','Aranceles y gastos judiciales','Publicidad y redes','Capacitación y libros','Transporte laboral','Honorarios a terceros','Cuotas y tarjeta profesional','Otros gastos del despacho']};
-const CAT_INGRESO=['Honorarios','Salario','Arriendos recibidos','Rendimientos e inversiones','Ventas','Apoyos y regalos','Reembolsos','Otros ingresos'];
+ 'Personales':['Vivienda (arriendo o cuota)','Servicios públicos','Internet y celular','Alimentación y mercado','Restaurantes y domicilios','Transporte personal','Salud (EPS, medicinas, citas)','Educación','Hijos y familia','Ropa y calzado','Belleza y bienestar','Ocio y salidas','Viajes','Suscripciones (streaming, apps)','Mascotas','Regalos y donaciones','Seguros','Deudas y tarjetas','Ahorro e inversión','Gimnasio y deporte','Cuidado personal (peluquería, spa)','Transporte público y taxis','Gasolina y peajes','Parqueadero','Mantenimiento del vehículo','Reparaciones del hogar','Administración (conjunto)','Gas y agua','Medicina prepagada','Odontología','Psicología y terapia','Cuota de manejo y gastos bancarios','Impuesto predial y vehículo','Guardería y colegio','Útiles y uniformes','Cursos y hobbies','Cine, conciertos y eventos','Café y panadería','Domicilios y mercado en línea','Imprevistos','Otros gastos personales'],
+ 'Del despacho':['Seguridad social y pensión','Impuestos (renta, ICA)','Software y herramientas','Arriendo u oficina','Papelería y copias','Aranceles y gastos judiciales','Publicidad y redes','Capacitación y libros','Transporte laboral','Honorarios a terceros','Cuotas y tarjeta profesional','Certificados y copias auténticas','Notaría y registro','Peritos y traductores','Correo y mensajería','Parqueadero y transporte a juzgados','Servicios públicos de oficina','Internet y telefonía del despacho','Equipo de cómputo y celular','Muebles y adecuación de oficina','Facturación y contador','Seguros y pólizas','Bases de datos jurídicas','Eventos y networking','Atención al cliente (café, detalles)','Gastos bancarios del despacho','Otros gastos del despacho']};
+const CAT_INGRESO=['Honorarios','Honorarios de consulta','Cuotas de proceso','Salario','Arriendos recibidos','Rendimientos e inversiones','Ventas','Apoyos y regalos','Reembolsos','Gastos reembolsados por clientes','Otros ingresos'];
 const MEDIOS=['Efectivo','Tarjeta débito','Tarjeta crédito','Transferencia','Nequi','Daviplata','Otro'];
 const ambitoDe=c=>CAT_GASTO['Del despacho'].includes(c)?'Del despacho':'Personal';
-const finDB=()=>{if(!db.fin)db.fin={};if(!db.fin.tx)db.fin.tx=[];if(!db.fin.budgets)db.fin.budgets={};return db.fin};
+const finDB=()=>{if(!db.fin)db.fin={};if(!db.fin.tx)db.fin.tx=[];if(!db.fin.budgets)db.fin.budgets={};
+ const K=db.fin.cats;if(K){[['Personales','Personales'],['Despacho','Del despacho']].forEach(([k,g])=>(K[k]||[]).forEach(c=>{if(!CAT_GASTO[g].includes(c)){const L=CAT_GASTO[g],i=L.length-1;L.splice(Math.max(i,0),0,c)}}));(K.Ingresos||[]).forEach(c=>{if(!CAT_INGRESO.includes(c))CAT_INGRESO.splice(Math.max(CAT_INGRESO.length-1,0),0,c)})}
+ return db.fin};
 let finMes=today().slice(0,7);
 const cap1=t=>t.charAt(0).toUpperCase()+t.slice(1);
 const mesTxt=m=>cap1(new Date(m+'-01T00:00').toLocaleDateString('es-CO',{month:'long',year:'numeric'}));
@@ -1351,7 +1350,7 @@ function finMesHtml(){
  const ahorro=T.ing>0?Math.round(bal/T.ing*100):null;
  const bud=F.budgets,conBud=Object.keys(bud).filter(k=>bud[k]>0);
  return `<div class="fhead"><button data-fm="-1" aria-label="Mes anterior">‹</button><h2>${esc(mesTxt(finMes))}</h2><button data-fm="1" aria-label="Mes siguiente">›</button></div>
- <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="primary" data-ftx="Ingreso">+ Ingreso</button><button data-ftx="Gasto">+ Gasto</button><button data-fbud>Presupuesto</button><button data-fcsv>Descargar Excel</button></div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="primary" data-ftx="Ingreso">+ Ingreso</button><button data-ftx="Gasto">+ Gasto</button><button data-fbud>Presupuesto</button><button data-fcat>Mis categorías</button><button data-fcsv>Descargar Excel</button></div>
  <div class="kpis"><div class="kpi"><small>Ingresos</small><b class="ing" style="font-size:20px">${eur(T.ing)}</b></div><div class="kpi"><small>Gastos</small><b class="gas" style="font-size:20px">${eur(T.gas)}</b></div><div class="kpi"><small>Balance del mes</small><b style="font-size:20px;color:${bal>=0?'var(--ok)':'var(--bad)'}">${eur(bal)}</b></div><div class="kpi"><small>Ahorro del mes</small><b style="font-size:20px">${ahorro===null?'—':ahorro+'%'}</b></div></div>
  ${var_===null?'':`<p style="color:var(--muted);margin:0 0 10px">Tus gastos ${var_>0?'subieron':var_<0?'bajaron':'se mantuvieron'} ${var_===0?'':Math.abs(var_)+'%'} frente al mes anterior.</p>`}
  ${T.gas?`<div class="panel"><h3>En qué se va tu dinero</h3><p>Personal ${eur(T.personal)} · Del despacho ${eur(T.despacho)}</p>${cats.map(([k,v])=>`<div style="margin:8px 0"><div class="row" style="display:flex;justify-content:space-between;gap:8px"><span>${esc(k)}</span><span class="num">${eur(v)} · ${Math.round(v/T.gas*100)}%</span></div><div class="fbar${bud[k]&&v>bud[k]?' over':''}"><i style="width:${Math.min(100,v/T.gas*100)}%"></i></div></div>`).join('')}</div>`:''}
@@ -1369,16 +1368,35 @@ function finForm(tipo,t){
  const e=!!t;t=t||{tipo,date:today(),medio:'Efectivo'};tipo=t.tipo;
  form((e?'Editar ':'Nuevo ')+(tipo==='Ingreso'?'ingreso':'gasto'),
   F('Monto (COP)','amount',t.amount??'','number','min="0" step="1" inputmode="numeric"')+
-  `<label for="f_cat">Categoría</label><select id="f_cat" name="cat">${optCats(tipo,t.cat)}</select>`+
+  `<label for="f_cat">Categoría</label><select id="f_cat" name="cat">${optCats(tipo,t.cat)}<option value="__new">+ Crear categoría nueva…</option></select><div id="ncw" class="hide">${F('Nombre de la categoría nueva','ncat','')}${tipo==='Ingreso'?'':S('¿Es personal o del despacho?','ngrp',['Personal','Del despacho'],'Personal')}</div>`+
   F('Descripción (opcional)','desc',t.desc||'')+F('Fecha','date',t.date,'date')+S('Medio de pago','medio',MEDIOS,t.medio||'Efectivo')+
   `<label for="f_caseId">Caso relacionado (opcional)</label><select id="f_caseId" name="caseId"><option value="">Ninguno</option>${db.cases.map(c=>`<option value="${c.id}" ${c.id===t.caseId?'selected':''}>${esc(c.client)}</option>`).join('')}</select>`+
   `<label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="f_rec" name="rec" ${t.rec?'checked':''} style="width:auto"> Se repite cada mes (arriendo, suscripción, salario…)</label><div id="hastaw">${F('Repetir hasta (opcional)','hasta',t.hasta||'','date')}</div>`,
-  f=>{const d={tipo,amount:parseFloat(val('amount')),cat:val('cat'),desc:val('desc'),date:val('date'),medio:val('medio'),caseId:val('caseId'),rec:f.elements.rec.checked,hasta:f.elements.rec.checked?val('hasta'):''};
+  f=>{let cat=val('cat');if(cat==='__new'){cat=(val('ncat')||'').trim();if(!cat)return 'Escribe el nombre de la categoría nueva.';const K=(finDB().cats=finDB().cats||{});const k=tipo==='Ingreso'?'Ingresos':(val('ngrp')==='Del despacho'?'Despacho':'Personales');K[k]=K[k]||[];if(!K[k].includes(cat))K[k].push(cat);finDB()}
+   const d={tipo,amount:parseFloat(val('amount')),cat:cat,desc:val('desc'),date:val('date'),medio:val('medio'),caseId:val('caseId'),rec:f.elements.rec.checked,hasta:f.elements.rec.checked?val('hasta'):''};
    if(!(d.amount>0))return 'Escribe un monto mayor a cero.';if(!d.date)return 'Elige la fecha.';
    if(e)Object.assign(t,d);else finDB().tx.push({id:uid('f'),...d})},
   e?'<button type="button" class="danger" id="delTx" style="margin-right:auto">Eliminar</button>':'');
  const sh=()=>$('hastaw').classList.toggle('hide',!$('f_rec').checked);$('f_rec').onchange=sh;sh();
+ $('f_cat').onchange=()=>$('ncw').classList.toggle('hide',$('f_cat').value!=='__new');
  if(e)$('delTx').onclick=()=>{if(confirm('¿Eliminar este movimiento? Si se repite, se borra de todos los meses.')){const F=finDB();F.tx=F.tx.filter(x=>x.id!==t.id);$('dlg').close();save();render()}};
+}
+function catsForm(){
+ finDB();const K=db.fin.cats||{};
+ const G=[['Personales','Gastos personales'],['Despacho','Gastos del despacho'],['Ingresos','Ingresos']];
+ const todas=G.reduce((n,[k])=>n+(K[k]||[]).length,0);
+ const lista=G.map(([k,t])=>(K[k]||[]).map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)"><span>${esc(c)} <small style="color:var(--muted)">· ${t}</small></span><button type="button" class="link" data-delcat="${k}|${esc(c)}">Quitar</button></div>`).join('')).join('');
+ form('Mis categorías',`<p style="font-size:.85rem;color:var(--muted);margin:0 0 8px">Crea las categorías que necesites. Aparecen en las listas de gastos e ingresos.</p>`+
+  `<label for="f_ncat">Nombre</label><input id="f_ncat" name="ncat" placeholder="Ej. Peritajes, Mensajería, Mascotas…">`+
+  S('Tipo','ngrp',['Gasto personal','Gasto del despacho','Ingreso'],'Gasto del despacho')+
+  `<div style="margin-top:14px"><b>Tus categorías (${todas})</b>${lista||'<p style="font-size:.85rem;color:var(--muted)">Todavía no has creado ninguna.</p>'}</div>`,
+  f=>{const n=(val('ncat')||'').trim();if(!n)return 'Escribe el nombre de la categoría.';
+   const g=val('ngrp'),k=g==='Ingreso'?'Ingresos':g==='Gasto personal'?'Personales':'Despacho';
+   const C=(db.fin.cats=db.fin.cats||{});C[k]=C[k]||[];if(!C[k].includes(n))C[k].push(n);finDB();save();render()});
+ $('ok').textContent='Agregar';
+ $('dlg').querySelectorAll('[data-delcat]').forEach(b=>b.onclick=()=>{const [k,...r]=b.dataset.delcat.split('|'),c=r.join('|');
+  const usado=db.fin.tx.some(x=>x.cat===c);if(usado&&!confirm('Hay movimientos con esta categoría. Seguirán existiendo, pero la categoría dejará de aparecer en las listas. ¿Quitarla?'))return;
+  db.fin.cats[k]=(db.fin.cats[k]||[]).filter(x=>x!==c);const L=k==='Ingresos'?CAT_INGRESO:CAT_GASTO[k==='Personales'?'Personales':'Del despacho'];const i=L.indexOf(c);if(i>-1)L.splice(i,1);save();$('dlg').close();render()});
 }
 function presForm(){
  const B=finDB().budgets,L=[...CAT_GASTO['Personales'],...CAT_GASTO['Del despacho']];
@@ -1397,6 +1415,7 @@ $('finView').addEventListener('click',e=>{
  else if(b.dataset.ftx)finForm(b.dataset.ftx);
  else if(b.dataset.ftxe)finForm(null,finDB().tx.find(x=>x.id===b.dataset.ftxe));
  else if('fbud' in b.dataset)presForm();
+ else if('fcat' in b.dataset)catsForm();
  else if('fcsv' in b.dataset)finCsv();
 });
 
@@ -1406,19 +1425,11 @@ let finSub='mes',finAnio=new Date().getFullYear();
 function renderFin(){
  $('finView').classList.remove('hide');
  const F=finDB();['metas','pagos','deudas'].forEach(k=>{if(!F[k])F[k]=[]});
- const T=[['mes','Mes'],['clientes','Clientes'],['metas','Metas'],['pagos','Pagos'],['deudas','Deudas'],['anio','Año']];
+ const T=[['mes','Mes'],['metas','Metas'],['pagos','Pagos'],['deudas','Deudas'],['anio','Año']];
  const nav=`<div class="fsub">${T.map(([k,n])=>`<button data-fs="${k}" class="${k===finSub?'on':''}">${n}</button>`).join('')}</div>`;
- const body=finSub==='clientes'?finClientesHtml():finSub==='metas'?finMetasHtml():finSub==='pagos'?finPagosHtml():finSub==='deudas'?finDeudasHtml():finSub==='anio'?finAnioHtml():finMesHtml();
+ const body=finSub==='metas'?finMetasHtml():finSub==='pagos'?finPagosHtml():finSub==='deudas'?finDeudasHtml():finSub==='anio'?finAnioHtml():finMesHtml();
  $('finView').innerHTML=nav+body;
 }
-function finClientesHtml(){
- const m={};
- db.cases.forEach(c=>{const k=(c.client||'Sin cliente').trim()||'Sin cliente',x=stats(c),r=m[k]||(m[k]={k,n:0,b:0,p:0});r.n++;r.b+=x.billed;r.p+=x.paid});
- const L=Object.values(m).map(r=>({...r,d:Math.max(0,r.b-r.p)})).sort((a,b)=>b.d-a.d||b.b-a.b);
- if(!L.length)return '<div class="empty">Aún no hay casos con honorarios.</div>';
- const B=L.reduce((s,r)=>s+r.b,0),P=L.reduce((s,r)=>s+r.p,0),D=L.reduce((s,r)=>s+r.d,0);
- return `<div class="panel"><h3>Honorarios por cliente</h3><p>Lo que has cobrado y lo que te deben, cliente por cliente</p><div class="kpis"><div class="kpi"><small>Facturado</small><b style="font-size:19px">${eur(B)}</b></div><div class="kpi"><small>Cobrado</small><b style="font-size:19px">${eur(P)}</b></div><div class="kpi"><small>Por cobrar</small><b style="font-size:19px;color:var(--warn)">${eur(D)}</b></div></div></div>
- ${L.map(r=>`<div class="panel"><div class="row" style="display:flex;justify-content:space-between;gap:10px"><b>${esc(r.k)}</b><span style="color:var(--muted)">${r.n} ${r.n===1?'caso':'casos'}</span></div><p style="margin:6px 0">Cobrado ${eur(r.p)} de ${eur(r.b)}</p><div class="bar"><i style="width:${r.b?Math.min(100,r.p/r.b*100):0}%"></i></div><p style="margin:8px 0 0;color:${r.d?'var(--warn)':'var(--ok)'};font-weight:600">${r.d?'Por cobrar '+eur(r.d):'Al día'}</p></div>`).join('')}`}
 const diasHasta=d=>Math.round((new Date(d+'T00:00')-new Date(today()+'T00:00'))/864e5);
 
 /* ---------- Metas de ahorro ---------- */
@@ -2427,7 +2438,7 @@ function donut(items,total){
  if(!total)return '<div class="empty">Sin datos todavía.</div>';
  let off=0;const R=15.9155;
  const segs=items.map((it,i)=>{const p=it[1]/total*100,x=`<circle r="${R}" cx="21" cy="21" fill="none" stroke-width="6" style="stroke:${PAL[i%PAL.length]}" stroke-dasharray="${p} ${100-p}" stroke-dashoffset="${25-off}"/>`;off+=p;return x}).join('');
- return `<div class="donut"><ul class="legend">${items.map((it,i)=>`<li><span><i style="background:${PAL[i%PAL.length]}"></i>${esc(it[0])}</span><b>${it[1]}</b></li>`).join('')}</ul></div>`}
+ return `<div class="donut"><svg viewBox="0 0 42 42" width="130" height="130" role="img" aria-label="Gráfico de ${total} casos"><circle r="${R}" cx="21" cy="21" fill="none" stroke-width="6" style="stroke:var(--line)"/>${segs}<text x="21" y="23" text-anchor="middle" font-size="7" font-weight="700" style="fill:var(--ink)">${total}</text></svg><ul class="legend">${items.map((it,i)=>`<li><span><i style="background:${PAL[i%PAL.length]}"></i>${esc(it[0])}</span><b>${it[1]}</b></li>`).join('')}</ul></div>`}
 function lastAct(c){const d=db.updates.filter(u=>u.caseId===c.id).map(u=>u.date).concat(autoActs.filter(a=>a.case_id===c.id).map(a=>String(a.fecha||'').slice(0,10))).filter(Boolean).sort();return d.length?d[d.length-1]:''}
 var resMes='';
 function resumenTop(){
@@ -2452,16 +2463,11 @@ function renderDash(){
  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button id="repBtn">Reporte mensual</button><button id="termBtn">Calculadora de términos</button></div>
  <div class="kpis"><div class="kpi"><small>Casos activos</small><b>${act.length}</b></div><div class="kpi"><small>Actuaciones este mes</small><b>${acts}</b></div><div class="kpi"><small>Casos nuevos este mes</small><b>${nuevos}</b></div><div class="kpi"><small>Por cobrar</small><b style="color:var(--warn);font-size:21px">${eur(due)}</b></div></div>
  <div class="panel"><h3>Antigüedad de la última actuación</h3><p>Casos no cerrados, según el tiempo desde su última actuación</p><div class="age"><div class="g"><b>${ag.g}</b><small>0–6 meses</small></div><div class="a"><b>${ag.a}</b><small>6–12 meses</small></div><div class="r"><b>${ag.r}</b><small>Más de 12 meses</small></div><div class="n"><b>${ag.n}</b><small>Sin actuación</small></div></div></div>
- <div class="panel"><h3>Casos por área</h3>${donut(cnt('type'),db.cases.length)}</div>
- ${atencionHtml(vivos)}
+ <div class="charts"><div class="panel"><h3>Casos por área</h3>${donut(cnt('type'),db.cases.length)}</div><div class="panel"><h3>Casos por estado</h3>${donut(cnt('status'),db.cases.length)}</div><div class="panel"><h3>Casos por jurisdicción</h3>${donut(cnt('jurisdiccion'),db.cases.length)}</div></div>
  ${porCobrarHtml(S)}
  <div class="panel"><h3>Honorarios</h3><p>Cobrado ${eur(P)} de ${eur(B)}</p><div class="bar"><i style="width:${B?Math.min(100,P/B*100):0}%"></i></div></div>
 `;
 }
-function atencionHtml(vivos){
- const L=vivos.map(c=>({c,d:lastAct(c)})).sort((a,b)=>(a.d||'')<(b.d||'')?-1:(a.d||'')>(b.d||'')?1:0).slice(0,5);
- if(!L.length)return '';
- return `<div class="panel"><h3>Casos que necesitan atención</h3><p>Los que llevan más tiempo sin una actuación</p>${L.map(x=>`<button class="case" data-id="${x.c.id}" style="--c:${x.d?'var(--warn)':'var(--muted)'}"><div class="row"><span class="t">${esc(x.c.client)}</span><span class="num">${esc(x.c.radicado||x.c.number||'')}</span></div><div class="row m"><span>${esc(x.c.title)}</span><span>${x.d?'Última: '+fdate(x.d):'Sin actuación'}</span></div></button>`).join('')}</div>`}
 function decodeRad(r){return{muni:r.slice(0,5),despacho:String(+r.slice(9,12)),anio:r.slice(12,16),inst:r.slice(21,23)}}
 function areaDe(t){t=String(t||'').toUpperCase();return /FAMILIA/.test(t)?'Familia':/LABORAL/.test(t)?'Laboral':/PENAL|GARANT|CONOCIMIENTO/.test(t)?'Penal':/ADMINISTRATIV/.test(t)?'Administrativo':/MERCANTIL|COMERCIAL|SOCIEDADES/.test(t)?'Mercantil':/CIVIL/.test(t)?'Civil':''}
 async function buscarRadicado(r){
@@ -2971,22 +2977,5 @@ render();
   setTimeout(()=>{const g=document.querySelector('#masView [data-go="'+b.dataset.xgo+'"]');if(g)g.click()},120)});
 })();
 </script>
-<style>
-/* Barra inferior del celular: botones centrados con la misma distancia a cada lado del + */
-@media (max-width:899px){
- html:root[data-estilo="claro"] .tabs,html:root[data-estilo="noche"] .tabs{display:flex!important;justify-content:center;align-items:center;padding:8px 8px!important}
- html:root[data-estilo="claro"] .tabs button,html:root[data-estilo="noche"] .tabs button{flex:1 1 0!important;min-width:0;margin:0!important;padding-left:0;padding-right:0}
- html:root[data-estilo="claro"] .tabs button:nth-child(3),html:root[data-estilo="noche"] .tabs button:nth-child(3){margin-right:68px!important}
- #atnB{bottom:calc(122px + env(safe-area-inset-bottom))!important}
- #atnB.up{bottom:calc(180px + env(safe-area-inset-bottom))!important}
-}
-</style>
-<style>
-/* Finanzas: pestañas en un control segmentado ordenado, todas visibles y del mismo ancho */
-html:root #finView .fsub{display:grid!important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px!important;overflow:visible!important;padding:4px!important;margin:0 0 16px!important;border:0!important;border-radius:99px;background:color-mix(in srgb,var(--line) 55%,var(--surface))}
-html:root #finView .fsub button{display:block;width:100%;min-width:0;padding:10px 0!important;border:0!important;border-radius:99px!important;background:none!important;color:var(--muted)!important;font-size:13px!important;font-weight:500;text-align:center;white-space:nowrap;box-shadow:none!important}
-html:root #finView .fsub button.on{background:var(--accent)!important;color:var(--accent-ink,#fff)!important;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.15)!important}
-@media (max-width:380px){html:root #finView .fsub button{font-size:12px!important}}
-</style>
 </body>
 </html>
