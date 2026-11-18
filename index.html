@@ -2444,11 +2444,16 @@ function renderDash(){
  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button id="repBtn">Reporte mensual</button><button id="termBtn">Calculadora de términos</button></div>
  <div class="kpis"><div class="kpi"><small>Casos activos</small><b>${act.length}</b></div><div class="kpi"><small>Actuaciones este mes</small><b>${acts}</b></div><div class="kpi"><small>Casos nuevos este mes</small><b>${nuevos}</b></div><div class="kpi"><small>Por cobrar</small><b style="color:var(--warn);font-size:21px">${eur(due)}</b></div></div>
  <div class="panel"><h3>Antigüedad de la última actuación</h3><p>Casos no cerrados, según el tiempo desde su última actuación</p><div class="age"><div class="g"><b>${ag.g}</b><small>0–6 meses</small></div><div class="a"><b>${ag.a}</b><small>6–12 meses</small></div><div class="r"><b>${ag.r}</b><small>Más de 12 meses</small></div><div class="n"><b>${ag.n}</b><small>Sin actuación</small></div></div></div>
- <div class="charts"><div class="panel"><h3>Casos por área</h3>${donut(cnt('type'),db.cases.length)}</div><div class="panel"><h3>Casos por estado</h3>${donut(cnt('status'),db.cases.length)}</div><div class="panel"><h3>Casos por jurisdicción</h3>${donut(cnt('jurisdiccion'),db.cases.length)}</div></div>
+ <div class="panel"><h3>Casos por área</h3>${donut(cnt('type'),db.cases.length)}</div>
+ ${atencionHtml(vivos)}
  ${porCobrarHtml(S)}
  <div class="panel"><h3>Honorarios</h3><p>Cobrado ${eur(P)} de ${eur(B)}</p><div class="bar"><i style="width:${B?Math.min(100,P/B*100):0}%"></i></div></div>
 `;
 }
+function atencionHtml(vivos){
+ const L=vivos.map(c=>({c,d:lastAct(c)})).sort((a,b)=>(a.d||'')<(b.d||'')?-1:(a.d||'')>(b.d||'')?1:0).slice(0,5);
+ if(!L.length)return '';
+ return `<div class="panel"><h3>Casos que necesitan atención</h3><p>Los que llevan más tiempo sin una actuación</p>${L.map(x=>`<button class="case" data-id="${x.c.id}" style="--c:${x.d?'var(--warn)':'var(--muted)'}"><div class="row"><span class="t">${esc(x.c.client)}</span><span class="num">${esc(x.c.radicado||x.c.number||'')}</span></div><div class="row m"><span>${esc(x.c.title)}</span><span>${x.d?'Última: '+fdate(x.d):'Sin actuación'}</span></div></button>`).join('')}</div>`}
 function decodeRad(r){return{muni:r.slice(0,5),despacho:String(+r.slice(9,12)),anio:r.slice(12,16),inst:r.slice(21,23)}}
 function areaDe(t){t=String(t||'').toUpperCase();return /FAMILIA/.test(t)?'Familia':/LABORAL/.test(t)?'Laboral':/PENAL|GARANT|CONOCIMIENTO/.test(t)?'Penal':/ADMINISTRATIV/.test(t)?'Administrativo':/MERCANTIL|COMERCIAL|SOCIEDADES/.test(t)?'Mercantil':/CIVIL/.test(t)?'Civil':''}
 async function buscarRadicado(r){
@@ -2958,5 +2963,15 @@ render();
   setTimeout(()=>{const g=document.querySelector('#masView [data-go="'+b.dataset.xgo+'"]');if(g)g.click()},120)});
 })();
 </script>
+<style>
+/* Barra inferior del celular: botones centrados con la misma distancia a cada lado del + */
+@media (max-width:899px){
+ html:root[data-estilo="claro"] .tabs,html:root[data-estilo="noche"] .tabs{display:flex!important;justify-content:center;align-items:center;padding:8px 8px!important}
+ html:root[data-estilo="claro"] .tabs button,html:root[data-estilo="noche"] .tabs button{flex:1 1 0!important;min-width:0;margin:0!important;padding-left:0;padding-right:0}
+ html:root[data-estilo="claro"] .tabs button:nth-child(3),html:root[data-estilo="noche"] .tabs button:nth-child(3){margin-right:68px!important}
+ #atnB{bottom:calc(122px + env(safe-area-inset-bottom))!important}
+ #atnB.up{bottom:calc(180px + env(safe-area-inset-bottom))!important}
+}
+</style>
 </body>
 </html>
